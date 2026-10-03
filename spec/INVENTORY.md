@@ -292,14 +292,22 @@ other side. Nothing in the pipeline resolves names:
 Not one of these produces a message. Every one of them produces a program that
 assembles cleanly and then misbehaves far from its cause.
 
-**Where the checks have to live: the emulator.** This is the part worth
-deciding deliberately. The obvious home for name resolution is the translator —
-but the translator is the student's, and we neither write it nor can rely on it.
-If the checks live only there, a student with a malformed `.sm` file cannot tell
-a bug in the program from a bug in the translator they are in the middle of
-writing, which is the worst possible confusion to hand someone at that moment.
-So the emulator carries the full set, and a program that the emulator rejects is
-known to be bad before any translator touches it.
+**Where the checks have to live: the emulator — and nowhere near the
+assignment.** The obvious home for name resolution is the translator, but the
+translator is the student's, and we neither write it nor can rely on it. If the
+checks live only there, a student with a malformed `.sm` file cannot tell a bug
+in the program from a bug in the translator they are in the middle of writing,
+which is the worst possible confusion to hand someone at that moment. So the
+emulator carries the full set, and a program it rejects is known to be bad
+before any translator touches it.
+
+The converse matters just as much: **the student's translator is never required
+to perform any of these checks**, and no test in `projects/07-sm` may expect a
+diagnostic from it. The course assumes error-free input throughout — its
+project 11 page says outright that the supplied programs are error-free, so a
+failure means a bug in the student's program and not in the test — and we assume
+the same. Validation is a service our tools provide, not a requirement we
+impose.
 
 *Proposed:* add the missing rule; state all of them in one place in the
 reference; implement the whole table above as diagnostics in the emulator, with
@@ -379,9 +387,10 @@ weaker runtime check — bounding `SP` at 2047 — which remains worth having as
 backstop, since runaway recursion is unbounded at run time and no static walk
 can catch it.
 
-**Where it lives:** the emulator and `sm-core`, for the reason given in Q5. The
-student's translator is theirs and cannot be relied on, and a malformed program
-should be known to be malformed before any translator is blamed for it.
+**Where it lives:** the emulator and `sm-core`, for the reason given in Q5 —
+and, equally, not in the assignment. The student's translator is theirs, cannot
+be relied on, and is not required to perform the check; a malformed program
+should simply be known to be malformed before any translator is blamed for it.
 
 **What it costs.** It is a restriction on SM programs, not only on compiler
 output: hand-written SM whose stack depth varies by path becomes illegal. No

@@ -61,6 +61,14 @@ library, and the library is useless without those two devices.
   course's own project 7/8 programs, compared by emulator output rather than by
   text, is a stronger correctness statement than any set of unit tests, and it
   is what proves the SM track is a genuine alternative rather than a fork.
+* **Validating the input is our job, not the student's.** Our tools — the
+  emulator, `sm-core`, our own translator and compiler — check that an `.sm`
+  program is well formed and say precisely what is wrong with it when it is not.
+  The student's translator is never required to do any of that, exactly as the
+  course never requires it: its test programs are error-free by construction and
+  a translator may assume so. The consequence is a rule for M6, written out
+  there: no test in the student package feeds a malformed program and expects a
+  diagnostic.
 * **Each assignment is checked the way the course checks it, and no harder.**
   The course automates project 7–8 with `.cmp` files and deliberately does not
   automate project 11: there the student runs the compiled program and looks at
@@ -204,6 +212,14 @@ highlights the current line.
 `FibonacciElement` from a cold load.
 
 ### M6 — `projects/07-sm`, the first assignment *(medium)*
+
+**Every program in this package is valid SM, and nothing here grades error
+handling.** The validation we build — undeclared call targets (C3), the name
+rules (Q5), the stack-depth walk (Q9) — belongs to our tools and exists so that
+a student can tell a bad `.sm` file from a bug in the translator they are
+writing. It is not part of the assignment, and a test that fed a malformed
+program and expected a message would be quietly assigning work the course never
+assigns.
 
 A staged sequence of tests. Each is a directory containing SM source, a
 `<Name>SM.tst` that runs it in the SM emulator, a `<Name>.tst` that loads the

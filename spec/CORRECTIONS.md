@@ -97,15 +97,21 @@ That is a property of the catch-all rule rather than of this command, and it
 turns every typo in the language into the same failure. So this entry carries a
 second requirement with it:
 
-> Every called name must resolve to a declared function. A call to an undeclared
-> name is a diagnostic, in the translator and in the emulator alike.
+> Every called name must resolve to a declared function. A call to an
+> undeclared name is a diagnostic.
 
 With that in place, `=` produces "unknown function `=`" and, better, so does
 every other mistyped command. Without it, nothing in this language can be
 mistyped safely.
 
+**Whose job this is.** Ours — the emulator, `sm-core`, and the tools we write
+with them. The student's translator is not required to validate its input, any
+more than the course requires it of theirs, and nothing in `projects/07-sm`
+tests for it. The point of the check is that a student can tell a malformed
+`.sm` file from a bug in the translator they are in the middle of writing.
+
 **Touches.** The reference page; the parser's catch-all rule; the whole-program
-check that resolves call targets.
+check that resolves call targets, in our tools only.
 
 ---
 
