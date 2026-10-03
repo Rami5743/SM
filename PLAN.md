@@ -61,10 +61,11 @@ library, and the library is useless without those two devices.
   course's own project 7/8 programs, compared by emulator output rather than by
   text, is a stronger correctness statement than any set of unit tests, and it
   is what proves the SM track is a genuine alternative rather than a fork.
-* **Each assignment is checked the way the course checks it.** A `.cmp` file the
-  student's own output must satisfy, not a description of what the output should
-  look like. For the translator that means comparing RAM; for the compiler it
-  means comparing what the compiled program does when run.
+* **Each assignment is checked the way the course checks it, and no harder.**
+  The course automates project 7–8 with `.cmp` files and deliberately does not
+  automate project 11: there the student runs the compiled program and looks at
+  it. We copy both choices rather than improve on either. Our own tests are a
+  separate matter — see M7.
 
 ## 3. Technical choices
 
@@ -232,29 +233,75 @@ and `->[]`, which is the clearest single illustration of what the design buys.
 This library is not optional and not polish. A student who writes their own
 Jack → SM compiler can run nothing at all without it.
 
-*Done when:* the course's project 11 programs compile to SM and run in the SM
-emulator with the same visible behaviour as their VM versions.
+**Testing it.** The course hands project 11 to the student with no automated
+tests at all, which is the right call for a student and the wrong one for us: a
+compiler is where a silent, narrow bug survives longest, and ours is the
+reference that every student's work will be compared against. So the compiler
+gets a test suite the student package does not:
+
+* *Per-construct tests.* One tiny Jack program per grammar construct and per
+  symbol kind — a field read, an array store, a method call on an expression, a
+  static across files, unary minus on a call — each leaving a known value in a
+  known global, compiled, run, asserted. This is the layer that catches the
+  narrow bugs.
+* *Golden output.* The SM text emitted for those same snippets, checked in. We
+  own both sides here, so pinning the exact output is legitimate and catches
+  unintended changes; it is exactly what we must *not* ask of a student.
+* *The course's own programs, end to end.* `Seven`, `ConvertToBin`, `Average`,
+  `ComplexArrays`, `Square`, `Pong`. Two of them are mechanically checkable as
+  they stand — `ConvertToBin` is defined by `RAM[8000]` in and `RAM[8001..8016]`
+  out, and `ComplexArrays` prints expected beside actual, so the text buffer can
+  be asserted. The graphical ones become a screen-buffer hash plus "runs N
+  thousand steps without faulting".
+* *The OS, against the course's own OS tests.* Project 12 supplies a test
+  program per class, and `MathTest`, `MemoryTest` and `ArrayTest` come with real
+  `.cmp` files we can reuse directly. The rest are observational and become
+  screen-buffer assertions. This is how the SM library in M7 gets checked, and
+  it is a ready-made suite we would otherwise have had to invent.
+* *Differential testing,* once M9 exists: compile the same Jack source with our
+  compiler and with the course's, run both, compare observable behaviour. The
+  strongest test of the lot, and the reason M9 earns its place even though no
+  student needs it.
+* *Pong as the integration test,* for the same reason the course uses it: it
+  exercises objects, statics, arrays, strings, screen and keyboard at once.
+
+*Done when:* every layer above passes, and the course's project 11 programs
+behave in the SM emulator as their VM versions do.
 
 ### M8 — `projects/11-sm`, the second assignment *(medium)*
 
-The package for the Jack → SM compiler, built the way M6 is built and staged the
-way the course stages project 11: expressionless programs first, then
-expressions, then arrays and objects, then complete programs.
+The package for the Jack → SM compiler. Unlike M6 it carries **no `.cmp` files**,
+because the course's project 11 carries none: the student is told to run the
+compiled program in the emulator and look at it — "make sure that it displays 7
+correctly", "play the game", "make sure that the actual results are identical to
+the expected results". That is a deliberate choice and a correct one. A
+compiler has no single right output — label names, evaluation order and
+temporaries are all free — so there is nothing to compare a student's output
+against, and the course does not pretend otherwise.
 
-Checking a compiler is not checking a translator, and the difference drives the
-design of this package. There is no single correct SM output to compare against
-— register allocation, label names and evaluation order are all free — so a
-`.cmp` file cannot describe the compiler's output. It describes the *behaviour*
-of that output: each test is a Jack program with a known result, and the student
-passes when their compiler's SM output, run in the emulator, produces it.
+So this package is the course's project 11 with the target changed: the same six
+programs, staged the same way — `Seven`, then `ConvertToBin`, then `Square`,
+`Average`, `ComplexArrays`, `Pong` — each with the same description of what the
+student should see, and each runnable in the SM emulator instead of the VM
+emulator. The work is in the porting and the instructions, not in inventing a
+grading regime.
 
-Two consequences. The emulator needs a comparison mode driven by a `.tst`
-script, not by a RAM dump at a fixed address. And the tests have to be written
-so that their result is observable — a value left in a known global, or a
-sequence of calls to a stub, rather than something drawn on the screen.
+Two small places where the SM emulator can do better than the course without
+changing the character of the assignment, both optional extras rather than the
+means of grading: `ConvertToBin` is already defined by a RAM precondition and a
+RAM postcondition, so it can be offered with a `.tst` that sets `RAM[8000]` and
+checks `RAM[8001..8016]`; and any program can be re-run with the emulator's
+screen buffer compared against a recorded one, which turns "it looks right" into
+something a student can check twice.
 
-*Done when:* the reference compiler passes every test, and a compiler that is
-wrong in one deliberate way fails at least one.
+**Project 10 needs no counterpart.** The syntax analyser is a Jack-to-XML
+program with no target machine in it; the course's project 10, its
+`TextComparer` and its supplied `.xml` compare files carry over to the SM track
+unchanged. The SM assignment begins at code generation.
+
+*Done when:* all six programs are present, each runs in the SM emulator when
+compiled by the reference compiler, and each carries instructions a student can
+follow without the course's VM emulator at hand.
 
 ### M9 — `sm-to-vm` and `vm-to-sm` *(large)*
 
@@ -336,10 +383,11 @@ M9 and M10 follow at leisure.
   but to order M7 so that `Math`, `Memory`, `Array` and `String` land first:
   those alone let the early stages of M8 run, and the graphical stages can wait.
   What can be cut from a release, if something must be, is M9.
-* **Testing a compiler by behaviour.** M8 compares what a student's compiled
-  program *does*, which only works if every test has an observable result. A
-  test whose result is a picture is a test nobody can grade. This has to be a
-  rule when the tests are written, not a repair afterwards.
+* **A quiet bug in our own compiler.** The student package cannot catch it —
+  project 11 is graded by eye, by design — so the reference compiler is only as
+  good as the suite described in M7. The layer that matters most there is the
+  per-construct one: whole programs like `Pong` fail loudly on a broken
+  constructor and silently on a wrong evaluation order.
 * **Prose drifting from code again.** Mitigated by making the reference page a
   rendering of the normative spec, with its examples executed by the emulator at
   build time.
@@ -353,9 +401,10 @@ M9 and M10 follow at leisure.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.
-3. Should there also be a package parallel to the course's project 10, the
-   syntax analyser, as a separate stage before the compiler — or does the SM
-   track start the Jack assignment at code generation?
+3. ~~A counterpart to project 10, the syntax analyser?~~ **Answered:** no. The
+   analyser has no target machine in it, so the course's own project 10 carries
+   over unchanged, `TextComparer` and `.xml` compare files included. The SM
+   assignment starts at code generation.
 4. Should the site host the course's own VM emulator as well, so a student can
    compare the two machines side by side, or only link to it?
 5. Language of the site: English throughout, or English reference with a Hebrew
