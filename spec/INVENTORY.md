@@ -72,16 +72,58 @@ negation. No comparison emits a label or a jump — the point of the convention.
 **Reserved assembly symbols** the runtime occupies: `SP`, `LCL`, `tmp`, `end`,
 and the prefixes `SM.`, `FUNTION.`, `LABEL.`, `call.`.
 
-## 3. Open questions
+## 3. Questions
 
-**Q1 — operand order of `->[]`.** The prose says: top is `y`, the element below
-is `x`, and the effect is `RAM[y] := x` — that is, the **address on top**. All
-three implementations do the opposite: `SM_doc_implimintation.txt`,
-`SM_trnsleitor3.py`, the hand-written `fib.sm` and every array store emitted by
-`jack_compaler.py` push the **address first and the value on top**, giving
-`RAM[x] := y`.
-*Proposed:* keep the implementations, fix the prose. Address below, value on top
-— it is also the order that falls out of compiling `let a[i] = e;` left to right.
+Decided so far: **Q1**. The rest are open.
+
+**Q1 — operand order of `->[]`. DECIDED: the code is right, the prose is wrong.**
+
+The prose says: top is `y`, the element below is `x`, and the effect is
+`RAM[y] := x` — the **address on top**. All four artefacts do the opposite:
+`SM_doc_implimintation.txt`, `SM_trnsleitor3.py`, the hand-written `fib.sm`
+with its own annotations, and every array store emitted by `jack_compaler.py`
+push the **address first and the value on top**.
+
+The decision is to keep the implementations and rewrite the sentence. The
+replacement text, normative from here on:
+
+> **`[]` — peek.** The top of the stack is an address. The command replaces it
+> by the content of that register.
+>
+> `… addr` → `… RAM[addr]`
+>
+> **`->[]` — poke.** The top of the stack is a value and the element below it is
+> an address. The command removes both and stores the value in that register.
+>
+> `… addr value` → `…`, with `RAM[addr] := value`
+
+Four reasons it is the better of the two, recorded so the question is not
+reopened:
+
+1. *It makes the operand convention uniform.* For `-`, `<` and `>` the
+   documentation already treats the deeper operand as the left-hand one: `x-y`,
+   `x<y`. The address is the left-hand side of an assignment. Under this
+   decision the rule holds for every two-operand command without exception:
+   **the deeper operand is the left-hand one.** Under the prose, `->[]` would
+   have been the sole command where it is the right-hand one.
+2. *It is the order a compiler produces.* A recursive-descent compiler reading
+   `let a[i] = e;` from left to right emits the address first. The other order
+   would force the right-hand side to be evaluated before the left.
+3. *It is cheaper to implement* — which matters, since implementing it is the
+   assignment. With the address below, the value is popped into `D` and the
+   address is then sitting in the cell `SP` points at, readable with one
+   `A=M`. With the address on top it has to be parked in a scratch register
+   first: 13 instructions and a scratch register, against 9 and none. This is
+   the same awkwardness the course's `pop that 0` has, and avoiding it is part
+   of what the design is for.
+4. *The sentence is the cheap thing to change.* The other direction would touch
+   the hand assembly, the translator, the compiler, two sample programs, and
+   then every `.cmp` file derived from them.
+
+The same paragraph of the supplied document also calls subtraction a sum and
+calls the unary `~` a two-operand command (§5), which is why this reads as one
+hastily written paragraph, copied into the implementation notes, rather than a
+design the code drifted from.
 
 **Q2 — equality mnemonic.** `=` in `SM_doc_details.txt`, `==` in the LaTeX
 document, in `all_cmds.sm` and in the translator.
@@ -146,5 +188,9 @@ accepts no sign and also matches a bare `<-`.
   logical NOT under the most-significant-bit convention.
 * The document never states where `SP` points, which is the one fact a student
   writing a translator needs first.
+* The convention settled by Q1 should be stated once, as a rule, rather than
+  re-derived per command: **in every two-operand command the deeper operand is
+  the left-hand one** — `x` in `x-y`, `x<y`, `x>y`, and the address in
+  `RAM[addr] := value`.
 * The function-declaration section should state that the argument count is a
   property of the callee alone.

@@ -45,8 +45,9 @@ library, and the library is useless without those two devices.
 ## 2. Principles
 
 * **The emulator is the specification.** Prose has already drifted from code
-  three times in the supplied material (Q1, Q2, Q3). One executable artefact is
-  normative, and the reference page is generated from, or tested against, it.
+  three times in the supplied material (Q1, Q2, Q3), and Q1 was settled in the
+  code's favour. One executable artefact is normative, and the reference page is
+  generated from, or tested against, it.
 * **No hidden second pass.** SM's call convention was designed so that an
   SM → assembly translator needs neither a function table nor a second pass
   (see `spec/INVENTORY.md` §2). Our reference translator must honour that, or
@@ -104,13 +105,16 @@ calendar time.
 
 ### M0 — Decide the specification *(small)*
 
-Answer Q1–Q8. Write `spec/sm.md` as the normative reference: grammar, memory
-model, frame layout, the exact statement of where `SP` points, the
+Answer Q2–Q8; **Q1 is settled** — the operand order of `->[]` follows the
+implementations, address below and value on top, and the prose is corrected to
+match. Write `spec/sm.md` as the normative reference: grammar, memory model,
+frame layout, the exact statement of where `SP` points, the
 most-significant-bit boolean convention, error conditions. Carry over the
-corrections in `spec/INVENTORY.md` §5.
+replacement wording recorded under Q1 and the corrections in
+`spec/INVENTORY.md` §5.
 
 *Done when:* `spec/sm.md` covers every command in `reference/tst/all_cmds.sm`
-and every open question is closed in writing.
+and every question in `spec/INVENTORY.md` §3 is closed in writing.
 
 ### M1 — `sm-core` *(small)*
 
