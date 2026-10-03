@@ -152,11 +152,66 @@ to a function that does not exist and thence into a jump to a garbage address,
 so call targets have to be resolved against the declarations for the rejection
 to mean anything.
 
-**Q3 — `Sys.init`: called or jumped to?** The rationale letter argues for a
-plain jump, there being no environment to save. The reference translator emits a
-full call.
-*Proposed:* jump. Then `<--` in `Sys.init` is a program error; the spec must say
-so, and the emulator must report it rather than wander off.
+**Q3 — `Sys.init`: called or jumped to?**
+
+The reference bootstrap is `SP = 256`, then a full call: push `LCL`, push the
+return label, jump, and a landing pad followed by an infinite loop. The design
+letter objects that there is no environment to save, since no function is
+running yet, and proposes a bare jump instead.
+
+**What is actually at stake.** Not cost. The call costs two cells and ten
+instructions, once, at startup. It is entirely a question of what happens when
+`Sys.init` returns — and the specification says it may: *"After its completion,
+the program will go into infinite loop."* Under the call, `<--` from `Sys.init`
+lands on the bootstrap's landing pad and does exactly that, for free. Under a
+bare jump it does not, and the arithmetic is worth following, because it is the
+whole question.
+
+With a bare jump and `SP = 255`, the declaration `!Sys.init()` sets
+`LCL = SP - 1 = 254`. The body then runs correctly — locals are pushed and
+addressed from `LCL`, and the stack grows from 256 as it should. Only `<--`
+breaks: with `a = 0` it reloads `LCL` from `RAM[254]` and jumps to `RAM[255]`,
+two cells below the stack base that nobody ever wrote. The program jumps to a
+garbage address.
+
+**So there are three options, not two.**
+
+*A — keep the call.* `<--` from `Sys.init` behaves as the specification says.
+No special case anywhere: the bootstrap is a call like every other call, which
+matters because the bootstrap is the first thing the student implements. The
+emulator's frame chain has an ordinary bottom frame instead of one pointing
+below the stack base.
+
+*B — bare jump, and `<--` from `Sys.init` becomes a program error.* Saves two
+cells and ten instructions. Requires rewriting the specification sentence above,
+and requires the emulator to detect and report the return rather than let it
+jump. Note that it also puts a burden on the Jack side: `Sys.init` there is an
+ordinary `void` function, and nothing stops a student's version from reaching
+its end.
+
+*C — push the return address, but not `LCL`.* Saves one cell and five
+instructions, and `<--` still works: the frame's return slot is correct, the
+saved-`LCL` slot holds garbage that is loaded into `LCL` on the way out and
+never read again, because the next thing that happens is the infinite loop.
+
+**Recommendation: C, with A as the safe fallback — not B.**
+
+The letter's argument is that there is *no environment to save*. Taken
+literally, that is an argument for C and not for B: the meaningless thing being
+pushed is the saved `LCL`, and C drops precisely that. A return address is not
+environment — it is where to go — and `Sys.init` genuinely does have somewhere
+to go, because the specification promises it an infinite loop to fall into.
+
+Between C and A the margin is one cell, and A has the simpler story to tell a
+student: *the bootstrap is a call.* If the reference page would rather not
+explain why one half of a frame is pushed and the other is not, A is the honest
+choice and costs nothing that matters.
+
+**Also to be settled here, whichever is chosen:** what happens when a function
+reaches its last line without a `<--`. The reference translator emits nothing,
+so execution runs on into whatever function the translator happened to place
+next. The Jack prototype's own `Sys.init` does exactly this — it has no `<--` at
+all — and is saved only by its infinite loop. This should be a diagnostic.
 
 **Q4 — discarding a return value. Probably not an SM question at all.**
 
