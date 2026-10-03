@@ -151,35 +151,51 @@ full call.
 *Proposed:* jump. Then `<--` in `Sys.init` is a program error; the spec must say
 so, and the emulator must report it rather than wander off.
 
-**Q4 — discarding a return value.** Every SM function returns exactly one value,
-so a call used as a statement always leaves one behind. Left in place it is a
-leak: the stack grows by a cell per call, and in a loop it eventually climbs
-into the heap — the kind of fault that appears thousands of iterations away
-from its cause.
+**Q4 — discarding a return value. Probably not an SM question at all.**
 
-`jack_compaler.py` disposes of it by popping into a global named `tmp`. That is
-correct and it collides with nothing: the prefix scheme (§2) puts it in `SM.tmp`,
-a different cell from the runtime scratch `tmp`. Two objections remain, and
-neither is about collisions:
+Every SM function returns a value, so a call made for its side effects leaves
+one behind, and `jack_compaler.py` pops it into a global named `tmp`. The
+question was whether SM should say what to do with it. It should not, and the
+reason is decisive: *where a compiler puts a value it is throwing away is one of
+the many choices a compiler writer makes freely*, like where to put a temporary.
+Nothing observable depends on it. Our SM library and a student's compiled code
+can discard differently and never interact, because neither reads what the other
+wrote. There is no interoperability question and nothing to grade. If it belongs
+in any specification it belongs in Jack's, not SM's.
 
-* It is a convention invented by one compiler. Nothing in the language says a
-  discard is needed or where it should go, so every compiler answers
-  differently — and with the second assignment, every compiler means every
-  student.
-* It costs 7 instructions and a memory write where 2 instructions and no write
-  would do.
+What is left is a narrow question about the language itself, independent of
+Jack.
 
-*Proposed:* a discard command, written as `->` with no target, translating to
-`@SP / M=M-1`. It completes a family the language already has — pop to local,
-pop to global, pop to memory — so there is nothing extra to teach. Note that
-the parser's pattern for pop-to-global, `->(.*)`, already accepts an empty name
-and so already matches a bare `->`; `<-([0-9]*)` has the same defect. Both need
-fixing regardless, and if this proposal is taken, the fix is the implementation.
+*SM already has a discard, at function granularity.* `<--` eliminates
+"anything that stacked above them", so values left behind by statement calls are
+swept away when the enclosing function returns. A compiler may therefore emit
+nothing at all for a discard in straight-line code: correct, zero instructions,
+and explicitly permitted.
 
-*Rejected:* letting a function return nothing. It solves the problem at the
-root but costs local readability — one could no longer tell a call's effect on
-the stack without going to look at the callee's declaration, where every other
-command in the language can be read where it stands.
+*What SM lacks is a discard inside a loop.* The sweep happens only at return, so
+a loop that calls a function for its side effect grows the stack by a cell per
+iteration, and a main loop that never returns overflows. There something must be
+emitted, and the cheapest thing SM can express is a store to a global nobody
+reads: 7 instructions and a memory write, where `@SP / M=M-1` would be 2 and
+none. That sequence also says something false — "store this in `x`" where it
+means "throw it away".
+
+*The case for `->` with no target:* it completes a family the language already
+has — pop to local, pop to global, pop to memory — costs one line in the
+reference, and gives a cheaper and more honest spelling of something only
+reachable inside loops.
+
+*The case for doing nothing:* the language is deliberately minimal and the gap
+is already expressible. This is a real option, not a straw one.
+
+*Either way, what to test.* The contract is the state of the stack **after a
+function returns** — right depth, right contents — and not what a statement call
+leaves behind mid-function. A compiler that defers every discard to `<--` is
+correct, and a per-statement balance check would wrongly fail it.
+
+*Note for the parser regardless of the decision:* the pattern for pop-to-global,
+`->(.*)`, accepts an empty name and so already matches a bare `->`; `<-([0-9]*)`
+has the same defect. Both need fixing whatever is decided here.
 
 **Q5 — name spaces.** A bare symbol on a line is a call, so a function and a
 global variable may not share a name. Labels are distinguished by their colon.

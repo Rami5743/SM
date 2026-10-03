@@ -244,6 +244,13 @@ gets a test suite the student package does not:
   static across files, unary minus on a call — each leaving a known value in a
   known global, compiled, run, asserted. This is the layer that catches the
   narrow bugs.
+* *Stack discipline.* After every function returns, the stack is at the depth it
+  had before the call and holds the same values. Checked at function granularity
+  and not per statement: a compiler that leaves statement-call results on the
+  stack and lets `<--` sweep them is correct, and a per-statement check would
+  fail it wrongly. Separately, a long-running loop containing a side-effect call
+  must not grow the stack — that is the bug this layer exists to catch, and it
+  is invisible to every other layer until something overflows.
 * *Golden output.* The SM text emitted for those same snippets, checked in. We
   own both sides here, so pinning the exact output is legitimate and catches
   unintended changes; it is exactly what we must *not* ask of a student.
@@ -394,10 +401,10 @@ M9 and M10 follow at leisure.
 
 ## 7. Questions for the author
 
-1. Q1–Q8 in `spec/INVENTORY.md`, in particular Q3 (`Sys.init` jumped to or
-   called), Q4 (discarding a return value) and Q6 (mnemonics or words). Q4 is
-   now the most urgent of the three: it is a language question that the second
-   assignment forces every student's compiler to answer.
+1. Q2–Q8 in `spec/INVENTORY.md`, in particular Q3 (`Sys.init` jumped to or
+   called) and Q6 (mnemonics or words). Q4 has shrunk to a small question about
+   whether SM wants a fine-grained discard at all, given that `<--` already
+   provides a coarse one.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.
