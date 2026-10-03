@@ -30,9 +30,11 @@ semantics. This is the behaviour the new emulator has to reproduce, because the
 produces.
 
 **Stack pointer.** `SP` holds the address of the **top element**, not of the
-first free cell. Push is `@SP / AM=M+1 / M=D`. The stack base is 256, so an empty
-stack is `SP = 255`. This differs from the course VM and changes every expected
-`RAM[0]` value.
+first free cell. Push is `@SP / AM=M+1 / M=D` — increment, then write. The
+bootstrap sets `SP = 256`, so an empty stack is `SP = 256` and the first element
+pushed lands at `RAM[257]`; cell 256 is never used. This differs from the course
+VM, where `SP = 256` means the first element is at `RAM[256]`, and it changes
+every expected `RAM[0]` value.
 
 **Call frame.** A call pushes the caller's `LCL`, then the return address, then
 jumps. The callee's declaration sets `LCL = SP - (a+1)`, where `a` is its own
