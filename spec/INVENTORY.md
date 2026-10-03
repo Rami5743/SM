@@ -77,6 +77,14 @@ infinite loop.
 **Reserved assembly symbols** the runtime occupies: `SP`, `LCL`, `tmp`, `end`,
 and the prefixes `SM.`, `FUNTION.`, `LABEL.`, `call.`.
 
+The prefixes close the name space completely, and it is worth saying so
+explicitly since it is a property worth preserving: every symbol derived from
+the user's program is prefixed — a global `x` becomes `SM.x`, a label becomes
+`LABEL.f.x`, a function becomes `FUNTION.f` — so no SM program can name the
+runtime's own cells, whatever it calls its variables. A global named `tmp`
+becomes `SM.tmp` and is a different cell from the scratch register `tmp`.
+Locals produce no symbol at all, being `LCL`-relative offsets.
+
 ## 3. Questions
 
 Decided so far: **Q1**. The rest are open. A decision becomes an entry in
@@ -144,12 +152,34 @@ full call.
 so, and the emulator must report it rather than wander off.
 
 **Q4 — discarding a return value.** Every SM function returns exactly one value,
-so a statement call always leaves one behind. `jack_compaler.py` disposes of it
-by popping into a global literally named `tmp`, which compiles to `SM.tmp` and
-sits uncomfortably close to the runtime scratch register also named `tmp`.
-*Proposed:* add an explicit discard command to the language rather than leave
-every compiler to invent a convention; and rename the runtime scratch so no
-user-visible name can collide with it.
+so a call used as a statement always leaves one behind. Left in place it is a
+leak: the stack grows by a cell per call, and in a loop it eventually climbs
+into the heap — the kind of fault that appears thousands of iterations away
+from its cause.
+
+`jack_compaler.py` disposes of it by popping into a global named `tmp`. That is
+correct and it collides with nothing: the prefix scheme (§2) puts it in `SM.tmp`,
+a different cell from the runtime scratch `tmp`. Two objections remain, and
+neither is about collisions:
+
+* It is a convention invented by one compiler. Nothing in the language says a
+  discard is needed or where it should go, so every compiler answers
+  differently — and with the second assignment, every compiler means every
+  student.
+* It costs 7 instructions and a memory write where 2 instructions and no write
+  would do.
+
+*Proposed:* a discard command, written as `->` with no target, translating to
+`@SP / M=M-1`. It completes a family the language already has — pop to local,
+pop to global, pop to memory — so there is nothing extra to teach. Note that
+the parser's pattern for pop-to-global, `->(.*)`, already accepts an empty name
+and so already matches a bare `->`; `<-([0-9]*)` has the same defect. Both need
+fixing regardless, and if this proposal is taken, the fix is the implementation.
+
+*Rejected:* letting a function return nothing. It solves the problem at the
+root but costs local readability — one could no longer tell a call's effect on
+the stack without going to look at the callee's declaration, where every other
+command in the language can be read where it stands.
 
 **Q5 — name spaces.** A bare symbol on a line is a call, so a function and a
 global variable may not share a name. Labels are distinguished by their colon.
