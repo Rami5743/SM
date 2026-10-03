@@ -73,3 +73,36 @@ generate the `.cmp` files ourselves.
 **Touches.** The bootstrap sequence; the emulator's initial state; every `.cmp`
 file, whose `RAM[0]` is one lower than the reference would give; the statement
 of the memory map in the reference page.
+
+---
+
+## C3 — `==` is the equality mnemonic, and `=` is an error
+
+*Settles Q2. A documentation change, plus a diagnostic the reference lacks.*
+
+**The reference.** `SM_doc_details.txt` writes the equality command `=`. The
+LaTeX document, `all_cmds.sm` and `SM_trnsleitor3.py` all write `==`.
+
+**We do.** `==`. The single `=` is not a synonym and not an alias; it is a
+syntax error.
+
+Rejecting it explicitly matters more than it looks, because of how the
+reference parser is built. Its last template is a catch-all: any line it does
+not otherwise recognise is a **call** to a function of that name. So `=` today
+is not an error at all — it compiles to a jump to `FUNTION.=`, a symbol no
+function ever defines, which the Hack assembler then allocates as an ordinary
+variable. The program jumps to a garbage address. Silently.
+
+That is a property of the catch-all rule rather than of this command, and it
+turns every typo in the language into the same failure. So this entry carries a
+second requirement with it:
+
+> Every called name must resolve to a declared function. A call to an undeclared
+> name is a diagnostic, in the translator and in the emulator alike.
+
+With that in place, `=` produces "unknown function `=`" and, better, so does
+every other mistyped command. Without it, nothing in this language can be
+mistyped safely.
+
+**Touches.** The reference page; the parser's catch-all rule; the whole-program
+check that resolves call targets.

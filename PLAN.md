@@ -106,11 +106,14 @@ calendar time.
 
 ### M0 — Decide the specification *(small)*
 
-Answer Q2–Q8. Two points are already settled and recorded in
+Answer the questions still open. Three points are settled and recorded in
 `spec/CORRECTIONS.md`, which is the normative list of our deviations from
 `reference/`: **C1**, the operand order of `->[]` follows the implementations —
 address below, value on top — and the prose is corrected to match; **C2**, the
-bootstrap sets `SP = 255`, so the stack starts at `RAM[256]`.
+bootstrap sets `SP = 255`, so the stack starts at `RAM[256]`; **C3**, the
+equality mnemonic is `==` and `=` is an error, which in turn requires that every
+called name resolve to a declared function — without that check the parser's
+catch-all rule turns any typo into a jump to a garbage address.
 
 Write `spec/sm.md` as the normative reference: grammar, memory model, frame
 layout, the exact statement of where `SP` points, the most-significant-bit
@@ -401,10 +404,10 @@ M9 and M10 follow at leisure.
 
 ## 7. Questions for the author
 
-1. Q2–Q8 in `spec/INVENTORY.md`, in particular Q3 (`Sys.init` jumped to or
-   called) and Q6 (mnemonics or words). Q4 has shrunk to a small question about
-   whether SM wants a fine-grained discard at all, given that `<--` already
-   provides a coarse one.
+1. The questions still open in `spec/INVENTORY.md`, in particular Q3
+   (`Sys.init` jumped to or called) and Q6 (mnemonics or words). Q4 has shrunk
+   to a small question about whether SM wants a fine-grained discard at all,
+   given that `<--` already provides a coarse one.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.

@@ -3,8 +3,9 @@
 This file records what was handed over, what the three existing implementations
 actually do, and every point on which they disagree with each other or with the
 prose documentation. Every item marked **Q** is a decision that has to be taken
-before M1 of [`../PLAN.md`](../PLAN.md); the "proposed" line is a
-recommendation, not a decision.
+before M0 of [`../PLAN.md`](../PLAN.md); the "proposed" line is a
+recommendation, not a decision. Decisions are recorded in
+[`CORRECTIONS.md`](CORRECTIONS.md).
 
 ## 1. What was supplied
 
@@ -87,7 +88,8 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 
 ## 3. Questions
 
-Decided so far: **Q1**. The rest are open. A decision becomes an entry in
+Decided so far: **Q1** (→ C1), **Q2** (→ C3). The rest are open, and **Q4**
+has largely dissolved. A decision becomes an entry in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
 
@@ -141,9 +143,14 @@ calls the unary `~` a two-operand command (§5), which is why this reads as one
 hastily written paragraph, copied into the implementation notes, rather than a
 design the code drifted from.
 
-**Q2 — equality mnemonic.** `=` in `SM_doc_details.txt`, `==` in the LaTeX
-document, in `all_cmds.sm` and in the translator.
-*Proposed:* `==`, and reject `=`.
+**Q2 — equality mnemonic. DECIDED → C3: `==`, and `=` is an error.**
+
+`=` appears only in `SM_doc_details.txt`; the LaTeX document, `all_cmds.sm` and
+the translator all write `==`. C3 also records what rejecting it requires: the
+parser's catch-all rule currently turns `=`, and every other typo, into a call
+to a function that does not exist and thence into a jump to a garbage address,
+so call targets have to be resolved against the declarations for the rejection
+to mean anything.
 
 **Q3 — `Sys.init`: called or jumped to?** The rationale letter argues for a
 plain jump, there being no environment to save. The reference translator emits a
