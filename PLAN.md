@@ -19,16 +19,28 @@ coding starts. This plan refers to them by number.
 | 3 | Jack → SM compiler | In-browser, plus a command-line entry point |
 | 4 | SM reference page and rationale page | Static pages of the same site |
 | 5 | `projects/07-sm/` | A directory of tests the student downloads |
+| 6 | `projects/11-sm/` | The same, for the second assignment |
 
 Everything runs client-side. The site is a static bundle on GitHub Pages; there
 is no backend, no account, and no upload. A student can also clone the
 repository and run every tool from the command line, which is what continuous
 integration does.
 
-Of these, (5) is the one the course actually assigns: the student writes an
-SM → Hack-assembly translator. (1)–(3) are the scaffolding that makes that
-assignment possible and lets the SM track interoperate with the rest of the
-course.
+**Two of these are assignments; the rest is scaffolding.** The student writes
+exactly two programs: an **SM → Hack-assembly translator**, replacing projects
+7–8, and then a **Jack → SM compiler**, replacing project 11. Deliverables (5)
+and (6) are those two assignments. The SM ↔ VM translators are never assigned —
+they exist so that a program can cross between the SM track and the course's own
+track, and so that each machine can be used to check the other.
+
+That second assignment is what makes the Jack half of the project mandatory
+rather than optional, and it pulls one thing onto the critical path that would
+otherwise have been polish: **the Jack operating system, compiled to SM**. A
+student's own compiler emits calls to `Math.multiply`, `String.new`,
+`Output.printString`; the course supplies the library as `.vm` files, so we must
+supply it as `.sm` files, and the emulator must own a screen buffer and a
+keyboard register for it to drive. Deliverable (6) cannot exist without that
+library, and the library is useless without those two devices.
 
 ## 2. Principles
 
@@ -39,13 +51,19 @@ course.
   SM → assembly translator needs neither a function table nor a second pass
   (see `spec/INVENTORY.md` §2). Our reference translator must honour that, or
   the student's assignment is harder than the design claims.
-* **The student never needs our source.** The package in (5) is self-contained:
-  SM sources, the emulator, `.tst` scripts, `.cmp` files. Our SM → assembly
-  translator is a build tool for generating `.cmp` files and is not shipped.
+* **The student never needs our source.** Each package is self-contained:
+  sources, the emulator, `.tst` scripts, `.cmp` files. Our own SM → assembly
+  translator is a build tool for generating `.cmp` files, and is not shipped.
+  The Jack → SM compiler is different: the course ships a reference compiler
+  alongside project 11 precisely so a student can compare, and we do the same.
 * **Round trips are the test suite.** SM → VM → SM and VM → SM → VM over the
   course's own project 7/8 programs, compared by emulator output rather than by
   text, is a stronger correctness statement than any set of unit tests, and it
   is what proves the SM track is a genuine alternative rather than a fork.
+* **Each assignment is checked the way the course checks it.** A `.cmp` file the
+  student's own output must satisfy, not a description of what the output should
+  look like. For the translator that means comparing RAM; for the compiler it
+  means comparing what the compiled program does when run.
 
 ## 3. Technical choices
 
@@ -68,7 +86,8 @@ packages/
   sm-to-asm/     reference translator — build tool, not shipped to students
   hack/          Hack assembler + CPU emulator, needed to check .asm output
 web/             the site
-projects/07-sm/  the student package
+projects/07-sm/  first assignment: the SM to assembly translator
+projects/11-sm/  second assignment: the Jack to SM compiler
 reference/       the supplied material, verbatim
 tools/           .cmp generation, CI scripts
 ```
@@ -109,6 +128,10 @@ An interpreter over a 32K 16-bit RAM image laid out exactly as
 and one taken from the Hack CPU emulator running the student's `.asm` are
 comparable cell for cell. Step, run, reset, breakpoints. A trace of the frame
 stack recovered from `LCL` and the declarations.
+
+The memory-mapped devices — a screen buffer and a keyboard register at the Hack
+addresses — belong here rather than in a later milestone. They are cheap now and
+they are a prerequisite for M7, where the Jack library drives them.
 
 *Done when:* `FibonacciElement` in SM computes the right value, and the RAM
 image after each step matches the one produced by running the output of
@@ -157,7 +180,7 @@ highlights the current line.
 *Done when:* the three pages are live on GitHub Pages and the emulator runs
 `FibonacciElement` from a cold load.
 
-### M6 — `projects/07-sm`, the student package *(medium)* — **the deliverable that matters**
+### M6 — `projects/07-sm`, the first assignment *(medium)*
 
 A staged sequence of tests. Each is a directory containing SM source, a
 `<Name>SM.tst` that runs it in the SM emulator, a `<Name>.tst` that loads the
@@ -180,10 +203,56 @@ supplied `FibonacciElement` pair is stale in three separate ways
 *Done when:* for each test, `smstep` and `ticktock` over the reference `.asm`
 both satisfy the `.cmp`, and a deliberately broken translator fails it.
 
-### M7 — `sm-to-vm` and `vm-to-sm` *(large)*
+### M7 — `jack-to-sm` and the Jack library in SM *(large)*
 
-The two directions are not symmetric, and the asymmetries are the interesting
-part.
+Two halves, and the second is the larger.
+
+**The compiler.** A port of `jack_compaler.py` to TypeScript: tokenizer, full
+Jack grammar, a symbol table over static / field / argument / local, fields
+reached through `this` with `[]` and `->[]`. Resolve Q4 — what a `do` statement
+does with the return value it must discard — rather than inheriting the
+prototype's global named `tmp`.
+
+**The library.** `Math`, `String`, `Array`, `Memory`, `Screen`, `Output`,
+`Keyboard`, `Sys`, available as `.sm` files. The standard implementations are
+themselves written in Jack, so most of this is compiling them with the compiler
+above, once it works. `Memory` is the exception and the interesting case:
+`peek` and `poke` are not library calls in SM, they are the instructions `[]`
+and `->[]`, which is the clearest single illustration of what the design buys.
+`Screen` and `Output` need the devices added in M2.
+
+This library is not optional and not polish. A student who writes their own
+Jack → SM compiler can run nothing at all without it.
+
+*Done when:* the course's project 11 programs compile to SM and run in the SM
+emulator with the same visible behaviour as their VM versions.
+
+### M8 — `projects/11-sm`, the second assignment *(medium)*
+
+The package for the Jack → SM compiler, built the way M6 is built and staged the
+way the course stages project 11: expressionless programs first, then
+expressions, then arrays and objects, then complete programs.
+
+Checking a compiler is not checking a translator, and the difference drives the
+design of this package. There is no single correct SM output to compare against
+— register allocation, label names and evaluation order are all free — so a
+`.cmp` file cannot describe the compiler's output. It describes the *behaviour*
+of that output: each test is a Jack program with a known result, and the student
+passes when their compiler's SM output, run in the emulator, produces it.
+
+Two consequences. The emulator needs a comparison mode driven by a `.tst`
+script, not by a RAM dump at a fixed address. And the tests have to be written
+so that their result is observable — a value left in a known global, or a
+sequence of calls to a stub, rather than something drawn on the screen.
+
+*Done when:* the reference compiler passes every test, and a compiler that is
+wrong in one deliberate way fails at least one.
+
+### M9 — `sm-to-vm` and `vm-to-sm` *(large)*
+
+Not an assignment: a bridge, so a program can cross between the two tracks and
+each machine can check the other. The two directions are not symmetric, and the
+asymmetries are the interesting part.
 
 **SM → VM.** Needs a function table, hence two passes: the course VM writes the
 argument count at the *call* site, where SM does not have it. Globals map to
@@ -212,24 +281,7 @@ on the most significant bit.
 *Done when:* for every program in the course's projects 7 and 8, SM → VM → SM
 and VM → SM → VM both preserve the emulator's output.
 
-### M8 — `jack-to-sm` *(large)*
-
-Port `jack_compaler.py` to TypeScript: tokenizer, full Jack grammar, symbol
-table over static / field / argument / local, fields reached through `this` with
-`[]` and `->[]`. Resolve Q4 — the `do` statement's discarded return value —
-rather than inheriting the prototype's global named `tmp`.
-
-The real work is the operating system. Jack programs need `Math`, `String`,
-`Array`, `Memory`, `Screen`, `Output`, `Keyboard`, `Sys`. The standard library
-is itself written in Jack, so compiling it to SM is mostly mechanical; `Memory`
-is the exception, since `peek` and `poke` become `[]` and `->[]` directly.
-Screen and keyboard need the emulator to own a Hack screen buffer and a keyboard
-register, which is an addition to M2.
-
-*Done when:* the course's project 11 programs compile to SM and run in the SM
-emulator with the same visible behaviour as their VM versions.
-
-### M9 — Polish *(small)*
+### M10 — Polish *(small)*
 
 Save and share a program by URL. Export a session as a downloadable folder.
 Import a course `.vm` directory and see it as SM, and the reverse — the most
@@ -239,13 +291,27 @@ every `.tst` on every push.
 
 ## 5. Order of work
 
-M0 → M1 → M2 → M3 → M4 → M6 is the critical path: it ends with the student
-package, which is the point of the exercise. M5 can proceed alongside M2–M4.
-M7 and M8 are independent of each other and both depend on M1–M3.
+There is one critical path and it runs through both assignments:
 
-A reasonable first release is M0–M6 plus the Reference and Rationale pages: at
-that point the unit-7 replacement is complete and usable on its own. The
-translators and the Jack compiler extend it to the rest of the course.
+```
+M0 → M1 → M2 → M3 → M4 → M6        first assignment ready
+                  ↘  M7 → M8       second assignment ready
+```
+
+M5, the site, proceeds alongside M2–M4 and is needed before either package is
+usable. M7 depends on M2 (for the devices) and on M3 (for the test runner), not
+on M4 or M6, so the Jack half can start as soon as the emulator runs. M9 depends
+only on M1–M3 and is independent of everything else; it is the one large piece
+that can be dropped from a first release without costing a student anything.
+
+Two releases suggest themselves:
+
+* **First:** M0–M6 plus the Reference and Rationale pages. The unit-7
+  replacement is complete and can be taught on its own.
+* **Second:** M7–M8. The Jack assignment, which is what makes the SM track a
+  replacement for the course's whole back end rather than for one project.
+
+M9 and M10 follow at leisure.
 
 ## 6. Risks
 
@@ -257,9 +323,15 @@ translators and the Jack compiler extend it to the rest of the course.
   break from the course VM, and the place where a translator silently produces
   wrong answers rather than failing. It needs tests of its own, not just
   coverage inside larger programs.
-* **Scope of the Jack OS.** M8 could absorb unlimited time through `Screen` and
-  `Output`. If it does, ship M0–M7 first; the Jack compiler is the one
-  deliverable the unit-7 package does not depend on.
+* **The Jack library absorbing M7.** `Screen` and `Output` can take unbounded
+  time. The mitigation is not to cut them — the second assignment needs them —
+  but to order M7 so that `Math`, `Memory`, `Array` and `String` land first:
+  those alone let the early stages of M8 run, and the graphical stages can wait.
+  What can be cut from a release, if something must be, is M9.
+* **Testing a compiler by behaviour.** M8 compares what a student's compiled
+  program *does*, which only works if every test has an observable result. A
+  test whose result is a picture is a test nobody can grade. This has to be a
+  rule when the tests are written, not a repair afterwards.
 * **Prose drifting from code again.** Mitigated by making the reference page a
   rendering of the normative spec, with its examples executed by the emulator at
   build time.
@@ -267,10 +339,16 @@ translators and the Jack compiler extend it to the rest of the course.
 ## 7. Questions for the author
 
 1. Q1–Q8 in `spec/INVENTORY.md`, in particular Q3 (`Sys.init` jumped to or
-   called), Q4 (discarding a return value) and Q6 (mnemonics or words).
-2. Is the student expected to write **only** the SM → assembly translator, or
-   also, as a later exercise, one of the SM ↔ VM translators?
-3. Should the site host the course's own VM emulator as well, so a student can
+   called), Q4 (discarding a return value) and Q6 (mnemonics or words). Q4 is
+   now the most urgent of the three: it is a language question that the second
+   assignment forces every student's compiler to answer.
+2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
+   translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
+   are ours.
+3. Should there also be a package parallel to the course's project 10, the
+   syntax analyser, as a separate stage before the compiler — or does the SM
+   track start the Jack assignment at code generation?
+4. Should the site host the course's own VM emulator as well, so a student can
    compare the two machines side by side, or only link to it?
-4. Language of the site: English throughout, or English reference with a Hebrew
+5. Language of the site: English throughout, or English reference with a Hebrew
    rationale?

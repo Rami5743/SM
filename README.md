@@ -19,7 +19,13 @@ Planned deliverables (nothing is implemented yet):
 5. **`projects/07-sm/`** — a package parallel to unit 7 of the course: a set of
    tests, each with SM source, a `.tst` script that runs it in the SM emulator,
    and a `.tst`/`.cmp` pair that checks the `.asm` the student is asked to
-   produce by writing their own SM → Hack-assembly translator.
+   produce by writing their own SM → Hack-assembly translator;
+6. **`projects/11-sm/`** — the same for the second assignment, in which the
+   student writes their own Jack → SM compiler.
+
+The student writes those two programs and nothing else; everything above them is
+scaffolding. The SM ↔ VM translators are never assigned — they are there so a
+program can cross between the SM track and the course's own track.
 
 Start here:
 
