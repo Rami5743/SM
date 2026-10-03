@@ -146,6 +146,12 @@ The memory-mapped devices — a screen buffer and a keyboard register at the Hac
 addresses — belong here rather than in a later milestone. They are cheap now and
 they are a prerequisite for M7, where the Jack library drives them.
 
+**Bound the stack.** `SP` passing 2047 is an overflow into the heap, and the
+emulator reports it rather than letting the program corrupt itself. This is the
+diagnostic that catches runaway recursion, and the one that catches a compiler
+whose loops leave a cell behind per iteration (Q4) — a fault that is otherwise
+invisible until a game has been running for a second or two.
+
 *Done when:* `FibonacciElement` in SM computes the right value, and the RAM
 image after each step matches the one produced by running the output of
 `sm-to-asm` through `packages/hack/`.
@@ -406,10 +412,9 @@ M9 and M10 follow at leisure.
 
 ## 7. Questions for the author
 
-1. The questions still open in `spec/INVENTORY.md`, in particular Q3
-   (`Sys.init` jumped to or called) and Q6 (mnemonics or words). Q4 has shrunk
-   to a small question about whether SM wants a fine-grained discard at all,
-   given that `<--` already provides a coarse one.
+1. Q3, Q5, Q7 and Q8 in `spec/INVENTORY.md` — the four still open. Q3
+   (`Sys.init` jumped to or called) is the one that changes generated code;
+   the other three are rules and diagnostics.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.

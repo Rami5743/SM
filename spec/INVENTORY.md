@@ -88,8 +88,9 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 
 ## 3. Questions
 
-Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4). The rest are open,
-and **Q4** has largely dissolved. A decision becomes an entry in
+Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), and **Q4**, closed
+with no change to either language. Still open: **Q3**, **Q5**, **Q7**, **Q8**.
+A decision that changes something becomes an entry in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
 
@@ -213,51 +214,50 @@ so execution runs on into whatever function the translator happened to place
 next. The Jack prototype's own `Sys.init` does exactly this — it has no `<--` at
 all — and is saved only by its infinite loop. This should be a diagnostic.
 
-**Q4 — discarding a return value. Probably not an SM question at all.**
+**Q4 — discarding a return value. CLOSED: neither language changes.**
 
-Every SM function returns a value, so a call made for its side effects leaves
-one behind, and `jack_compaler.py` pops it into a global named `tmp`. The
-question was whether SM should say what to do with it. It should not, and the
-reason is decisive: *where a compiler puts a value it is throwing away is one of
-the many choices a compiler writer makes freely*, like where to put a temporary.
-Nothing observable depends on it. Our SM library and a student's compiled code
-can discard differently and never interact, because neither reads what the other
-wrote. There is no interoperability question and nothing to grade. If it belongs
-in any specification it belongs in Jack's, not SM's.
+No entry in `CORRECTIONS.md`, because nothing is corrected.
 
-What is left is a narrow question about the language itself, independent of
-Jack.
+*State the two languages separately, since the question touches both.*
 
-*SM already has a discard, at function granularity.* `<--` eliminates
-"anything that stacked above them", so values left behind by statement calls are
-swept away when the enclosing function returns. A compiler may therefore emit
-nothing at all for a discard in straight-line code: correct, zero instructions,
-and explicitly permitted.
+**Jack** has `void` subroutines and the `do` statement, unchanged from the
+course. **SM** requires every function to return exactly one value, and has no
+command that pops one off the stack and throws it away. A Jack `void` function
+therefore compiles to an SM function that returns something — the prototype
+returns `0` — and each `do` statement leaves that value behind.
 
-*What SM lacks is a discard inside a loop.* The sweep happens only at return, so
-a loop that calls a function for its side effect grows the stack by a cell per
-iteration, and a main loop that never returns overflows. There something must be
-emitted, and the cheapest thing SM can express is a store to a global nobody
-reads: 7 instructions and a memory write, where `@SP / M=M-1` would be 2 and
-none. That sequence also says something false — "store this in `x`" where it
-means "throw it away".
+**Is that a problem? No.** The discard is expressible in SM as it stands: a pop
+to a dedicated global, `-> x`, removes exactly one cell, is always available,
+needs no special case for recursion, and clobbers nothing but a cell nobody
+reads. It is also exactly what the course does — the course's own compiler
+emits `pop temp 0` after a `do`, which is the same move into a cell nobody
+reads. The entire cost of SM not having a dedicated command is **five
+instructions and one RAM cell**, on statement calls only.
 
-*The case for `->` with no target:* it completes a family the language already
-has — pop to local, pop to global, pop to memory — costs one line in the
-reference, and gives a cheaper and more honest spelling of something only
-reachable inside loops.
+*The second route, also already available:* emit nothing. `<--` eliminates
+"anything that stacked above them", so values left behind are swept when the
+enclosing function returns. Correct, zero instructions, and explicitly
+permitted — but only outside a loop, for the reason below.
 
-*The case for doing nothing:* the language is deliberately minimal and the gap
-is already expressible. This is a real option, not a straw one.
+**The one hazard, and it is not a language defect.** A loop whose body makes a
+statement call, and whose compiler emits no discard, grows the stack by a cell
+per iteration. The Hack stack is `RAM[256..2047]`, 1792 cells, with the heap
+immediately above it, so such a loop walks into the heap after fewer than two
+thousand iterations — a second or two of a game's main loop — and silently
+corrupts whatever was allocated there. A compiler that emits `-> x` never
+meets this; a compiler that relies on the sweep inside a loop always does.
 
-*Either way, what to test.* The contract is the state of the stack **after a
-function returns** — right depth, right contents — and not what a statement call
-leaves behind mid-function. A compiler that defers every discard to `<--` is
-correct, and a per-statement balance check would wrongly fail it.
+*What that calls for is a diagnostic, not a command.* **The emulator must bound
+the stack and report an overflow when `SP` passes 2047.** That turns the single
+worst failure mode in this area into a message naming its cause, costs nothing,
+and is worth having whatever else is decided — it catches runaway recursion
+just as well. Our own test suite covers the same ground from the other side:
+after a function returns the stack is at its previous depth, and a long-running
+loop does not grow it (M7).
 
-*Note for the parser regardless of the decision:* the pattern for pop-to-global,
-`->(.*)`, accepts an empty name and so already matches a bare `->`; `<-([0-9]*)`
-has the same defect. Both need fixing whatever is decided here.
+*Settled, then:* SM gains no discard command, Jack keeps `void`, and where a
+compiler puts a value it is throwing away stays what it always was — the
+compiler writer's choice, with nothing observable depending on it.
 
 **Q5 — the name rules are unenforced, and one of them is missing.**
 
