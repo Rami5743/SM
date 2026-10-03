@@ -246,11 +246,41 @@ both satisfy the `.cmp`, and a deliberately broken translator fails it.
 
 Two halves, and the second is the larger.
 
-**The compiler.** A port of `jack_compaler.py` to TypeScript: tokenizer, full
-Jack grammar, a symbol table over static / field / argument / local, fields
-reached through `this` with `[]` and `->[]`. Resolve Q4 — what a `do` statement
-does with the return value it must discard — rather than inheriting the
-prototype's global named `tmp`.
+**The front end, as a milestone of its own.** One tokenizer and one parser,
+producing an **AST with source positions**, used by everything downstream. This
+is written fresh and tested well beyond what project 10 asks, with the
+prototype as a reference rather than a basis — the author's instruction, and
+the prototype bears it out:
+
+* *There are two parsers and no AST.* `parser.py` walks the tokens and writes
+  XML; `jack_compaler.py` walks the tokens again and writes SM directly. The
+  grammar is implemented twice and a fix to one does not reach the other. With
+  no tree in between there is nowhere to put a resolution pass, nowhere to hang
+  a source position, and no way to test parsing apart from code generation.
+* *They have already diverged.* `parser.py` tests for `"fild"` where
+  `jack_compaler.py` correctly tests for `"field"`, so the XML parser has not
+  parsed a class with fields for some time.
+* *Passing project 10 is not the bar, and in fact it no longer passes.* The
+  tokenizer labels its tokens `integrConstant` and `StringConstant`, where the
+  course's compare files expect `integerConstant` and `stringConstant`.
+* *The tokenizer carries no positions*, so no message from any later stage can
+  point at a line. It also indexes one past the end when a keyword ends the
+  file, drops a `//` comment that is not newline-terminated, and returns `None`
+  — an unpacking crash with no message — on a character it does not recognise.
+
+What we need beyond project 10's bar: positions on every node, a diagnostic
+rather than a crash on malformed input, and a tree that a symbol-resolution
+pass can run over before anything is emitted. Tested by round-tripping the
+pretty-printer, by a case per grammar production, and by a corpus of malformed
+inputs that must each produce a located message.
+
+Writing a parser is not the task; the compiler is. This is a milestone on the
+way, and it is sized accordingly.
+
+**The compiler.** Over that tree: a symbol table across static / field /
+argument / local, fields reached through `this` with `[]` and `->[]`, and code
+generation per construct. Q4 is settled — a statement call's value is discarded,
+and where it goes is this compiler's own business.
 
 **The library.** `Math`, `String`, `Array`, `Memory`, `Screen`, `Output`,
 `Keyboard`, `Sys`, available as `.sm` files. The standard implementations are
