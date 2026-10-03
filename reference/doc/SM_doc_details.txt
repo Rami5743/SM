@@ -1,0 +1,128 @@
+Documentation of the SM language:
+
+Symbols: 
+for the sake of this document a symbol is a string that starts with a letter and might include letters, digits and the character "."
+
+Variables:
+The SM language uses symbolic variables. A variable name should be symbol.  All variables occupy 1 register in the RAM
+There are of 2 types:
+
+	local variables:
+	variables that are used in a function and disappear when the function is finished. Can not be accessed  from outside the function.
+	those variables includes the arguments of the function and the internal variables. internal variables mast be declared together with the function. All the local variables of a given function should have distinct names.
+
+	global variables:
+	variables that are recognized by the inter code. All global variables should have distinct names, however they can coincide with names of local variables.
+
+Stack:
+The SM have a global stack. The stack operations (push/pop) always refers to it.
+
+Functions:
+All functions including built-in functions are performed on the top of the stack. A function uses how many arguments that it needs from the top of the stack, eliminate those arguments from the stak, and push the result to the stack. The function might have also side effects that influence other pleases in the RAM.
+
+Functions declaration:
+declaration of a function must include all its arguments and its internal variables. Those will be used by the function.
+The name of a non built-in function mast be a symbol.
+Non built-in functions have to return exactly one result. The result should be on the top of the stack before the return command.
+
+Labels:
+labels have name that are recognize inside a given function. All the labels in a given function must be distinct, but they can coincide with variables. As variables they represented by a symbol.
+
+Logical Operation:
+When performing logical operator, the boolean value of a variable is determined by its most significant bit.
+
+Initialisation:
+The first function that will be run should have the name "Sys.init". After its completion, the program will go into infinite loop. Only functions that are called from "Sys.init" (in the hereditary seance) will be performed.
+
+Files: 
+The code might be separated into multiple files. Each file must start with a functions declaration, and it have to consist of (1 or more) functions. 
+ 
+Commands: 
+Below is a list of all SM commands. 
+
+Note that the strings
+x,sin,loop, x1,x2,y1,y2, 
+are given as examples and can be replaced by any symbol.
+
+The string "5" is given as examples and  can be replaced by any integer
+
+Three dots "..." means etc. 
+
+
+
+	Stack operations:
+		-> @x
+		pop to the local variable x from the stack
+	
+		-> x
+		pop to a global variable  x from the stack
+		
+		<- @x
+		push  the local variable x to the stack
+	
+		<- 5
+		push the constant 5 to the stack
+	
+		<- x
+		push the global variable x to the stack
+
+	Bult in functions:
+		Arithmetic/Logical functions:
+			+
+			adding the top 2 elements of the stack and replace them by there sum.
+			
+			-
+			substantiating the top  element of the stack from the previous one and replace both of them by there sum.
+			
+			(-)
+			replace the top  element of the stack with its opposite.
+			
+			&
+			Perform AND on the top 2 elements of the stack and replace them by the result. (only the moset sugnificant bit are mater)
+			
+			|
+			Perform OR on the top 2 elements of the stack and replace them by the result. (only the moset sugnificant bit are mater)
+
+			~
+			Perform Not on the top 2 elements of the stack and replace them by the result. (only the moset sugnificant bit are mater)
+
+			=
+			Denote the values top elements in the stack by x and y (y is the top one). The function replcae the top to elements in the stack by a register whos most dugnificant bit it the troth value of 
+			"x=y"
+			
+			>
+			Denote the values top elements in the stack by x and y (y is the top one). The function replcae the top to elements in the stack by a register whos most dugnificant bit it the troth value of 
+			"x>y"
+			
+			<
+			Denote the values top elements in the stack by x and y (y is the top one). The function replcae the top to elements in the stack by a register whos most dugnificant bit it the troth value of 
+			"x<y"
+			
+		Memory functions:
+			[]
+			Peek function: Denote the value top element in the stack by x. The function replace the top element in the stack by the content of regester with adress x 
+
+			->[]
+			Pock function. Denote the values top elements in the stack by x and y (y is the top one). The function eliminate the top 2 elements of the stack and put the valure x in regester with adress y
+			
+
+
+Flow control:			
+	sin
+	call the function sin and apply it on the last elements of the stack. at the and of the functions they will be replaced by the returned value
+
+	loop:
+	a label with name loop. recognized within the function
+
+	--> loop
+	jump to a label with name loop. 
+
+	? --> loop
+	jump to a label with name loop, if the top of the stak is true. 
+
+
+	! sin(x1,x2,...) y1,y2,...
+	declare a function whos name is sin and arguments names (recognized inside the function) are x1,x2,.... also the function is allowed to have internal variable with names y1,y2,...
+
+	<--
+	return from a function. All arguments, internal variables and anything that stacked above them (exept of the top of the stack) will be eliminated from the stack, and will be replaced be the element that was on the top of the stack before the command.

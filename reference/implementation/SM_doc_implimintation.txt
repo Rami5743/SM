@@ -1,0 +1,272 @@
+local varibles:
+veribals that are used in a function and disapear wen it is finished. can not be acsed from outsid. includes its arguments and an number of varibls declared with  the function
+
+Absolut addresses: 
+addresses  of the phisical ram.
+
+global variblas:
+variblas that are recognized by the inter code
+------------------------------------------------
+x,sin,loop, x1,x2,y1,y2, can be replaced by any symbol. three points meens ec. 
+5 can be replaced by any integer
+------------------------------------------------
+
+
++
+@SP
+A=M
+D=M
+@SP
+AM=M-1
+M=D+M
+
+
+-
+@SP
+A=M
+D=M
+@SP
+AM=M-1
+M=M-D
+
+
+
+(-)
+@SP
+A=M
+M=-M
+
+
+
+&
+|
+~
+
+>
+SM impl:
+-
+
+<
+SM impl
+-
+(-)
+
+=
+-
+D=-M
+M=M|D
+M=!M
+
+//@SP
+//A=M
+//D=M
+//@SP
+//AM=M+1
+//M=D
+//(-)
+//|
+
+[]
+replace the top element in the stack x by the content of regester with absolut adress x 
+@SP
+A=M
+A=M
+D=M
+@SP
+A=M
+M=D
+->[]
+eliminate the top 2 element in the stack x,y and put x in regester with absolut adress y
+@SP
+A=M
+D=M
+@SP
+AM=M-1
+A=M
+M=D
+@SP
+M=M-1
+
+<- 5
+push the constant 5 to the stack
+@5
+D=A
+@SP
+AM=M+1
+M=D
+
+<- x
+push the global varibal x to the stack
+@SM.x
+D=M
+@SP
+AM=M+1
+M=D
+
+-> x
+pop to a global varible  x from the stack
+@SP
+A=M
+D=M
+@SP
+M=M-1
+@SM.x
+M=D
+
+
+<- @x
+push  the local varibal x to the stack
+//Asume x have relative adress 7
+@7
+D=A
+@LCL
+A=D+M
+D=M
+@SP
+AM=M+1
+M=D
+
+-> @x
+pop to the local varibal x from the stack
+//Asume x have relative adress 7
+@SP
+A=M
+D=M
+@SP
+M=M-1
+@tmp
+M=D
+@7
+D=A
+@LCL
+D=D+A
+@tmp2
+M=D
+@tmp
+D=M
+@tmp2
+A=M
+M=D
+
+alternative:
+@7
+
+D=A
+@LCL
+D=D+A
+@tmp
+M=D
+
+pop_D
+
+@tmp
+A=M
+M=D
+
+
+
+
+
+loop:
+a lable with name loop. recognized within the function
+//FNAME
+(lable.FNAME.loop)
+
+--> loop
+jump to a lable with name loop. 
+//FNAME
+@lable.FNAME.loop
+0;JMP
+
+? --> loop
+jump to a lable with name loop, if the top of the stak is true. 
+//FNAME
+@SP
+A=M
+D=M
+@SP
+M=M-1
+@lable.FNAME.loop
+D;JLT
+
+sin
+call the function sin and aplay it on the last elments of the stack. at the and of the functions they will be replaced by the reterend value
+//17
+@LCL
+D=M
+@SP
+AM=M+1
+M=D
+
+@COL.17
+D=M
+@SP
+AM=M+1
+M=D
+
+@FUNTION.sin
+0;JMP
+
+(COL.17)
+
+! sin(x1,x2,...) y1,y2,...
+declare a function whus name is sin and arguments names (recognized inside the function) are x1,x2, etc. also it is alowd to have internal varble with names y1,y2,...
+//ARG=2
+//LCL=5
+(FUNTION.sin)
+@SP
+D=M
+@LCL
+M=D
+@3
+D=A
+@LCL
+M=M-D
+<- 0
+<- 0
+<- 0
+<- 0
+<- 0
+
+<--
+return from a function
+//ARG=2
+
+//@SP
+//A=M
+//D=M
+//@tmp
+//M=D
+
+->tmp
+
+//mov_LCL2SP
+@LCL
+D=M
+@SP
+M=D
+
+
+@2
+
+//add_SP2A
+D=A
+@SP
+A=D+M
+
+//mov_M2LCL
+D=M
+@LCL
+M=D
+
+<-tmp
+
+@2
+
+//add_SP2A
+D=A
+@SP
+A=D+M
+
+A=M
+0;JMP

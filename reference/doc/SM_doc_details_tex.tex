@@ -1,0 +1,557 @@
+%
+%\documentclass[12pt]{article}
+%\documentclass[12pt]{article}
+\documentclass[12pt]{amsart}
+\usepackage{amssymb,amsmath,amsthm,mathrsfs}
+\usepackage[usenames]{color}
+\usepackage{hyperref}
+\usepackage[all]{xy}
+\usepackage{xypic}
+\usepackage{graphicx}
+\usepackage{amscd}
+\usepackage{enumerate}
+	%\usepackage[bbgreekl]{mathbbol}
+
+
+
+\newcommand{\Bmu}{\mbox{$\raisebox{-0.59ex}
+		{$l$}\hspace{-0.18em}\mu\hspace{-0.88em}\raisebox{-0.98ex}{\scalebox{2}
+			{$\color{white}.$}}\hspace{-0.416em}\raisebox{+0.88ex}
+		{$\color{white}.$}\hspace{0.46em}$}{}}
+
+
+
+\oddsidemargin=0cm
+\evensidemargin=0cm
+
+\baselineskip 18pt \textwidth 16cm \sloppy \theoremstyle{plain}
+
+
+\newtheorem{theorem}{Theorem}[subsection]
+\newtheorem{thm}[theorem]{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{defn}[theorem]{Definition}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{conj}[theorem]{Conjecture}
+\newtheorem{question}[theorem]{Question}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{prop}[theorem]{Proposition}
+\newtheorem{thmdef}[theorem]{Theorem-Definition}
+
+\newtheorem{theoremABC}{Theorem}
+\renewcommand{\thetheoremABC}{\Alph{theoremABC}}
+\newtheorem{propositionABC}[theoremABC]{Proposition}
+
+
+
+
+
+\newcommand{\lbl}[1]{\label{#1}{\color{blue}{#1}}}
+%\newcommand{\lbl}[1]{\label{#1}}
+
+
+\DeclareMathOperator{\SL}{SL}
+\DeclareMathOperator{\GL}{GL}
+\DeclareMathOperator{\PGL}{PGL}
+\DeclareMathOperator{\Sp}{Sp}
+\DeclareMathOperator{\val}{val}
+\DeclareMathOperator{\ac}{ac}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\Aut}{Aut}
+\DeclareMathOperator{\Hom}{Hom}
+\DeclareMathOperator{\End}{End}
+\DeclareMathOperator{\Ad}{Ad}
+\DeclareMathOperator{\ad}{ad}
+\DeclareMathOperator{\Mat}{Mat}
+\DeclareMathOperator{\Res}{Res}
+\DeclareMathOperator{\Lie}{Lie}
+\DeclareMathOperator{\trace}{trace}
+\DeclareMathOperator{\rk}{rk}
+\DeclareMathOperator{\Ind}{Ind}
+\DeclareMathOperator{\red}{red}
+\DeclareMathOperator{\Spec}{Spec}
+\DeclareMathOperator{\Jac}{Jac}
+\DeclareMathOperator{\characteristic}{char}
+\DeclareMathOperator{\vol}{vol}
+\DeclareMathOperator{\st}{st}
+\DeclareMathOperator{\gr}{gr}
+\DeclareMathOperator{\Rees}{Rees}
+\DeclareMathOperator{\wt}{wt}
+\DeclareMathOperator{\Sym}{Sym}
+\DeclareMathOperator{\linspan}{span}
+\DeclareMathOperator{\Def}{Def}
+\DeclareMathOperator{\Rep}{Rep}
+\DeclareMathOperator{\Real}{Re}
+\DeclareMathOperator{\coker}{coker}
+\DeclareMathOperator{\Gal}{Gal}
+\DeclareMathOperator{\Frob}{Frob}
+\DeclareMathOperator{\Fr}{Fr}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\VF}{{VF}}
+\DeclareMathOperator{\VG}{{VG}}
+\DeclareMathOperator{\RV}{{RV}}
+\DeclareMathOperator{\RF}{{RF}}
+\DeclareMathOperator{\ACVF}{ACVF}
+\DeclareMathOperator{\Witt}{Witt}
+\DeclareMathOperator{\Bor}{Bor}
+\DeclareMathOperator{\Vect}{Vect}
+
+% Local definitions
+\DeclareMathOperator{\Irr}{Irr}
+\newcommand{\FRS}{(FRS)}
+\newcommand{\A}{\mathbb A}
+\newcommand{\N}{\mathbb N}
+\newcommand{\bZ}{\mathbb Z }
+\newcommand{\bfS}{\mathbf S }
+%\newcommand{\bfG}{\mathbf G }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Rami added
+\usepackage[usenames,dvipsnames]{xcolor}
+%\usepackage{showkeys}
+
+
+
+%A blue link (color #0645AD = rgb(6,69,173) =       ) is a link to a page that currently exists within Wikipedia.
+%A dark blue link (#0B0080 = rgb(11,0,128) =       ) is a link to a page that has been visited already.
+\definecolor{dblue}{RGB}{6,69,173}
+\definecolor{lblue}{RGB}{11,0,128}
+
+\newcommand{\colorlinks}{true}
+
+\newcommand{\linkcolor}{lblue}
+\newcommand{\citecolor}{green}
+\newcommand{\urlcolor}{dblue}
+
+\newcommand{\linkbordercolor}{red}
+\newcommand{\citebordercolor}{green}
+\newcommand{\urlbordercolor}{cyan}
+
+%\usepackage[colorlinks=\colorlinks,linkbordercolor=\linkbordercolor, linkcolor=\linkcolor, citecolor=\citecolor, urlcolor=\urlcolor,urlbordercolor=\urlbordercolor,citebordercolor=\citebordercolor]{hyperref}
+\usepackage{hyperref}
+\hypersetup{colorlinks=\colorlinks,linkbordercolor=\linkbordercolor, linkcolor=\linkcolor, citecolor=\citecolor, urlcolor=\urlcolor,urlbordercolor=\urlbordercolor,citebordercolor=\citebordercolor}%
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%hyper Makros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\newcommand{\hrefHid}[2]{
+\hypersetup{urlbordercolor={1 1 1}}%
+\hypersetup{urlcolor=black}%
+\href{#1}{#2}%
+\hypersetup{urlbordercolor=\urlbordercolor}%
+\hypersetup{urlcolor=\urlcolor}%
+}
+
+\newcommand{\inhref}[2]{\hyperref[#1]{#2}}
+
+\newcommand{\inhrefHid}[2]{%
+\hypersetup{linkbordercolor={1 1 1}}%
+\hypersetup{linkcolor=black}%
+\inhref{#1}{#2}%
+\hypersetup{linkbordercolor=\linkbordercolor}%
+\hypersetup{linkcolor=\linkcolor}%
+}
+
+\newcommand{\defHref}[3]{\newcommand{#1}[1][#3]{\href{#2}{##1}}}
+\newcommand{\defInhref}[3]{\newcommand{#1}[1][#3]{\inhref{#2}{##1}}}
+\newcommand{\defHrefHid}[3]{\newcommand{#1}[1][#3]{\hrefHid{#2}{##1}}}
+\newcommand{\defInhrefHid}[3]{\newcommand{#1}[1][#3]{\inhrefHid{#2}{##1}}}
+
+\newcommand{\defHrefBoth}[3]{%
+\expandafter\defHrefHid \csname #3Hid\endcsname {#1}{#2}%
+\expandafter\defHref \csname #3Vis\endcsname {#1}{#2}%
+}
+\newcommand{\defInhrefBoth}[3]{%
+  \expandafter\defInhrefHid \csname #3Hid\endcsname {#1}{#2}%
+  \expandafter\defInhref \csname #3Vis\endcsname {#1}{#2}%
+}
+
+
+\newcommand{\defHrefBothVis}[3]{%
+\defHrefBoth{#1}{#2}{#3}%
+\expandafter\defHref \csname #3\endcsname {#1}{#2}%
+}
+\newcommand{\defInhrefBothVis}[3]{%
+  \defInhrefBoth{#1}{#2}{#3}%
+  \expandafter\defInhref \csname #3\endcsname {#1}{#2}%
+}
+
+\newcommand{\defHrefBothHid}[3]{%
+\defHrefBoth{#1}{#2}{#3}%
+\expandafter\defHrefHid \csname #3\endcsname {#1}{#2}%
+}
+\newcommand{\defInhrefBothHid}[3]{%
+  \defInhrefBoth{#1}{#2}{#3}%
+  \expandafter\defInhrefHid \csname #3\endcsname {#1}{#2}%
+}
+
+
+%\newcommand{\defInhrefBoth}[4][Vis]{%
+%\expandafter\defInhrefHid \csname #4Hid\endcsname {#2}{#3}%
+%\expandafter\defInhref \csname #4Vis\endcsname {#2}{#3}%
+%\expandafter \let  \csname #4 \endcsname \expandafter \csname #4#1 \endcsname
+%\expandafter\newcommand \csname #4\endcsname%[1]%[#3]%
+%\expandafter \csname #4#1 \endcsname%
+%}
+
+
+\newcommand{\Href}[3]{%
+\href{#1}{#2}%
+\defHrefBothVis{#1}{#2}{#3}
+%\expandafter\defHref \csname #3\endcsname {#1}{#2}%
+}
+
+
+\newcommand{\Inhref}[3]{%
+\inhref{#1}{#2}%
+\defInhrefBothVis{#1}{#2}{#3}
+%\expandafter\defInhref \csname #3\endcsname {#1}{#2}%
+}
+
+
+\newcommand{\HrefHid}[3]{%
+\href{#1}{#2}%
+\defHrefBothHid{#1}{#2}{#3}
+%\expandafter\defHrefHid \csname #3\endcsname {#1}{#2}%
+}
+
+
+\newcommand{\InhrefHid}[3]{%
+\inhref{#1}{#2}%
+\defInhrefBothHid{#1}{#2}{#3}
+%\expandafter\defInhrefHid \csname #3\endcsname {#1}{#2}%
+}
+
+
+\newcommand{\wref}[2]{%
+\href{http://en.wikipedia.org/wiki/#1}{#2}%
+ }
+\newcommand{\wiki}[1]{%
+\wref{#1}{#1}%
+ }
+
+\newcommand{\Wref}[3]{%
+\Href{http://en.wikipedia.org/wiki/#1}{#2}{#3}%
+ }
+\newcommand{\Wiki}[2]{%
+\Wref{#1}{#1}{#2}%
+ }
+
+\newcommand{\hbibit}[3]{\bibitem[\href{#2}{#1}]{#3}}
+
+\newcommand{\term}[2]{%
+\label{#2}%
+\emph{#1}%
+ \globaldefs =1%
+%\defInhrefBothVis{#2}{#1}{#2}%
+\defInhrefBothHid{#2}{#1}{#2}%
+%\expandafter\defInhref \csname #2\endcsname{#2}{#1}%
+ \globaldefs =0%
+}
+
+
+
+
+
+
+
+\oddsidemargin=0cm
+%
+\evensidemargin=0cm
+%\textheight=22cm
+\baselineskip 18pt \textwidth 16cm \sloppy \theoremstyle{plain}
+
+
+\newtheorem*{theorem*}{Theorem}
+\newtheorem*{remark*}{Remark}
+%\newtheorem{lemma}[thm]{Lemma}
+%\newtheorem{proposition}[thm]{Proposition}
+%\newtheorem{remark}[thm]{Remark}
+%\newtheorem{rmk}[thm]{Remark}
+%\newtheorem{example}[thm]{Example}
+%\newtheorem{theorem}[thm]{Theorem}
+%\newtheorem{definition}[thm]{Definition}
+%\newtheorem{notation}[thm]{Notation}
+%\newtheorem{result}{Result}[section]
+%\newtheorem{property}[thm]{Property}
+%\newtheorem{corollary}[thm]{Corollary}
+%\newtheorem{construction}[thm]{Construction}
+%\newtheorem{case}{Case}
+%\newtheorem{conjecture}{Conjecture}
+\newtheorem*{conjecture*}{Conjecture}
+
+\newtheorem{introtheorem}{Theorem}
+\renewcommand{\theintrotheorem}{\Alph{introtheorem}}
+\newtheorem{introcorollary}[introtheorem]{Corollary}
+\newtheorem{introremark}[introtheorem]{Remark}
+\newtheorem{introconjecture}[introtheorem]{Conjecture}
+
+
+
+
+\newcommand{\C}{\mathbb C}
+
+
+
+\DeclareMathOperator{\M}{Mat}
+\DeclareMathOperator{\Stab}{Stab}
+\DeclareMathOperator{\Frac}{Frac}
+\DeclareMathOperator{\spec}{Spec}
+\DeclareMathOperator{\Img}{Im}
+\DeclareMathOperator{\Tr}{Tr}
+\DeclareMathOperator{\Rad}{Rad}
+\DeclareMathOperator{\rad}{Rad}
+
+
+\newcommand{\R}{\mathbb{R}}
+
+\newcommand{\ACh}{\operatorname{ACh}}
+\newcommand{\ind}{\operatorname{ind}}
+\newcommand{\IC}{\operatorname{IC}}
+
+\newcommand{\bs}{\backslash}
+\newcommand{\cM}{{\mathcal M}}
+
+\newcommand{\Sc}{{\mathcal S}}
+\newcommand{\Span}{{\operatorname{Span}}}
+\renewcommand{\dim}{{\operatorname{dim}}}
+%\newcommand{\gr}{{\operatorname{gr}}}
+%\newcommand{\Ind}{\operatorname{Ind}}
+\newcommand{\Supp}{{\operatorname{Supp}}}
+\renewcommand{\Hom}{{\operatorname{Hom}}}
+\newcommand{\oH}{\operatorname{H}}
+\newcommand{\charac}{\operatorname{char}}
+\newcommand{\et}{{\'{e}tale }}
+\newcommand{\irr}{\operatorname{Irr}}
+\newcommand{\Rami}[1]{{\color{blue}{#1}}}
+\newcommand{\RamiQ}[1]{{\color{red}{Rami: #1}}}
+\newcommand{\nir}[1]{{\color{red}{Nir: #1}}}
+
+
+\newcommand{\LS}{\mathcal{L}oc\mathcal{S}ys}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Rami added end
+
+\newcommand{\Id}{\operatorname{Id}}
+
+
+
+\newcommand{\bR}{\mathbf{R}}
+\newcommand{\bG}{\mathbf{G}}
+\newcommand{\bfG}{\mathbf{G}}
+\newcommand{\bQ}{\mathbf{Q}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\bH}{\mathbf{H}}
+\newcommand{\bfH}{\mathbf{H}}
+
+\newcommand{\bK}{\mathbf{K}}
+\newcommand{\bfK}{\mathbf{K}}
+
+\newcommand{\bS}{\mathbf{S}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bL}{\mathbf{L}}
+
+\newcommand{\bF}{\mathbb{F}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\fu}{\mathfrak{u}}
+
+\newcommand{\alg}{\mathrm{rd}}
+%\newcommand{\Rad}{\mathrm{Rad}}
+\newcommand{\ralg}{\overline{\alg}}
+
+\newcommand{\cS}{{\mathcal S}}
+\renewcommand{\cR}{{\mathcal R}}
+\newcommand{\cE}{{\mathcal E}}
+\newcommand{\cF}{{\mathcal F}}
+\newcommand{\cG}{{\mathcal G}}
+\newcommand{\cI}{{\mathcal I}}
+\newcommand{\calH}{{\mathcal H}}
+\newcommand{\cA}{{\mathcal A}}
+\newcommand{\cZ}{{\mathcal Z}}
+
+
+\newcommand{\fX}{{\mathfrak X}}
+
+
+\newcommand{\eps}{{\varepsilon}}
+\newtheorem{innercustomthm}{Theorem}
+\newenvironment{customthm}[1]
+  {\renewcommand\theinnercustomthm{#1}\innercustomthm}
+  {\endinnercustomthm}
+
+\title{Documentation of the SM language}
+%\author{Avraham Aizenbud\thanks{{The Incumbent of Dr. A. Edward Friedmann Career Development Chair in Mathematics}} and Nir Avni}
+\author{Avraham Aizenbud}
+\address{Avraham Aizenbud,
+Faculty of Mathematics and Computer Science, Weizmann Institute of Science, Israel. }
+\email{aizenr@gmail.com}
+\urladdr{\url{http://www.aizenbud.org}}
+
+
+\author{Meir Aizenbud}
+\address{Meir Aizenbud,}
+\email{meir.aizenbud@gmail.com}
+
+\begin{document}
+\maketitle
+The language is based on the vm language from \cite{NS}.
+
+\section{Symbols}
+for the sake of this document a symbol is a string that starts with a letter and might include letters, digits and the character ``."
+
+\section{Variables}
+The SM language uses symbolic variables. A variable name should be symbol.  All variables occupy 1 register in the RAM
+There are of 2 types:
+
+\subsection{local variables}
+	variables that are used in a function and disappear when the function is finished. Can not be accessed  from outside the function.
+	those variables includes the arguments of the function and the internal variables. internal variables mast be declared together with the function. All the local variables of a given function should have distinct names.
+
+\subsection{global variables}	
+	variables that are recognized by the inter code. All global variables should have distinct names, however they can coincide with names of local variables.
+
+\section{Stack}	
+The SM have a global stack. The stack operations (push/pop) always refers to it.
+
+\section{Functions}	
+All functions including built-in functions are performed on the top of the stack. A function uses how many arguments that it needs from the top of the stack, eliminate those arguments from the stak, and push the result to the stack. The function might have also side effects that influence other pleases in the RAM.
+
+\subsection{Functions declaration}	
+declaration of a function must include all its arguments and its internal variables. Those will be used by the function.
+The name of a non built-in function mast be a symbol.
+Non built-in functions have to return exactly one result. The result should be on the top of the stack before the return command.
+
+\section{Labels}
+labels have name that are recognize inside a given function. All the labels in a given function must be distinct, but they can coincide with variables. As variables they represented by a symbol.
+
+\section{Logical Operation}
+
+When performing logical operator, the boolean value of a variable is determined by its most significant bit.
+
+\section{Initialisation}
+The first function that will be run should have the name "Sys.init". After its completion, the program will go into infinite loop. Only functions that are called from "Sys.init" (in the hereditary seance) will be performed.
+
+\section{Files}
+The code might be separated into multiple files. Each file must start with a functions declaration, and it have to consist of (1 or more) functions. 
+ 
+\section{Commands}
+Below is a list of all SM commands. 
+
+Note that the strings
+$x,sin,loop, x1,x2,y1,y2 $
+are given as examples and can be replaced by any symbol.
+
+The string ``5" is given as examples and  can be replaced by any integer
+
+Three dots ``..." means etc. 
+
+
+
+\subsection{Stack operations}	
+\begin{itemize}	
+\item		$-> @ x$\\
+		pop to the local variable x from the stack
+	
+\item				$-> x$\\
+		pop to a global variable  x from the stack
+		
+\item				$<- @ x$\\
+		push  the local variable x to the stack
+	
+\item				$<- 5$\\
+		push the constant $5$ to the stack
+	
+\item				$<- x$\\
+		push the global variable $x$ to the stack
+
+\end{itemize}	
+\subsection{	Bult in functions}
+
+
+\subsubsection{Arithmetic/Logical functions}
+\begin{itemize}	
+	\item		$+$\\
+			adding the top 2 elements of the stack and replace them by there sum.
+	\item	$-$\\
+			substantiating the top  element of the stack from the previous one and replace both of them by there sum.
+			
+	\item	$(-)$\\			
+			replace the top  element of the stack with its opposite.
+			
+	\item	$\&$\\
+			Perform AND on the top 2 elements of the stack and replace them by the result. (only the moset sugnificant bit are mater)
+			
+	\item	$|$\\
+			Perform OR on the top 2 elements of the stack and replace them by the result. (only the moset sugnificant bit are mater)
+
+	\item	$~$
+			Perform Not on the top 2 elements of the stack and replace them by the result. (only the moset sugnificant bit are mater)
+
+	\item	$==$\\
+			Denote the values top elements in the stack by x and y (y is the top one). The function replcae the top to elements in the stack by a register whos most dugnificant bit it the troth value of 
+	``$x=y$"
+			
+\item	$>$\\
+			Denote the values top elements in the stack by x and y (y is the top one). The function replcae the top to elements in the stack by a register whos most dugnificant bit it the troth value of 
+			``$x>y$"
+			
+\item				$<$\\
+			Denote the values top elements in the stack by x and y (y is the top one). The function replcae the top to elements in the stack by a register whos most dugnificant bit it the troth value of 
+			``$x<y$"
+\end{itemize}	
+			
+\subsubsection{Memory functions}		
+\begin{itemize}	
+\item				$[]$\\
+			Peek function: Denote the value top element in the stack by x. The function replace the top element in the stack by the content of regester with adress x 
+
+\item				$->[]$\\
+			Pock function. Denote the values top elements in the stack by x and y (y is the top one). The function eliminate the top 2 elements of the stack and put the valure x in regester with adress y
+			
+\end{itemize}	
+
+
+\subsection{Flow control}	
+\begin{itemize}	
+			
+\item				$sin$\\
+	call the function sin and apply it on the last elements of the stack. at the and of the functions they will be replaced by the returned value
+
+\item					$loop:$\\
+	a label with name loop. recognized within the function
+
+\item					$--> loop$\\
+	jump to a label with name loop. 
+
+\item					$? --> loop$\\
+	jump to a label with name loop, if the top of the stak is true. 
+
+
+\item					$! sin(x1,x2,...) y1,y2,...$\\
+	declare a function whos name is sin and arguments names (recognized inside the function) are $x1,x2,....$ also the function is allowed to have internal variable with names $y1,y2,...$
+
+\item					$<--$\\
+	return from a function. All arguments, internal variables and anything that stacked above them (exept of the top of the stack) will be eliminated from the stack, and will be replaced be the element that was on the top of the stack before the command.
+	
+\end{itemize}	
+
+
+\begin{thebibliography}{WWW}
+\bibitem[NS05]{NS} N. Nisan and S. Schocken, {\it The Elements of Computing Systems: Building a Modern Computer from First Principles}, The MIT press 2005.
+\end{thebibliography}
+\end{document}

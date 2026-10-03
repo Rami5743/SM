@@ -1,0 +1,21 @@
+class Main{
+	function int fibonachie(int n){
+		if ((n=0) | (n=1)){
+			return n;
+		}
+		return fibonachie(n-1)+fibonachie(n-2);
+	}
+	function array fibonachie_arr(int n){
+		var int fib_nam;
+		var array fib;
+		let fib = 1000;
+		let fib[0] = 0;
+		let fib[1] = 1;
+		let fib_nam = 2;
+		while (fib_nam < (n+1)){
+			let fib[fib_nam] = fib[fib_nam-1] + fib[fib_nam-2];
+			let fib_nam = fib_nam + 1;
+		}
+		return fib;
+	}
+}

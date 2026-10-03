@@ -1,0 +1,28 @@
+10,15 can be any integer
+x,myfunction,label can be any symbol
+
+-------------------------------
+-> @10
+-> x
+
+<- @10
+<- 10
+<- x
+
+=
+>
+<
+
+
+myfunction
+
+label:
+--> label
+? --> label
+
+! myfunction(10) 15
+<--
+
+
+[10]
+->[10]

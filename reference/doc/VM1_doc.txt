@@ -1,0 +1,28 @@
+-> @integer
+-> symbol
+
+<- @integer
+<- integer
+<- symbol
+
+[integer]
+->[integer]
+
++
+-
+(-)
+&
+|
+~
+
+=
+>
+<
+
+symbol
+
+symbol:
+--> symbol
+? --> symbol
+! symbol(integer1) integer2
+<--

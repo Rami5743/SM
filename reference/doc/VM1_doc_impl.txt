@@ -1,0 +1,106 @@
+-> @10
+@LCL
+D=M
+@10
+D=D+A
+@R5
+M=D
+
+@SP
+A=M
+D=M
+
+@R5
+A=M
+M=D
+
+@SP
+M=M-1
+
+-> @1
+@SP
+A=M
+D=M
+
+@LCL
+A=M
+A=A+1
+M=D
+
+@SP
+M=M-1
+
+-> @0
+@SP
+A=M
+D=M
+
+@LCL
+A=M
+M=D
+
+@SP
+M=M-1
+
+-> x
+@SP
+A=M
+D=M
+
+@x
+M=D
+
+@SP
+M=M-1
+
+
+
+<- @0
+
+
+<- @1
+<- @10
+<- 0
+<- 1
+<- 17
+<- y
+
+[7]
+->[5]
+
++
+@SP
+A=M
+D=M
+@SP
+M=M-1
+A=M
+M=M+D
+
+-
+@SP
+A=M
+D=M
+@SP
+M=M-1
+A=M
+M=D-M
+
+(-)
+@SP
+A=M
+M=-M
+
+&
+|
+~
+
+=
+>
+<
+
+Loop:
+--> Loop
+? --> Loop
+! sin(1) 10
+<--

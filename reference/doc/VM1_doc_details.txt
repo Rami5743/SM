@@ -1,0 +1,61 @@
+relative adrresses:
+כתובת יחסית:
+הכתובת ביחס למצב המחסנית בתחילת הפעלת הפונקציה הנוכחית. מצב מחסנית זה נישמר ברגיסטר 
+LCL
+הכתובות היחסיות כוללות גם את הפרמטרים של הפונקציה וגם את המשתנים המקומיים שלה.
+
+addresses relative to the stack position in the begining of the ranning function as stored in register LCL. 
+contain both arguments and local varbals. evrithing in this adresses wis local to the function and with disaper when the function is done 
+(asuming no overflow)
+
+Absolut addresses: 
+addresses  of the phisical ram.
+
+static variblas:
+Stored in registers 16-255. have names which are symbols, recognased by all the code. if you want that the names will be recognize by the file/function only use names filename.xxx/filename.functionname.xxx. otherwithe do not use ".". the varibles maintain thire value after the function is done.
+נישמרים ברגיסטרים
+16-255. 
+השמות שלהם הם סימבולים המזהים ע"י כל הקוד.
+אם רוצים משתנים המזוהים ע"י קובץ\פונקציה יש להשתמש בשמות מהסוג 
+filename.xxx אוfilename.functionname.xxx
+אחרת אין להשתמש בנקודה. השמות השמורים באסמבלי שמורים גם כאן לאותם מטרות
+------------------------------------------------
+
+-> @integer
+pop to the regester with relative address "integer" from the stack
+
+-> symbol
+pop to a static varible with name "symbol" from the stack
+
+<- @integer
+push  the regester with relative address "integer" to the stack
+
+<- integer
+push the constant "integer" from the stack
+
+<- symbol
+push the value of a static varible with name "symbol" to the stack
+
+[integer]
+replace the top element in the stack x by the content of regester with absolut adress x+"integer" 
+
+->[integer]
+eliminate the top 2 element in the stack x,y and put x in regester with absolut adress y+"integer" 
+
++
+-
+(-)
+=
+>
+<
+&
+|
+~
+
+symbol
+
+symbol:
+--> symbol
+? --> symbol
+! symbol(integer1) integer2
+<--

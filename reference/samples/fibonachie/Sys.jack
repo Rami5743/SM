@@ -1,0 +1,7 @@
+class Sys{
+	function void init(){
+		//do Main.fibonachie_arr(8);
+		do Main.fibonachie(4);
+		while (true){}
+	}
+}

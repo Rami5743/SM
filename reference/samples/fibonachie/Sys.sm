@@ -1,0 +1,11 @@
+!Sys.init()
+<-4
+Main.fibonachie
+->tmp
+while_strt.0:
+<-1
+(-)
+~
+?-->while_end.0
+-->while_strt.0
+while_end.0:
