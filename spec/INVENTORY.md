@@ -318,8 +318,40 @@ global. This is a convention, not a rule the translator enforces.
 another file, and leave it legal.
 
 **Q8 — negative literals.** The parser's pattern for `<- 5` is `[0-9]*`, which
-accepts no sign and also matches a bare `<-`.
-*Proposed:* `<- -5` is legal and the bare `<-` is an error.
+accepts no sign — and also matches a bare `<-`.
+
+**What the course does.** It forbids them, at all three levels, and for a
+reason SM inherits exactly.
+
+* *The VM language.* `push constant x` takes "some non-negative integer x".
+  There is no negative literal; negative numbers are produced by the `neg`
+  command, whose SM counterpart is `(-)`.
+* *Jack.* An `integerConstant` is a decimal number in `0..32767`. `-5` is not a
+  literal but the unary operator `-` applied to the literal `5`. The SM
+  prototype's own Jack compiler already follows this, mapping unary `-` to
+  `(-)`.
+* *Hack assembly.* `@value` takes a non-negative decimal in `0..32767`, because
+  the A-instruction has fifteen bits and no sign. `@-5` cannot be assembled.
+
+The third is the cause of the first two. A VM translator renders
+`push constant x` as `@x / D=A / …`, which is a one-to-one translation only
+while `x` is non-negative. SM is in precisely the same position: its
+`push_const` emits `@` followed by the literal.
+
+**What this costs either way.** Allowing `<- -5` would mean emitting
+`@5 / D=A / D=-D` instead of `@5 / D=A`, which saves two instructions over
+writing `<- 5` then `(-)` — and costs every student a sign test inside the
+command they implement first. Negative constants are rare; the branch is in
+every translator forever.
+
+*Proposed, reversing what this entry said before:* follow the course. `<- 5`
+takes a non-negative decimal; a negative value is `<- 5` followed by `(-)`.
+A leading sign is a syntax error rather than silently falling through to the
+next template and becoming a push of a global named `-5`.
+
+*Separately, and regardless:* the bare `<-` must be an error. It matches
+`<-([0-9]*)` with an empty capture today and emits a bare `@`. The bare `->`
+has the same defect, noted under Q4.
 
 ## 4. Errors in the supplied samples
 
