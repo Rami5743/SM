@@ -32,6 +32,9 @@ Start here:
 * [`PLAN.md`](PLAN.md) — the work plan.
 * [`spec/INVENTORY.md`](spec/INVENTORY.md) — what the supplied material contains,
   and the list of specification questions it leaves open.
+* [`spec/CORRECTIONS.md`](spec/CORRECTIONS.md) — the points where we deliberately
+  depart from that material. The reference directory is never edited; this file
+  records the changes instead, and the implementation follows it.
 * [`reference/`](reference/) — the original material, kept verbatim.
 
 SM was designed by Avraham Aizenbud and Meir Aizenbud. The course VM is from

@@ -105,13 +105,16 @@ calendar time.
 
 ### M0 — Decide the specification *(small)*
 
-Answer Q2–Q8; **Q1 is settled** — the operand order of `->[]` follows the
-implementations, address below and value on top, and the prose is corrected to
-match. Write `spec/sm.md` as the normative reference: grammar, memory model,
-frame layout, the exact statement of where `SP` points, the
-most-significant-bit boolean convention, error conditions. Carry over the
-replacement wording recorded under Q1 and the corrections in
-`spec/INVENTORY.md` §5.
+Answer Q2–Q8. Two points are already settled and recorded in
+`spec/CORRECTIONS.md`, which is the normative list of our deviations from
+`reference/`: **C1**, the operand order of `->[]` follows the implementations —
+address below, value on top — and the prose is corrected to match; **C2**, the
+bootstrap sets `SP = 255`, so the stack starts at `RAM[256]`.
+
+Write `spec/sm.md` as the normative reference: grammar, memory model, frame
+layout, the exact statement of where `SP` points, the most-significant-bit
+boolean convention, error conditions. Carry over `spec/CORRECTIONS.md` and the
+prose corrections in `spec/INVENTORY.md` §5.
 
 *Done when:* `spec/sm.md` covers every command in `reference/tst/all_cmds.sm`
 and every question in `spec/INVENTORY.md` §3 is closed in writing.
@@ -160,7 +163,8 @@ is to generate `.cmp` files and to be the thing a student's translator is
 measured against.
 
 *Done when:* its output agrees with the Python original on every sample, except
-where an answer to Q1–Q8 deliberately changed the behaviour.
+at the points listed in `spec/CORRECTIONS.md` — which, for this milestone,
+means C2 and nothing else.
 
 ### M5 — The site, first cut *(medium)*
 

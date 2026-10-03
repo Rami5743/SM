@@ -25,16 +25,20 @@ assembler module `asembly_OO`, and any SM emulator at all.
 ## 2. The machine as the reference implementation actually builds it
 
 Read off `SM_trnsleitor3.py`, which is the only executable statement of the
-semantics. This is the behaviour the new emulator has to reproduce, because the
+semantics. This section describes the **reference** behaviour; where we
+deliberately depart from it, [`CORRECTIONS.md`](CORRECTIONS.md) says so and
+wins. Otherwise this is what the new emulator has to reproduce, because the
 `.cmp` files of the student package must match what the student's own translator
 produces.
 
 **Stack pointer.** `SP` holds the address of the **top element**, not of the
 first free cell. Push is `@SP / AM=M+1 / M=D` — increment, then write. The
 bootstrap sets `SP = 256`, so an empty stack is `SP = 256` and the first element
-pushed lands at `RAM[257]`; cell 256 is never used. This differs from the course
-VM, where `SP = 256` means the first element is at `RAM[256]`, and it changes
-every expected `RAM[0]` value.
+pushed lands at `RAM[257]`; cell 256 is never used. **Changed by C2:** the
+bootstrap sets `SP = 255` instead, so the first element lands at `RAM[256]`.
+Either way `SP` addresses the top element, not the first free cell, which is
+where the course's VM differs and why every expected `RAM[0]` value differs
+from the course's by one.
 
 **Call frame.** A call pushes the caller's `LCL`, then the return address, then
 jumps. The callee's declaration sets `LCL = SP - (a+1)`, where `a` is its own
@@ -67,16 +71,20 @@ subtraction, `>` the reverse subtraction, `==` is `v | -v` followed by bitwise
 negation. No comparison emits a label or a jump — the point of the convention.
 `?-->` tests with `D;JLT`.
 
-**Bootstrap.** `SP = 256`, then a *call* to `Sys.init`, then an infinite loop.
+**Bootstrap.** `SP = 256` (C2: `255`), then a *call* to `Sys.init` (Q3), then an
+infinite loop.
 
 **Reserved assembly symbols** the runtime occupies: `SP`, `LCL`, `tmp`, `end`,
 and the prefixes `SM.`, `FUNTION.`, `LABEL.`, `call.`.
 
 ## 3. Questions
 
-Decided so far: **Q1**. The rest are open.
+Decided so far: **Q1**. The rest are open. A decision becomes an entry in
+[`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
+deviations from `reference/`.
 
-**Q1 — operand order of `->[]`. DECIDED: the code is right, the prose is wrong.**
+**Q1 — operand order of `->[]`. DECIDED → C1: the code is right, the prose is
+wrong.**
 
 The prose says: top is `y`, the element below is `x`, and the effect is
 `RAM[y] := x` — the **address on top**. All four artefacts do the opposite:
