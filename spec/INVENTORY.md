@@ -210,9 +210,18 @@ choice and costs nothing that matters.
 
 **Also to be settled here, whichever is chosen:** what happens when a function
 reaches its last line without a `<--`. The reference translator emits nothing,
-so execution runs on into whatever function the translator happened to place
-next. The Jack prototype's own `Sys.init` does exactly this — it has no `<--` at
-all — and is saved only by its infinite loop. This should be a diagnostic.
+so execution runs straight into the next function's declaration, which sets
+`LCL` from the current `SP` and pushes that function's locals — entering it with
+a frame that has no return address, so its own `<--` jumps to a garbage address.
+
+Both supplied `Sys.init` files are one step from this. The hand-written one has
+a `<--`, but only after an infinite loop, so it is unreachable; the
+Jack-generated one has no `<--` at all, because Jack's `Sys.init` body is
+`while (true) {}` with no `return`, and is saved only by that loop.
+
+*Proposed:* a diagnostic — control must not be able to fall off the end of a
+function. It costs nothing to add: the depth walk of Q9 already computes which
+points are reachable, so this is the same traversal asking one more question.
 
 **Q4 — discarding a return value. CLOSED: neither language changes.**
 
