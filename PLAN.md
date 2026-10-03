@@ -5,8 +5,8 @@ the SM stack machine.
 
 Companion document: [`spec/INVENTORY.md`](spec/INVENTORY.md) — what the supplied
 material contains, how the existing Python translator actually behaves, and the
-eight specification questions (**Q1**–**Q8**) that have to be answered before
-coding starts. This plan refers to them by number.
+specification questions (**Q1**–**Q9**) that have to be answered before coding
+starts. This plan refers to them by number.
 
 ---
 
@@ -18,8 +18,9 @@ coding starts. This plan refers to them by number.
 | 2 | SM → VM and VM → SM translators | In-browser, plus a command-line entry point |
 | 3 | Jack → SM compiler | In-browser, plus a command-line entry point |
 | 4 | SM reference page and rationale page | Static pages of the same site |
-| 5 | `projects/07-sm/` | A directory of tests the student downloads |
-| 6 | `projects/11-sm/` | The same, for the second assignment |
+| 5 | `projects/07-sm/` | First assignment, part I: a directory of tests the student downloads |
+| 6 | `projects/08-sm/` | First assignment, part II |
+| 7 | `projects/11-sm/` | Second assignment |
 
 Everything runs client-side. The site is a static bundle on GitHub Pages; there
 is no backend, no account, and no upload. A student can also clone the
@@ -28,8 +29,9 @@ integration does.
 
 **Two of these are assignments; the rest is scaffolding.** The student writes
 exactly two programs: an **SM → Hack-assembly translator**, replacing projects
-7–8, and then a **Jack → SM compiler**, replacing project 11. Deliverables (5)
-and (6) are those two assignments. The SM ↔ VM translators are never assigned —
+7–8, and then a **Jack → SM compiler**, replacing project 11. Deliverables
+(5)–(6) are the first assignment, split into two parts as the course splits it,
+and (7) is the second. The SM ↔ VM translators are never assigned —
 they exist so that a program can cross between the SM track and the course's own
 track, and so that each machine can be used to check the other.
 
@@ -39,7 +41,7 @@ otherwise have been polish: **the Jack operating system, compiled to SM**. A
 student's own compiler emits calls to `Math.multiply`, `String.new`,
 `Output.printString`; the course supplies the library as `.vm` files, so we must
 supply it as `.sm` files, and the emulator must own a screen buffer and a
-keyboard register for it to drive. Deliverable (6) cannot exist without that
+keyboard register for it to drive. Deliverable (7) cannot exist without that
 library, and the library is useless without those two devices.
 
 ## 2. Principles
@@ -96,7 +98,8 @@ packages/
   sm-to-asm/     reference translator — build tool, not shipped to students
   hack/          Hack assembler + CPU emulator, needed to check .asm output
 web/             the site
-projects/07-sm/  first assignment: the SM to assembly translator
+projects/07-sm/  first assignment, part I: commands without frames
+projects/08-sm/  first assignment, part II: control flow, functions, bootstrap
 projects/11-sm/  second assignment: the Jack to SM compiler
 reference/       the supplied material, verbatim
 tools/           .cmp generation, CI scripts
@@ -177,7 +180,7 @@ Hack assembler and CPU emulator, so a `.tst` naming a `.asm` file runs too.
 
 *Done when:* one `.cmp` file is satisfied both by `smstep` over the `.sm`
 sources and by `ticktock` over the assembled output of `sm-to-asm`. That
-equivalence is the whole premise of deliverable (5).
+equivalence is the whole premise of the student packages.
 
 ### M4 — `sm-to-asm`, the reference translator *(medium)*
 
@@ -211,9 +214,13 @@ highlights the current line.
 *Done when:* the three pages are live on GitHub Pages and the emulator runs
 `FibonacciElement` from a cold load.
 
-### M6 — `projects/07-sm`, the first assignment *(medium)*
+### M6 — `projects/07-sm` and `projects/08-sm`, the first assignment *(medium)*
 
-**Every program in this package is valid SM, and nothing here grades error
+Two packages, as the course has two projects. The split is what makes the
+assignment tractable: part I is the commands that need no frame, part II is
+frames, control flow and the bootstrap, which is the hard half.
+
+**Every program in both packages is valid SM, and nothing here grades error
 handling.** The validation we build — undeclared call targets (C3), the name
 rules (Q5), the stack-depth walk (Q9) — belongs to our tools and exists so that
 a student can tell a bad `.sm` file from a bug in the translator they are
@@ -221,26 +228,61 @@ writing. It is not part of the assignment, and a test that fed a malformed
 program and expected a message would be quietly assigning work the course never
 assigns.
 
-A staged sequence of tests. Each is a directory containing SM source, a
-`<Name>SM.tst` that runs it in the SM emulator, a `<Name>.tst` that loads the
-`<Name>.asm` the student is expected to produce, one `<Name>.cmp` shared by
-both, and a README stating what the stage adds.
+Each test is a directory containing SM source, a `<Name>SM.tst` that runs it in
+the SM emulator, a `<Name>.tst` that loads the `<Name>.asm` the student is
+expected to produce, one `<Name>.cmp` shared by both, and a README stating what
+the stage adds.
 
-| Stage | Tests | What it exercises |
+**Part I — `projects/07-sm/`.** Constants, globals, the arithmetic and logical
+operators, `[]` and `->[]`. One file at a time, no bootstrap.
+
+| Test | What it exercises | Course counterpart |
 |---|---|---|
-| 1 | `SimpleAdd`, `StackTest` | the stack, all arithmetic and logic, the boolean convention |
-| 2 | `GlobalTest`, `StaticsTest` | global variables, and statics by dotted name (Q7) |
-| 3 | `PointerTest`, `ArrayTest` | `[]` and `->[]`, including the operand order of Q1 |
-| 4 | `BasicLoop`, `FibonacciSeries` | labels, `-->`, `?-->` |
-| 5 | `SimpleFunction`, `NestedCall` | one frame, then frames that must survive a call |
-| 6 | `FibonacciElement` | several files, recursion, `Sys.init` |
+| `SimpleAdd` | the stack, one operator | `SimpleAdd` |
+| `StackTest` | all nine arithmetic and logical commands, and the most-significant-bit boolean convention | `StackTest` |
+| `GlobalTest` | `<- x` and `-> x` | `BasicTest` |
+| `PointerTest` | `[]` and `->[]`, including the operand order of C1 | `PointerTest` |
+| `StaticTest` | the dotted-name convention (Q7) | `StaticTest` |
+
+**Part II — `projects/08-sm/`.** Labels, `-->`, `?-->`, the declaration, the
+call, `<--`, the bootstrap, several files at once — and local variables, for the
+reason below.
+
+| Test | What it exercises | Course counterpart |
+|---|---|---|
+| `BasicLoop` | a label, `-->`, `?-->` | `BasicLoop` |
+| `FibonacciSeries` | the same, over an array | `FibonacciSeries` |
+| `SimpleFunction` | one declaration, locals, `<--` | `SimpleFunction` |
+| `NestedCall` | a frame surviving a call | `NestedCall` |
+| `FibonacciElement` | several files, recursion, `Sys.init`, the bootstrap | `FibonacciElement` |
+| `StaticsTest` | dotted names across files, inside functions | `StaticsTest` |
+
+**Where the split falls differently from the course, and why.** The course puts
+`push local 0` in project 7, because a local there is a numeric offset from a
+pointer the `.tst` file sets by hand. SM cannot do that: `<- @x` names a local,
+and the name is resolved against the function's declaration at translation time,
+so a local has no meaning outside a function. Locals therefore move to part II,
+with the declaration that gives them meaning.
+
+The same property makes part I's test files simpler than the course's. A
+project-7 `.tst` has to set five segment pointers before it can run anything;
+ours sets `SP` and nothing else, because there is nothing else to set.
+
+**One liberty, the same one the course takes.** A part-I file is a bare sequence
+of commands with no function declaration, which the specification does not
+permit — a file "must start with a functions declaration". The course's
+project-7 `.vm` files are not legal complete VM programs either, for the same
+reason and to the same end. The reference page should name this as a teaching
+form rather than let a student discover the inconsistency: in part I the
+emulator accepts a *fragment*, and from part II onward only whole programs.
 
 Every `.cmp` is generated by `tools/`, never copied from the course. The
 supplied `FibonacciElement` pair is stale in three separate ways
 (`spec/INVENTORY.md` §4) and is not a starting point.
 
-*Done when:* for each test, `smstep` and `ticktock` over the reference `.asm`
-both satisfy the `.cmp`, and a deliberately broken translator fails it.
+*Done when:* for each test in both packages, `smstep` and `ticktock` over the
+reference `.asm` both satisfy the `.cmp`, and a deliberately broken translator
+fails it.
 
 ### M7 — `jack-to-sm` and the Jack library in SM *(large)*
 
@@ -415,7 +457,7 @@ every `.tst` on every push.
 There is one critical path and it runs through both assignments:
 
 ```
-M0 → M1 → M2 → M3 → M4 → M6        first assignment ready
+M0 → M1 → M2 → M3 → M4 → M6        first assignment ready, both parts
                   ↘  M7 → M8       second assignment ready
 ```
 
@@ -427,8 +469,8 @@ that can be dropped from a first release without costing a student anything.
 
 Two releases suggest themselves:
 
-* **First:** M0–M6 plus the Reference and Rationale pages. The unit-7
-  replacement is complete and can be taught on its own.
+* **First:** M0–M6 plus the Reference and Rationale pages. The replacement for
+  projects 7 and 8 is complete and can be taught on its own.
 * **Second:** M7–M8. The Jack assignment, which is what makes the SM track a
   replacement for the course's whole back end rather than for one project.
 
@@ -436,8 +478,8 @@ M9 and M10 follow at leisure.
 
 ## 6. Risks
 
-* **`.cmp` files that do not hold.** Deliverable (5) rests on the SM emulator
-  and the student's assembly output agreeing cell for cell. M3's acceptance
+* **`.cmp` files that do not hold.** Both parts of the first assignment rest on
+  the SM emulator and the student's assembly output agreeing cell for cell. M3's acceptance
   criterion is written to force that agreement early, before a dozen tests have
   been authored against a wrong assumption.
 * **Boolean conventions.** The most-significant-bit convention is the sharpest
