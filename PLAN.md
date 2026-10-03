@@ -126,7 +126,9 @@ equality mnemonic is `==` and `=` is an error, which in turn requires that every
 called name resolve to a declared function — without that check the parser's
 catch-all rule turns any typo into a jump to a garbage address; **C4**, the
 mnemonics are the language and the word forms are a rendering the emulator
-offers, with the arithmetic and logical operators left symbolic in every view.
+offers, with the arithmetic and logical operators left symbolic in every view;
+**C5**, constants are non-negative as in the course, negation is `(-)`, and an
+empty operand is an error rather than something the catch-all rule swallows.
 
 Write `spec/sm.md` as the normative reference: grammar, memory model, frame
 layout, the exact statement of where `SP` points, the most-significant-bit
@@ -502,7 +504,7 @@ M9 and M10 follow at leisure.
 
 ## 7. Questions for the author
 
-1. Q3, Q5, Q7 and Q8 in `spec/INVENTORY.md` — the four still open. Q3
+1. Q3, Q5, Q7 and Q9 in `spec/INVENTORY.md` — the four still open. Q3
    (`Sys.init` jumped to or called) is the one that changes generated code;
    the other three are rules and diagnostics.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly

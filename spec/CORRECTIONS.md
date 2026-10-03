@@ -144,3 +144,46 @@ enough to decide the question by eye.
 
 **Touches.** One pretty-printer over the AST; one toggle in the emulator. The
 exact word for each mnemonic is settled in M0 with the rest of the reference.
+
+---
+
+## C5 — constants are non-negative, and an empty operand is an error
+
+*Settles Q8. A narrowing of what the parser accepts; no change to any program
+that was already well formed.*
+
+**The reference.** The pattern for a constant is `<-([0-9]*)`. It accepts no
+sign, so `<- -5` falls through to the next template and becomes a push of a
+global named `-5`. It also accepts the empty string, so a bare `<-` is read as
+a constant push and emits a bare `@`. The pattern for pop-to-global, `->(.*)`,
+accepts an empty name in the same way.
+
+**We do.** Follow the course.
+
+> `<- n` takes a decimal constant in `0..32767`. A negative value is written
+> `<- n` followed by `(-)`. A leading sign is a syntax error.
+>
+> A bare `<-` and a bare `->` are syntax errors.
+
+**Why non-negative.** The course forbids negative literals at all three of its
+levels and SM is in the same position for the same reason. `push constant x`
+takes "some non-negative integer x", and negative numbers come from `neg`. A
+Jack `integerConstant` is a decimal in `0..32767`, and `-5` is the unary
+operator applied to the literal `5` — which the prototype's Jack compiler
+already handles by emitting `(-)`. Underneath both: the Hack A-instruction has
+fifteen bits and no sign, so `@-5` cannot be assembled, and a constant push is
+a one-to-one translation only while the constant is non-negative.
+
+Allowing `<- -5` would save two instructions per negative constant, by emitting
+`@5 / D=A / D=-D` instead of `@5 / D=A / (-)`. It would cost every student a
+sign test inside the first command they implement, in every translator, forever.
+Negative constants are rare.
+
+**Why the empty operand is an error rather than a fallthrough.** For the reason
+given in C3: this language's parser ends in a catch-all, so anything not
+rejected becomes a call to a function that does not exist, and thence a jump to
+a garbage address. `<- -5` silently becoming a push of a global named `-5` is
+the same failure wearing a different hat.
+
+**Touches.** The reference page; the two patterns; the diagnostics in our tools
+(not in the student's translator — see C3).

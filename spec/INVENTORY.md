@@ -88,9 +88,9 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 
 ## 3. Questions
 
-Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), and **Q4**, closed
-with no change to either language. Still open: **Q3**, **Q5**, **Q7**, **Q8**,
-**Q9**. A decision that changes something becomes an entry in
+Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), and
+**Q4**, closed with no change to either language. Still open: **Q3**, **Q5**,
+**Q7**, **Q9**. A decision that changes something becomes an entry in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
 
@@ -333,41 +333,13 @@ global. This is a convention, not a rule the translator enforces.
 *Proposed:* have the tools warn when a file writes to a dotted name belonging to
 another file, and leave it legal.
 
-**Q8 — negative literals.** The parser's pattern for `<- 5` is `[0-9]*`, which
-accepts no sign — and also matches a bare `<-`.
-
-**What the course does.** It forbids them, at all three levels, and for a
-reason SM inherits exactly.
-
-* *The VM language.* `push constant x` takes "some non-negative integer x".
-  There is no negative literal; negative numbers are produced by the `neg`
-  command, whose SM counterpart is `(-)`.
-* *Jack.* An `integerConstant` is a decimal number in `0..32767`. `-5` is not a
-  literal but the unary operator `-` applied to the literal `5`. The SM
-  prototype's own Jack compiler already follows this, mapping unary `-` to
-  `(-)`.
-* *Hack assembly.* `@value` takes a non-negative decimal in `0..32767`, because
-  the A-instruction has fifteen bits and no sign. `@-5` cannot be assembled.
-
-The third is the cause of the first two. A VM translator renders
-`push constant x` as `@x / D=A / …`, which is a one-to-one translation only
-while `x` is non-negative. SM is in precisely the same position: its
-`push_const` emits `@` followed by the literal.
-
-**What this costs either way.** Allowing `<- -5` would mean emitting
-`@5 / D=A / D=-D` instead of `@5 / D=A`, which saves two instructions over
-writing `<- 5` then `(-)` — and costs every student a sign test inside the
-command they implement first. Negative constants are rare; the branch is in
-every translator forever.
-
-*Proposed, reversing what this entry said before:* follow the course. `<- 5`
-takes a non-negative decimal; a negative value is `<- 5` followed by `(-)`.
-A leading sign is a syntax error rather than silently falling through to the
-next template and becoming a push of a global named `-5`.
-
-*Separately, and regardless:* the bare `<-` must be an error. It matches
-`<-([0-9]*)` with an empty capture today and emits a bare `@`. The bare `->`
-has the same defect, noted under Q4.
+**Q8 — negative literals. DECIDED → C5: follow the course.** `<- n` takes a
+non-negative decimal; a negative value is `<- n` then `(-)`; a leading sign is
+a syntax error, and so are a bare `<-` and a bare `->`. The course forbids
+negative literals at all three of its levels, and the cause is the same one
+that binds SM: the Hack A-instruction has fifteen bits and no sign, so a
+constant push is a one-to-one translation only while the constant is
+non-negative.
 
 **Q9 — should the stack depth be a function of the program point?** *(New,
 and mine rather than the author's — it generalises a point of his, and the
