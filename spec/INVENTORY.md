@@ -89,8 +89,8 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 ## 3. Questions
 
 Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), and **Q4**, closed
-with no change to either language. Still open: **Q3**, **Q5**, **Q7**, **Q8**.
-A decision that changes something becomes an entry in
+with no change to either language. Still open: **Q3**, **Q5**, **Q7**, **Q8**,
+**Q9**. A decision that changes something becomes an entry in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
 
@@ -234,30 +234,29 @@ emits `pop temp 0` after a `do`, which is the same move into a cell nobody
 reads. The entire cost of SM not having a dedicated command is **five
 instructions and one RAM cell**, on statement calls only.
 
-*The second route, also already available:* emit nothing. `<--` eliminates
-"anything that stacked above them", so values left behind are swept when the
-enclosing function returns. Correct, zero instructions, and explicitly
-permitted — but only outside a loop, for the reason below.
+**What is not a route: emitting nothing.** An earlier version of this entry
+offered a second option — leave the value, and let the enclosing function's
+`<--` sweep it, since the specification says `<--` eliminates "anything that
+stacked above them". That is wrong, and the correction is the author's: *a
+compiler that leaves a value on the stack after a statement call has a bug*, and
+the tests are supposed to catch it. The sentence in the specification describes
+what `<--` does with a stack that has gone wrong; it does not license putting
+one in that state.
 
-**The one hazard, and it is not a language defect.** A loop whose body makes a
-statement call, and whose compiler emits no discard, grows the stack by a cell
-per iteration. The Hack stack is `RAM[256..2047]`, 1792 cells, with the heap
-immediately above it, so such a loop walks into the heap after fewer than two
-thousand iterations — a second or two of a game's main loop — and silently
-corrupts whatever was allocated there. A compiler that emits `-> x` never
-meets this; a compiler that relies on the sweep inside a loop always does.
+The practical consequence is the reason the bug matters. A loop whose body makes
+such a call grows the stack by a cell per iteration. The Hack stack is
+`RAM[256..2047]`, 1792 cells, with the heap immediately above it, so the loop
+walks into the heap after fewer than two thousand iterations — a second or two
+of a game's main loop — and silently corrupts whatever was allocated there.
+Nothing before that point looks wrong.
 
-*What that calls for is a diagnostic, not a command.* **The emulator must bound
-the stack and report an overflow when `SP` passes 2047.** That turns the single
-worst failure mode in this area into a message naming its cause, costs nothing,
-and is worth having whatever else is decided — it catches runaway recursion
-just as well. Our own test suite covers the same ground from the other side:
-after a function returns the stack is at its previous depth, and a long-running
-loop does not grow it (M7).
+*Catching it is Q9*, which turns the author's point into a check that runs
+before the program does.
 
 *Settled, then:* SM gains no discard command, Jack keeps `void`, and where a
 compiler puts a value it is throwing away stays what it always was — the
-compiler writer's choice, with nothing observable depending on it.
+compiler writer's choice, with nothing observable depending on it. What is *not*
+a free choice is whether to discard at all.
 
 **Q5 — the name rules are unenforced, and one of them is missing.**
 
@@ -352,6 +351,45 @@ next template and becoming a push of a global named `-5`.
 *Separately, and regardless:* the bare `<-` must be an error. It matches
 `<-([0-9]*)` with an empty capture today and emits a bare `@`. The bare `->`
 has the same defect, noted under Q4.
+
+**Q9 — should the stack depth be a function of the program point?** *(New,
+and mine rather than the author's — it generalises a point of his, and the
+generalisation needs his assent.)*
+
+Q4 settles that a compiler leaving a value on the stack after a statement call
+has a bug. The question here is whether SM should say so in a form a machine
+can check, and the proposed rule is the one bytecode verifiers use:
+
+> At every program point inside a function, the depth of the stack above the
+> function's locals is determined by the point itself, and not by the path taken
+> to reach it. At `<--`, that depth is exactly one.
+
+Every command has a known effect on depth — `<- …` adds one, `-> …` removes
+one, the binary operators remove one, `(-)`, `~` and `[]` leave it, `->[]`
+removes two, `?-->` removes one, and a call removes the callee's argument count
+and adds one. So the depth at each point can be computed by walking the
+function, merging at labels and reporting a disagreement. The only input beyond
+the function itself is the arity of each callee, which a whole-program loader
+has.
+
+**What it buys.** The leak of Q4 is reported *before the program runs*, naming
+the function and the point where two paths disagree, instead of appearing as
+heap corruption after two thousand iterations of a game loop. It subsumes the
+weaker runtime check — bounding `SP` at 2047 — which remains worth having as a
+backstop, since runaway recursion is unbounded at run time and no static walk
+can catch it.
+
+**Where it lives:** the emulator and `sm-core`, for the reason given in Q5. The
+student's translator is theirs and cannot be relied on, and a malformed program
+should be known to be malformed before any translator is blamed for it.
+
+**What it costs.** It is a restriction on SM programs, not only on compiler
+output: hand-written SM whose stack depth varies by path becomes illegal. No
+sample in `reference/` violates it, and it is hard to construct a program that
+wants to — but it is a real narrowing of the language and should be taken as
+such, not slipped in as a diagnostic.
+
+*Proposed:* adopt it, with the runtime bound kept as the backstop.
 
 ## 4. Errors in the supplied samples
 

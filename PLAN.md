@@ -146,11 +146,14 @@ The memory-mapped devices — a screen buffer and a keyboard register at the Hac
 addresses — belong here rather than in a later milestone. They are cheap now and
 they are a prerequisite for M7, where the Jack library drives them.
 
-**Bound the stack.** `SP` passing 2047 is an overflow into the heap, and the
-emulator reports it rather than letting the program corrupt itself. This is the
-diagnostic that catches runaway recursion, and the one that catches a compiler
-whose loops leave a cell behind per iteration (Q4) — a fault that is otherwise
-invisible until a game has been running for a second or two.
+**Check the stack before running, and bound it while running.** Before
+execution, walk each function and compute the depth of the stack above its
+locals at every point; paths that meet at a label must agree, and `<--` must
+find exactly one value (Q9). That reports a compiler whose statement calls leave
+a cell behind — otherwise invisible until a game loop has corrupted the heap —
+with the function and the disagreeing paths named, before the program runs. At
+run time, `SP` passing 2047 is an overflow into the heap and is reported as
+such: a backstop for runaway recursion, which no static walk can bound.
 
 *Done when:* `FibonacciElement` in SM computes the right value, and the RAM
 image after each step matches the one produced by running the output of
@@ -255,13 +258,12 @@ gets a test suite the student package does not:
   static across files, unary minus on a call — each leaving a known value in a
   known global, compiled, run, asserted. This is the layer that catches the
   narrow bugs.
-* *Stack discipline.* After every function returns, the stack is at the depth it
-  had before the call and holds the same values. Checked at function granularity
-  and not per statement: a compiler that leaves statement-call results on the
-  stack and lets `<--` sweep them is correct, and a per-statement check would
-  fail it wrongly. Separately, a long-running loop containing a side-effect call
-  must not grow the stack — that is the bug this layer exists to catch, and it
-  is invisible to every other layer until something overflows.
+* *Stack discipline.* Every compiled function passes the static depth check of
+  Q9: depth determined by program point, one value above the locals at `<--`.
+  This is the layer that catches a statement call whose result is left behind —
+  a bug invisible to every other layer until a loop has run long enough to walk
+  into the heap. Running the check over our own compiler's output on every test
+  program costs nothing and is the cheapest assurance in the suite.
 * *Golden output.* The SM text emitted for those same snippets, checked in. We
   own both sides here, so pinning the exact output is legitimate and catches
   unintended changes; it is exactly what we must *not* ask of a student.
