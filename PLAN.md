@@ -113,7 +113,9 @@ address below, value on top — and the prose is corrected to match; **C2**, the
 bootstrap sets `SP = 255`, so the stack starts at `RAM[256]`; **C3**, the
 equality mnemonic is `==` and `=` is an error, which in turn requires that every
 called name resolve to a declared function — without that check the parser's
-catch-all rule turns any typo into a jump to a garbage address.
+catch-all rule turns any typo into a jump to a garbage address; **C4**, the
+mnemonics are the language and the word forms are a rendering the emulator
+offers, with the arithmetic and logical operators left symbolic in every view.
 
 Write `spec/sm.md` as the normative reference: grammar, memory model, frame
 layout, the exact statement of where `SP` points, the most-significant-bit

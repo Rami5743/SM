@@ -88,8 +88,8 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 
 ## 3. Questions
 
-Decided so far: **Q1** (→ C1), **Q2** (→ C3). The rest are open, and **Q4**
-has largely dissolved. A decision becomes an entry in
+Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4). The rest are open,
+and **Q4** has largely dissolved. A decision becomes an entry in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
 
@@ -259,17 +259,57 @@ correct, and a per-statement balance check would wrongly fail it.
 `->(.*)`, accepts an empty name and so already matches a bare `->`; `<-([0-9]*)`
 has the same defect. Both need fixing whatever is decided here.
 
-**Q5 — name spaces.** A bare symbol on a line is a call, so a function and a
-global variable may not share a name. Labels are distinguished by their colon.
-*Proposed:* state the rule explicitly and have the emulator diagnose collisions.
+**Q5 — the name rules are unenforced, and one of them is missing.**
 
-**Q6 — the mnemonics.** The letter itself is unsure whether `<-`, `-->`, `!`,
-`<--` are an improvement or a gimmick, and floats keeping symbols only for the
-arithmetic and logical operations.
-*Proposed:* keep the mnemonics as the language, and have the emulator offer a
-word-for-word alternative rendering of any program (`push`, `goto`, `function`,
-`return`), so the question can be settled by looking at both. This costs one
-pretty-printer over the AST.
+*First, a correction to how this entry used to read.* It claimed a function and
+a global variable may not share a name, on the grounds that a bare symbol is a
+call. That is wrong: the two are written differently at the point of use —
+`<- foo` pushes the global, `foo` calls the function — and they reach the
+assembler as `SM.foo` and `FUNTION.foo`. They coexist perfectly well. The same
+goes for a label and a variable, which the document already permits, and for a
+label and a function.
+
+So the rules themselves are in reasonable shape. The problems are elsewhere.
+
+**One rule is missing.** The document says local names within a function must be
+distinct, and that labels within a function must be distinct. It never says that
+**function names must be unique across the whole program** — which they must,
+since they become a single flat space of `FUNTION.` labels. Two files each
+declaring `!f()` produce two definitions of the same assembly label.
+
+**No rule is enforced, and every violation is silent.** This is the real
+content of the question, and it is the same defect that C3 ran into from the
+other side. Nothing in the pipeline resolves names:
+
+| mistake | what happens today |
+|---|---|
+| call to a function that does not exist | `@FUNTION.f` is allocated as a variable; jump to a garbage address |
+| jump to a label that does not exist | the same, with `@LABEL.f.x` |
+| two functions with the same name | two definitions of one assembly label |
+| two labels with the same name in one function | the same |
+| an argument and an internal variable with the same name | `dict(zip(...))` keeps the last; the argument becomes unreachable |
+| a declaration's argument count disagreeing with what callers push | nothing; the frame is simply wrong |
+
+Not one of these produces a message. Every one of them produces a program that
+assembles cleanly and then misbehaves far from its cause.
+
+**Where the checks have to live: the emulator.** This is the part worth
+deciding deliberately. The obvious home for name resolution is the translator —
+but the translator is the student's, and we neither write it nor can rely on it.
+If the checks live only there, a student with a malformed `.sm` file cannot tell
+a bug in the program from a bug in the translator they are in the middle of
+writing, which is the worst possible confusion to hand someone at that moment.
+So the emulator carries the full set, and a program that the emulator rejects is
+known to be bad before any translator touches it.
+
+*Proposed:* add the missing rule; state all of them in one place in the
+reference; implement the whole table above as diagnostics in the emulator, with
+`sm-core` exposing them so our own tools get them too.
+
+**Q6 — the mnemonics. DECIDED → C4: the mnemonics are the language; the words
+are a view.** The emulator renders any program word-for-word so the two can be
+compared by eye, but only the structural commands have a word form — the
+arithmetic and logical operators stay symbolic everywhere.
 
 **Q7 — statics versus globals by naming convention.** A name containing `.` is
 a static of the file named before the dot; a name without a dot is a true

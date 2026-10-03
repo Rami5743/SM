@@ -106,3 +106,35 @@ mistyped safely.
 
 **Touches.** The reference page; the parser's catch-all rule; the whole-program
 check that resolves call targets.
+
+---
+
+## C4 — the mnemonics are the language; the words are a view
+
+*Settles Q6. No change to the language; an addition to the emulator.*
+
+**The reference.** `<-`, `->`, `-->`, `?-->`, `!`, `<--`, and the trailing colon
+of a label. The design letter is unsure whether these are an improvement or a
+gimmick, and floats keeping symbols for the arithmetic and logical operations
+only.
+
+**We do.** The mnemonics stay, and they are the language — the only accepted
+input syntax. Alongside them the emulator offers a word-for-word **rendering**
+of any program, so the two can be compared by looking at them rather than by
+arguing about them.
+
+**One invariant the rendering must respect:** the arithmetic and logical
+operators are symbolic in every view and are never spelled as words. `+`, `-`,
+`(-)`, `&`, `|`, `~`, `==`, `>`, `<`, `[]` and `->[]` stay exactly as they are.
+Only the structural commands have a word form — push, pop, goto, if-goto,
+function, return, label. This is the split the letter itself suggests, and it is
+the one that survives the argument: nobody wants to read `add` where `+` will
+do, and the case for `<-` over `push` is the one genuinely in doubt.
+
+**A view, not a second syntax.** The words are produced by a pretty-printer over
+the AST and are not accepted as input. Two ways to write every command would be
+a real cost in a teaching language, and nothing is gained: a rendering is
+enough to decide the question by eye.
+
+**Touches.** One pretty-printer over the AST; one toggle in the emulator. The
+exact word for each mnemonic is settled in M0 with the rest of the reference.
