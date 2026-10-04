@@ -89,9 +89,9 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 ## 3. Questions
 
 Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), the companion to
-Q3 (→ C6), most of **Q5** (→ C7), and **Q3**, **Q4** and **Q7**, all closed by
-keeping things as they are. Still open:
-one row of **Q5**, and **Q9**. A decision that changes something becomes an entry
+Q3 (→ C6), most of **Q5** (→ C7), and **Q3**, **Q4**, **Q7** and **Q9**, all
+closed by keeping things as they are. Still open: one row of **Q5** — whether a label declared twice in one function
+is an error — and nothing else in the language. A decision that changes something becomes an entry
 in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
@@ -372,105 +372,46 @@ that binds SM: the Hack A-instruction has fifteen bits and no sign, so a
 constant push is a one-to-one translation only while the constant is
 non-negative.
 
-**Q9 — should the stack depth be a function of the program point?** *(New,
-and mine rather than the author's — it generalises a point of his, and the
-generalisation needs his assent.)*
+**Q9 — should the stack depth be a function of the program point? DECLINED.**
+No entry in `CORRECTIONS.md`; nothing changes.
 
-Q4 settles that a compiler leaving a value on the stack after a statement call
-has a bug. The question here is whether SM should say so in a form a machine
-can check, and the proposed rule is the one bytecode verifiers use:
+The proposal was to require that at every point inside a function the depth of
+the stack above the locals be determined by the point rather than by the path,
+and to reject programs that break it. It would have caught, statically, a
+compiler whose statement calls leave a value behind — and it did catch the real
+defect in the supplied Jack compiler (§4a).
 
-> At every program point inside a function, the depth of the stack above the
-> function's locals is determined by the point itself, and not by the path taken
-> to reach it. At `<--`, that depth is exactly one.
+**It is declined because it is not SM's business.** A program that grows the
+stack in a loop is a legitimate SM program, as it is a legitimate VM program.
+Narrowing the language to make a class of compiler bug unrepresentable puts the
+cost on every SM program to catch a mistake that belongs to one compiler.
 
-Every command has a known effect on depth — `<- …` adds one, `-> …` removes
-one, the binary operators remove one, `(-)`, `~` and `[]` leave it, `->[]`
-removes two, `?-->` removes one, and a call removes the callee's argument count
-and adds one. So the depth at each point can be computed by walking the
-function, merging at labels and reporting a disagreement. The only input beyond
-the function itself is the arity of each callee, which a whole-program loader
-has.
-
-**A worked example.** It is the output of a *hypothetical* compiler that omits
-the discard of Q4 — not of the supplied one, which emits `->tmp` after every
-`do` statement and is balanced throughout. Correct output would never reach
-this check. `Screen.drawPixel(x, y)` is `void` in Jack and takes two arguments;
-note that its being `void` is invisible here, since in SM every function
-returns a value and the depth arithmetic does not care what Jack called it. The
-caller must remove that value, and this one has not:
+**What the course does instead, measured.** It lets such a program run and
+stops it when the stack actually overflows, naming the function:
 
 ```
-while:
-    <- @i          1
-    <- @n          2
-    <              1
-    ~              1
-    ?--> end       0
-    <- @x          1
-    <- @y          2
-    Screen.drawPixel   1     ← two arguments off, one value on
-    --> while      1         ← reaches the label at depth 1
-end:
+Stack overflow in Sys.init.1
 ```
 
-The label is reached twice: by falling in from above at depth 0, and round the
-loop at depth 1. They disagree, and that disagreement *is* the missing discard.
-A correct compiler emits `-> tmp` before `--> while`, the arrival depth returns
-to 0, and the check passes.
+That is the model: the program is legal, the emulator bounds the stack at run
+time, and the fault is reported where it happens. Our emulator does the same
+and nothing more.
 
-**What it buys.** The leak of Q4 is reported *before the program runs*, naming
-the function and the point where two paths disagree, instead of appearing as
-heap corruption after two thousand iterations of a game loop. It subsumes the
-weaker runtime check — bounding `SP` at 2047 — which remains worth having as a
-backstop, since runaway recursion is unbounded at run time and no static walk
-can catch it.
+**What falls away with it.**
 
-**Where it lives:** the emulator and `sm-core`, for the reason given in Q5 —
-and, equally, not in the assignment. The student's translator is theirs, cannot
-be relied on, and is not required to perform the check; a malformed program
-should simply be known to be malformed before any translator is blamed for it.
+* The *static* version of the missing-return check at the SM level. Only the
+  two course checks of C6 remain — static in the Jack compiler, dynamic in the
+  emulator.
+* The last row of Q5, an argument count disagreeing with the declaration.
+  Nothing checks it, which is also what the course does: measured, it reports
+  nothing at load time and the mistake surfaces later, if at all, as the same
+  stack overflow.
 
-**What the course does: nothing of the kind.** Worth knowing, because adopting
-this makes the SM track stricter than the book.
-
-* The course's VM has the same hazard. `call f n` always leaves a return value,
-  so a Jack `do` statement leaves one, and the course's own compiler removes it
-  with `pop temp 0` — the same move the SM prototype makes.
-* The course's `return` is equally forgiving. It ends with `SP = ARG+1`,
-  discarding whatever was left above the frame, exactly as `<--` does.
-* The VM language imposes no requirement on stack depth, and the course
-  supplies no verifier. A VM program whose depth at a label depends on the path
-  is legal and runs.
-
-So this is a deviation. Two readings:
-
-*Against.* A rule that is not in the book is a rule a student has to learn from
-us, and the book is the thing they are reading.
-
-*For.* The course's permissiveness here is the absence of a tool rather than a
-decision, and SM would be joining the norm rather than leaving it: the JVM's
-and the CLR's verifiers both check exactly this, and WebAssembly makes it
-unrepresentable by replacing labels with structured control flow.
-
-**It is not a defect report on the supplied compiler.** `jack_compaler.py`
-already keeps this discipline. The check exists because the second assignment
-hands that discipline to every student, and because a discipline nothing
-verifies is one that decays — as the XML parser in the same directory shows,
-having rotted to `"fild"` while the compiler beside it stayed correct.
-
-**What it costs in practice: close to nothing.** Ask who could ever be
-inconvenienced. In both parts of the first assignment the `.sm` files are ours,
-so the rule never fires. In the second assignment the SM is the output of the
-student's compiler, so it fires exactly when that compiler has the bug — which
-is the signal they need, delivered at the only moment it helps. Only someone
-hand-writing SM could be stopped by it, and only by writing a program that
-wants a path-dependent depth. Nothing in `reference/` does.
-
-*Proposed:* adopt it as an error, with the runtime bound kept as the backstop.
-The weaker form — report it as a warning, narrowing nothing — is available, but
-it buys little: the one population the rule ever reaches is students whose
-compiler is wrong, and a warning is what they would ignore.
+**What survives, as a tool rather than a rule.** The depth walk is still the
+cheapest way to check *our own* compiler's output, so it stays in M7's test
+suite as a lint run in continuous integration over the SM we generate. It
+rejects nothing that anyone else writes, and the emulator does not know it
+exists.
 
 ## 4. Errors in the supplied samples
 

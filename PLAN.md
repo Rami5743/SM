@@ -176,14 +176,12 @@ here the value the bootstrap pushes from the uninitialised `LCL` is arbitrary
 and every `.cmp` covering that cell is unreliable. `packages/hack/` inherits
 the behaviour from the tool it reimplements.
 
-**Check the stack before running, and bound it while running.** Before
-execution, walk each function and compute the depth of the stack above its
-locals at every point; paths that meet at a label must agree, and `<--` must
-find exactly one value (Q9). That reports a compiler whose statement calls leave
-a cell behind — otherwise invisible until a game loop has corrupted the heap —
-with the function and the disagreeing paths named, before the program runs. At
-run time, `SP` passing 2047 is an overflow into the heap and is reported as
-such: a backstop for runaway recursion, which no static walk can bound.
+**Bound the stack at run time, and only at run time.** `SP` passing 2047 is an
+overflow into the heap, and the emulator stops the program and names the
+function, as the course's does — measured: `Stack overflow in Sys.init.1`. A
+program that grows the stack in a loop is legal SM, exactly as it is legal VM
+(Q9 declined), so the emulator reports the fault where it happens rather than
+refusing the program.
 
 *Done when:* `FibonacciElement` in SM computes the right value, and the RAM
 image after each step matches the one produced by running the output of
@@ -374,12 +372,15 @@ gets a test suite the student package does not:
   static across files, unary minus on a call — each leaving a known value in a
   known global, compiled, run, asserted. This is the layer that catches the
   narrow bugs.
-* *Stack discipline.* Every compiled function passes the static depth check of
-  Q9: depth determined by program point, one value above the locals at `<--`.
-  This is the layer that catches a statement call whose result is left behind —
-  a bug invisible to every other layer until a loop has run long enough to walk
-  into the heap. Running the check over our own compiler's output on every test
-  program costs nothing and is the cheapest assurance in the suite.
+* *Stack discipline, as a lint on our own output.* Walk each generated
+  function and compute the depth of the stack above its locals at every point:
+  paths meeting at a label must agree, and `<--` must find exactly one value.
+  This catches a statement call whose result is left behind, which no other
+  layer sees until a loop has run long enough to walk into the heap, and it
+  found the real defect in the supplied prototype (`spec/INVENTORY.md` §4a).
+  It is a continuous-integration check over the SM *we* generate and nothing
+  more — Q9 declined it as a rule of the language, so the emulator neither
+  performs it nor knows of it.
 * *Golden output.* The SM text emitted for those same snippets, checked in. We
   own both sides here, so pinning the exact output is legitimate and catches
   unintended changes; it is exactly what we must *not* ask of a student.
@@ -538,8 +539,8 @@ M9 and M10 follow at leisure.
 ## 7. Questions for the author
 
 1. One row of Q5 — whether to reject a label declared twice in one function,
-   which the document forbids and the course does not check — and Q9, the only
-   remaining question that would make the SM track stricter than the book.
+   which the document forbids and the course does not check. It is the last
+   open question about the language.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.

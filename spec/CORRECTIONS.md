@@ -260,9 +260,8 @@ line number and only fires on the path actually taken; but nothing gets past
 it. Each covers the other's gap, which is presumably why the course has both.
 
 **Not adopted:** a *static* version of the SM-level check. The course has no
-such thing, and the instruction here is to match it. Q9's depth walk would
-supply it free if Q9 is adopted, catching the fall-through even on a path never
-taken; that remains Q9's business, not this entry's.
+such thing, and the instruction here is to match it. Q9, which would have
+supplied it, is declined, so this is settled rather than pending.
 
 **Touches.** `jack-to-sm`, which gains the analysis above; `sm-emulator`, which
 gains the runtime fault; the reference page, which states both.
