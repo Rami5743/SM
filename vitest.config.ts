@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@sm/core': pkg('sm-core'),
       '@sm/emulator': pkg('sm-emulator'),
+      '@sm/tst': pkg('sm-tst'),
     },
   },
   test: {

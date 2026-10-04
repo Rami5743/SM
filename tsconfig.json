@@ -15,7 +15,8 @@
     "baseUrl": ".",
     "paths": {
       "@sm/core": ["packages/sm-core/src/index.ts"],
-      "@sm/emulator": ["packages/sm-emulator/src/index.ts"]
+      "@sm/emulator": ["packages/sm-emulator/src/index.ts"],
+      "@sm/tst": ["packages/sm-tst/src/index.ts"]
     }
   },
   "include": ["packages/**/*.ts", "tools/**/*.ts"]
