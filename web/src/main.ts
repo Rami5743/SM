@@ -8,6 +8,7 @@ import rationaleMarkdown from '../../spec/RATIONALE.md?raw'
 import rationaleHebrewMarkdown from '../../spec/RATIONALE.he.md?raw'
 import { el } from './lib/dom.js'
 import { dirOf, LANGS, PAGES, STRINGS, type Lang, type PageId, type Strings } from './lib/i18n.js'
+import { readerText } from './lib/reader.js'
 import { href, parseRoute, switched, type Route } from './lib/router.js'
 import { emulatorPage } from './pages/emulator.js'
 import { compilerPage } from './pages/compiler.js'
@@ -33,10 +34,12 @@ function pageFor(route: Route, s: Strings): HTMLElement {
     case 'compiler': return compilerPage(s)
     case 'bridge': return bridgePage(s)
     // Each language gets its own document, not one document holding both.
+    // The reference is served without the correction marks it carries in
+    // the repository: see reader.ts.
     case 'reference':
       return route.lang === 'he'
-        ? docPage(smHebrewMarkdown, 'rtl')
-        : docPage(smMarkdown, 'ltr')
+        ? docPage(readerText(smHebrewMarkdown), 'rtl')
+        : docPage(readerText(smMarkdown), 'ltr')
     case 'rationale':
       return route.lang === 'he'
         ? docPage(rationaleHebrewMarkdown, 'rtl')

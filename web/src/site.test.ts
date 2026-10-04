@@ -110,6 +110,8 @@ describe('the shell', () => {
     for (const [path, dir, has, hasNot] of [
       ['/reference', 'rtl', 'שפת SM', 'The SM language'],
       ['/en/reference', 'ltr', 'The SM language', 'שפת SM'],
+      // The page is the language; the correction marks stay in the file.
+      ['/en/reference', 'ltr', 'Nothing else is a symbol', 'CORRECTIONS.md'],
       ['/rationale', 'rtl', 'בעבודה', 'Work in progress'],
       ['/en/rationale', 'ltr', 'Work in progress', 'בעבודה'],
     ] as const) {
