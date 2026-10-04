@@ -1,0 +1,21 @@
+// Global variables: written, read back, and reached from more than one place
+// in the program. Their addresses are the translator's business, so the
+// results are put on the stack where a comparison can name them.
+<-111
+->first
+<-333
+->second
+<-888
+->third
+
+<-first
+<-second
++          // 444
+<-third
+<-first
+-          // 777
+
+// A global written twice keeps the second value.
+<-5
+->first
+<-first    // 5

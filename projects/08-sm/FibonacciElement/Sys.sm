@@ -1,0 +1,6 @@
+// Calls Main.fibonacci and returns its answer. When Sys.init returns, the
+// program enters the infinite loop the bootstrap left for it.
+!Sys.init()
+	<-6
+	Main.fibonacci
+	<--

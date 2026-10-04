@@ -1,0 +1,20 @@
+// The n'th Fibonacci number, recursively.
+!Main.fibonacci(n)
+	<-@n
+	<-2
+	<
+	?-->base
+	// fib(n-1) + fib(n-2)
+	<-@n
+	<-1
+	-
+	Main.fibonacci
+	<-@n
+	<-2
+	-
+	Main.fibonacci
+	+
+	<--
+	base:
+	<-@n
+	<--

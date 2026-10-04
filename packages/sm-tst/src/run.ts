@@ -27,7 +27,16 @@ export interface RunResult {
   readonly steps: number
 }
 
-export function runScript(source: string, host: Host): RunResult {
+export interface RunOptions {
+  /**
+   * Ignore `compare-to`. The generator needs this: a script names the .cmp it
+   * will be checked against, and that file does not exist until the generator
+   * has produced it.
+   */
+  readonly skipCompare?: boolean
+}
+
+export function runScript(source: string, host: Host, options: RunOptions = {}): RunResult {
   const commands = parseScript(source)
   const emulator = new Emulator()
   let columns: ColumnSpec[] = []
@@ -52,7 +61,15 @@ export function runScript(source: string, host: Host): RunResult {
     // A package's part-I tests are fragments, which the language permits only
     // as a teaching form; a script that loads one is asking for it.
     const anyFragment = files.some((f) => f.fragment.length > 0)
-    emulator.load(files, { allowFragment: anyFragment })
+    // With no Sys.init there is nothing to bootstrap into, so the script is
+    // planting a frame itself — the course's way of testing a function before
+    // the student has written a bootstrap. Inferred rather than declared, so
+    // that the script language stays the course's.
+    const hasInit = files.some((f) => f.functions.some((fn) => fn.decl.name === 'Sys.init'))
+    emulator.load(files, {
+      allowFragment: anyFragment,
+      entry: hasInit || anyFragment ? 'bootstrap' : 'none',
+    })
     loaded = true
   }
 
@@ -89,7 +106,9 @@ export function runScript(source: string, host: Host): RunResult {
   if (outputFile !== undefined) host.write(outputFile, output)
 
   let comparison: RunResult['comparison']
-  if (compareFile !== undefined) comparison = compare(output, host.read(compareFile))
+  if (compareFile !== undefined && options.skipCompare !== true) {
+    comparison = compare(output, host.read(compareFile))
+  }
 
   return { output, comparison, steps: emulator.steps }
 }

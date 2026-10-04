@@ -33,6 +33,16 @@ export interface LoadOptions {
    * missing `Sys.init` is reported rather than silently tolerated.
    */
   readonly allowFragment?: boolean
+  /**
+   * Where to begin. `'bootstrap'`, the default, sets `SP` and calls
+   * `Sys.init` as a translated program does.
+   *
+   * `'none'` starts at the first step with nothing set up, which is how a
+   * test runs a function before the bootstrap exists: the script plants the
+   * frame itself and the function's code, being first, simply runs. The
+   * course does the same, and its own project-8 scripts rely on it.
+   */
+  readonly entry?: 'bootstrap' | 'none'
 }
 
 export class Emulator {
@@ -65,6 +75,13 @@ export class Emulator {
         throw new SmFault('commands outside any function; a fragment must be asked for', undefined)
       }
       this.fragmentMode = true
+      this.pc = 0
+      this.state = 'running'
+      return
+    }
+
+    if (options.entry === 'none') {
+      // Nothing is set up: the script plants what it needs.
       this.pc = 0
       this.state = 'running'
       return
@@ -294,6 +311,19 @@ export class Emulator {
     this.push(value)
 
     if (ret === RETURN_TO_BOOTSTRAP) {
+      this.state = 'halted'
+      this.finished = true
+      return
+    }
+    // A return address that is not a step of this program stops the run.
+    //
+    // This is what lets a test plant a frame by hand and call a function
+    // without a bootstrap, which is how the course tests a function before
+    // the student has written one: its SimpleFunction.tst plants a return
+    // address of 1000, and the Hack CPU then wanders harmlessly through
+    // unassembled ROM until the tick budget runs out. Here the same plant
+    // stops cleanly, so that both emulators end with the same RAM.
+    if (this.program.steps[ret] === undefined) {
       this.state = 'halted'
       this.finished = true
       return

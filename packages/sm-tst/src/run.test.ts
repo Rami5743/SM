@@ -113,3 +113,24 @@ describe('compare', () => {
     expect(compare('|  7 |\n', '|  7 |\r\n')).toEqual({ ok: true })
   })
 })
+
+describe('a script that plants a frame', () => {
+  // With no Sys.init there is nothing to bootstrap into, so the runner starts
+  // at the first step and the script sets up what it needs. This is how the
+  // course tests a function before the student has written a bootstrap.
+  it('runs a function and leaves the result in the first argument slot', () => {
+    const h = host({ 'A.sm': '!twice(n)\n<-@n\n<-@n\n+\n<--' })
+    const r = runScript([
+      'load,',
+      'output-file A.out,',
+      'output-list RAM[0]%D1.6.1 RAM[310]%D1.6.1;',
+      'set RAM[310] 21,',   // the argument
+      'set RAM[311] 0,',    // the caller's frame pointer
+      'set RAM[312] 9999,', // a return address outside the program
+      'set RAM[0] 312,',    // SP, from which the declaration derives LCL
+      'repeat 100 { smstep; }',
+      'output;',
+    ].join('\n'), h)
+    expect(r.output.trimEnd().split('\n')[1]).toBe('|    310 |     42 |')
+  })
+})

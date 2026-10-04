@@ -1,0 +1,13 @@
+!Class2.set(a, b)
+	<-@a
+	->Class2.x
+	<-@b
+	->Class2.y
+	<-0
+	<--
+
+!Class2.get()
+	<-Class2.x
+	<-Class2.y
+	-
+	<--

@@ -1,0 +1,16 @@
+// Two files writing and reading the same globals. The dotted names are a
+// convention for keeping each class's own apart; the machine sees ordinary
+// globals either way.
+!Class1.set(a, b)
+	<-@a
+	->Class1.x
+	<-@b
+	->Class1.y
+	<-0
+	<--
+
+!Class1.get()
+	<-Class1.x
+	<-Class1.y
+	-
+	<--

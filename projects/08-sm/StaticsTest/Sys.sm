@@ -1,0 +1,13 @@
+!Sys.init()
+	<-6
+	<-8
+	Class1.set
+	->drop
+	<-23
+	<-15
+	Class2.set
+	->drop
+	Class1.get
+	Class2.get
+	+
+	<--

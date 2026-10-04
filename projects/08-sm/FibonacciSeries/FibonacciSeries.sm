@@ -1,0 +1,49 @@
+// The same control flow, over an array in the heap. Writes the first n
+// Fibonacci numbers from the given address and returns that address.
+!FibonacciSeries.fill(at, n) i
+	// first[0] = 0
+	<-@at
+	<-0
+	->[]
+	// first[1] = 1
+	<-@at
+	<-1
+	+
+	<-1
+	->[]
+	<-1
+	->@i
+	loop:
+		// stop once i+1 > n-1, that is once i > n-2
+		<-@n
+		<-2
+		-
+		<-@i
+		<
+		?-->done
+		// at[i+1] = at[i-1] + at[i]
+		<-@at
+		<-@i
+		+
+		<-1
+		+
+		<-@at
+		<-@i
+		+
+		<-1
+		-
+		[]
+		<-@at
+		<-@i
+		+
+		[]
+		+
+		->[]
+		<-@i
+		<-1
+		+
+		->@i
+		-->loop
+	done:
+	<-@at
+	<--

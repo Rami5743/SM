@@ -1,0 +1,20 @@
+// A dotted name is an ordinary global. The dot means nothing to the machine;
+// it is the convention a Jack compiler uses for a class's statics, and no
+// rule of this language.
+<-111
+->Class1.a
+<-333
+->Class2.b
+<-888
+->plain
+
+<-Class1.a
+<-Class2.b
+-          // -222
+<-plain
++          // 666
+
+// A dotted name and an undotted one are simply two different names.
+<-Class1.a
+<-plain
++          // 999

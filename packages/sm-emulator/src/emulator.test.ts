@@ -257,3 +257,29 @@ describe('the devices', () => {
     expect(e.memory.get(e.globals().get('pressed')!)).toBe(81)
   })
 })
+
+describe('a frame planted by a test script', () => {
+  /**
+   * How the course tests a function before the bootstrap exists: the script
+   * builds the frame, and the function's code, being first, simply runs.
+   *
+   * An SM frame is a saved pointer and a return address where the course's is
+   * four pointers and a return address, and LCL is derived from SP rather than
+   * set, so the script plants four cells where the course's plants twelve.
+   */
+  it('runs a function with no Sys.init and leaves the result in the first argument slot', () => {
+    const parsed = files(['A.sm', '!twice(n)\n<-@n\n<-@n\n+\n<--'])
+    const e = new Emulator()
+    // No bootstrap: the program is the function, so reset would look for a
+    // Sys.init. Load it as a fragmentless program and plant the frame.
+    e.load(parsed, { entry: 'none' })
+    e.memory.set(310, 21)       // the argument
+    e.memory.set(311, 0)        // the caller's LCL
+    e.memory.set(312, 9999)     // a return address outside the program
+    e.memory.set(ADDR.SP, 312)  // SP points at the top of the frame
+    e.run(1000)
+
+    expect(e.memory.get(310)).toBe(42)
+    expect(e.memory.get(ADDR.SP)).toBe(310)
+  })
+})

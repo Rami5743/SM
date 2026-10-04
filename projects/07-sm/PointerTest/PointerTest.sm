@@ -1,0 +1,22 @@
+// The two memory commands. The address is the deeper operand and the value
+// is on top, which is the order every other two-operand command uses and the
+// order compiling `a[i] = e` from left to right produces.
+<-3010
+<-32
+->[]       // RAM[3010] = 32
+
+<-3020
+<-46
+->[]       // RAM[3020] = 46
+
+<-3010
+[]         // 32
+<-3020
+[]         // 46
++          // 78
+
+// A pointer is an ordinary value, so it can be computed.
+<-3000
+<-10
++
+[]         // RAM[3010] again, by arithmetic: 32
