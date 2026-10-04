@@ -19,11 +19,24 @@ export interface Subroutine extends At {
   readonly body: readonly Statement[]
 }
 
+/** A `static` or `field` declaration, kept in source order so the tree can
+ *  be printed back as the course's project 10 XML. */
+export interface ClassVarDec extends VarDec {
+  readonly scope: 'static' | 'field'
+}
+
 export interface ClassDec extends At {
   readonly name: string
-  readonly statics: readonly VarDec[]
-  readonly fields: readonly VarDec[]
+  readonly classVars: readonly ClassVarDec[]
   readonly subroutines: readonly Subroutine[]
+}
+
+export function statics(cls: ClassDec): readonly ClassVarDec[] {
+  return cls.classVars.filter((d) => d.scope === 'static')
+}
+
+export function fields(cls: ClassDec): readonly ClassVarDec[] {
+  return cls.classVars.filter((d) => d.scope === 'field')
 }
 
 export type Statement =
@@ -48,4 +61,8 @@ export type Expression =
   | { readonly kind: 'index'; readonly name: string; readonly index: Expression; readonly line: number }
   | { readonly kind: 'call'; readonly call: Call; readonly line: number }
   | { readonly kind: 'unary'; readonly op: '-' | '~'; readonly operand: Expression; readonly line: number }
+  // `( e )` is kept rather than folded away: Jack has no precedence, so the
+  // parentheses are the only thing that says `(a + b) * c` is not `a + b * c`,
+  // and the project 10 XML prints them.
+  | { readonly kind: 'paren'; readonly inner: Expression; readonly line: number }
   | { readonly kind: 'binary'; readonly op: string; readonly left: Expression; readonly right: Expression; readonly line: number }

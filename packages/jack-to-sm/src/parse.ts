@@ -7,7 +7,7 @@
  * correctly tests for `"field"`, and so has not parsed a class with fields
  * for some time). One tree, used by both, is the fix.
  */
-import type { Call, ClassDec, Expression, Statement, Subroutine, Type, VarDec } from './ast.js'
+import type { Call, ClassDec, ClassVarDec, Expression, Statement, Subroutine, Type, VarDec } from './ast.js'
 import { JackError, tokenize, type Token } from './token.js'
 
 const BINARY_OPS = new Set(['+', '-', '*', '/', '&', '|', '<', '>', '='])
@@ -67,17 +67,15 @@ class Parser {
     this.eat('class')
     const name = this.identifier('a class name')
     this.eat('{')
-    const statics: VarDec[] = []
-    const fields: VarDec[] = []
+    const classVars: ClassVarDec[] = []
     while (this.at_('static') || this.at_('field')) {
-      const where = this.next().text
-      const dec = this.varNames()
-      ;(where === 'static' ? statics : fields).push(dec)
+      const scope = this.next().text as 'static' | 'field'
+      classVars.push({ scope, ...this.varNames() })
     }
     const subroutines: Subroutine[] = []
     while (!this.at_('}')) subroutines.push(this.subroutine())
     this.eat('}')
-    return { name, statics, fields, subroutines, line }
+    return { name, classVars, subroutines, line }
   }
 
   /** `<type> a, b, c ;` — the keyword before it has already been eaten. */
@@ -223,7 +221,12 @@ class Parser {
       this.next()
       return { kind: 'keyword', value: t.text, line }
     }
-    if (t.text === '(') { this.eat('('); const e = this.expression(); this.eat(')'); return e }
+    if (t.text === '(') {
+      this.eat('(')
+      const inner = this.expression()
+      this.eat(')')
+      return { kind: 'paren', inner, line }
+    }
     if (t.text === '-' || t.text === '~') {
       this.next()
       return { kind: 'unary', op: t.text, operand: this.term(), line }

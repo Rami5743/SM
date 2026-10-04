@@ -13,6 +13,7 @@
  * no `that` to re-point. `a[i] = b[j]` needs no temporary.
  */
 import type { Call, ClassDec, Expression, Statement, Subroutine } from './ast.js'
+import { fields, statics } from './ast.js'
 import { completes, firstUnreachable } from './flow.js'
 import { JackError } from './token.js'
 
@@ -47,12 +48,12 @@ class Compiler {
 
   constructor(private readonly file: string, private readonly cls: ClassDec) {
     let fieldIndex = 0
-    for (const dec of cls.statics) {
+    for (const dec of statics(cls)) {
       for (const name of dec.names) {
         this.classScope.set(name, { scope: 'static', type: dec.type, index: 0 })
       }
     }
-    for (const dec of cls.fields) {
+    for (const dec of fields(cls)) {
       for (const name of dec.names) {
         this.classScope.set(name, { scope: 'field', type: dec.type, index: fieldIndex++ })
       }
@@ -60,7 +61,7 @@ class Compiler {
   }
 
   private get fieldCount(): number {
-    return this.cls.fields.reduce((n, d) => n + d.names.length, 0)
+    return fields(this.cls).reduce((n, d) => n + d.names.length, 0)
   }
 
   private fail(line: number, message: string): never {
@@ -230,6 +231,7 @@ class Compiler {
         return
       }
       case 'call': this.call(e.call); return
+      case 'paren': this.expression(e.inner); return
       case 'unary':
         this.expression(e.operand)
         this.emit(e.op === '-' ? '(-)' : '~')
