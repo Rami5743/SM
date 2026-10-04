@@ -224,9 +224,41 @@ means C2 and nothing else.
 
 ### M5 — The site, first cut *(medium)*
 
-Pages: Emulator, Reference, Rationale. The emulator page loads a folder of `.sm`
-files, runs them, shows the stack, the frame chain, the globals and raw RAM, and
-highlights the current line.
+**The shell comes first, because everything else is a page inside it.**
+
+*A home page* that gathers every page, with a line on each saying what it is
+for, so the site has a front door rather than a bookmark per tool.
+
+*A tab bar on every page*, the same tabs in the same order everywhere, marking
+the current one: Emulator, Reference, Rationale, Projects, and later
+Translators and Jack. Moving between pages is one click from anywhere.
+
+*Two languages, Hebrew by default.* Both flags with their language names sit at
+the top of every page. Hebrew is served at `/`, English at `/en/`, the same
+tree under each, and switching keeps the page you are on rather than returning
+you to the front door.
+
+Three consequences of the bilingual decision, all of them cheap now and
+expensive later:
+
+* **Direction.** Hebrew pages are right-to-left, and anything that is code is
+  not. A `.sm` listing, a RAM dump, a stack view, a `.tst` script and an error
+  message must each be marked left-to-right explicitly, or the browser reorders
+  them — a leading `@` jumps to the far end, a `->` points the wrong way. This
+  has to be in the page components from the first one, not retrofitted.
+* **What is not translated.** The mnemonics, the code, the file names, the
+  `.tst` syntax, and the diagnostics. The messages are the course's own wording,
+  adopted verbatim by C6 and C7, and translating them would break the match
+  that is their point; a Hebrew page may gloss one, but the message itself
+  stays as it is.
+* **Keeping the two in step.** Two prose trees drift apart. The build checks
+  that every page exists in both languages and that their section headings
+  correspond; a page that has not been translated yet is served in the other
+  language behind a visible banner, never as a missing page.
+
+**Then the pages.** The emulator page loads a folder of `.sm` files, runs them,
+shows the stack, the frame chain, the globals and raw RAM, and highlights the
+current line.
 
 * **Reference** is `spec/sm.md`, rendered, with a live "try it" box per command.
 * **Rationale** follows the design letter: a virtual machine should be generic
@@ -235,14 +267,19 @@ highlights the current line.
   what removes the `pointer`/`this`/`that` segments; symbolic variables rather
   than numeric addresses, since the language is textual anyway; a single frame
   pointer, since the offset between arguments and locals is known at translation
-  time; globals and statics separated by naming convention rather than by two
-  segments; and a boolean convention that makes `<`, `>`, `==` branch-free.
+  time; globals as one flat space rather than two segments; and a boolean
+  convention that makes `<`, `>`, `==` branch-free.
   It should state the costs honestly too — re-deriving `this` on every field
   access is slower than the course's constant `this`, offset partly by cheaper
-  calls — and present Q6, the mnemonics, as the open question it is.
+  calls — and it is the page where the mnemonics are argued, C4 having settled
+  that the emulator renders both notations so the reader can judge.
+* **Links, not copies**, to the course's own tools: its web IDE and its
+  download page.
 
-*Done when:* the three pages are live on GitHub Pages and the emulator runs
-`FibonacciElement` from a cold load.
+*Done when:* the home page, the tab bar and the language switch work; the three
+pages are live on GitHub Pages in both languages; and the emulator runs
+`FibonacciElement` from a cold load, with its code pane reading correctly on
+the Hebrew side.
 
 ### M6 — `projects/07-sm` and `projects/08-sm`, the first assignment *(medium)*
 
@@ -565,5 +602,7 @@ M9 and M10 follow at leisure.
    over unchanged, `TextComparer` and `.xml` compare files included. The SM
    assignment starts at code generation.
 4. ~~Host the course's VM emulator, or link to it?~~ **Answered:** link only.
-5. Language of the site: English throughout, or English reference with a Hebrew
-   rationale?
+5. ~~Language of the site?~~ **Answered:** both, Hebrew by default, English at
+   its own address, with both flags and their language names at the top of
+   every page. Plus a home page gathering the pages, and tabs on each for
+   moving between them.
