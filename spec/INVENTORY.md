@@ -88,10 +88,9 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 
 ## 3. Questions
 
-Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), and
-**Q3** and **Q4**, both closed by keeping things as they are. Still open:
-**Q5**, **Q7**, **Q9**, and the companion to Q3 — whether falling off the end
-of a function is an error. A decision that changes something becomes an entry
+Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), the companion to
+Q3 (→ C6), and **Q3** and **Q4**, both closed by keeping things as they are. Still open:
+**Q5**, **Q7** and **Q9**. A decision that changes something becomes an entry
 in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
@@ -207,46 +206,14 @@ a `<--`, but only after an infinite loop, so it is unreachable; the
 Jack-generated one has no `<--` at all, because Jack's `Sys.init` body is
 `while (true) {}` with no `return`, and is saved only by that loop.
 
-**What the course does, measured rather than remembered.** The official tools
-were run on purpose-built inputs. The course catches this at **both** levels.
+**DECIDED → C6: exactly what the course does, which is to catch it twice** —
+statically in the Jack compiler, which rejects the file, and dynamically in the
+emulator, which stops the program with `Missing return in Foo.a`. Both were
+measured on the official tools, and C6 records the static rule in full,
+including the two rows where it knowingly parts company with the truth.
 
-*In the Jack compiler, statically.* It refuses to emit anything:
-
-```
-In Main.jack (line 4): In subroutine noReturn:
-    Program flow may reach end of subroutine without 'return'
-```
-
-No `.vm` file is produced at all — one bad subroutine rejects the whole
-compilation. And "may reach" is literal: a flow analysis over the statement
-tree, not a look at the last statement.
-
-| source | verdict |
-|---|---|
-| `if (c) { return 1; } else { return 2; }` | accepted |
-| `if (c) { return 1; }` with no `else` | rejected |
-| `while (true) { }` with nothing after it | rejected — a `while` is always assumed able to exit |
-
-*In the VM emulator, at run time.* A `.vm` function that runs past its last
-line stops the program with `Missing return in Foo.a`. This one is dynamic,
-not static: the same file loads and runs without complaint when that function
-is never called.
-
-**The supplied `Sys.jack` is rejected by the official compiler**, being the
-`while (true) { }` row above. The Jack grammar does permit it —
-`subroutineBody: '{' varDec* statements '}'` with `statements: statement*` —
-so the rule lives in the compiler, which is where ours should carry it too.
-
-*Proposed, and almost all of it is simply matching the book:*
-
-* *In our Jack → SM compiler:* the same static analysis, rejecting rather than
-  inserting a `<--`.
-* *In the SM emulator, at run time:* stepping from a function's last command
-  into another function's declaration is a fault, reported as the VM emulator
-  reports it. The emulator knows the declarations, so this is free.
-* *In the SM tools, statically:* the only part that goes beyond the course, and
-  the only part that depends on Q9 — the depth walk already computes
-  reachability, so it catches the same fault on a path that is never taken.
+A *static* version of the SM-level check is not adopted, the course having no
+counterpart. Q9 would supply it free if taken.
 
 **Q4 — discarding a return value. CLOSED: neither language changes.**
 

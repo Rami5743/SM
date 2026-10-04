@@ -187,3 +187,82 @@ the same failure wearing a different hat.
 
 **Touches.** The reference page; the two patterns; the diagnostics in our tools
 (not in the student's translator — see C3).
+
+---
+
+## C6 — the two missing-return checks, exactly as the course has them
+
+*Settles the companion to Q3. The supplied prototype has neither check; the
+official tools have both, and we copy both rather than invent anything.*
+
+**The reference.** `jack_compaler.py` emits nothing when a Jack subroutine ends
+without a `return`, and `SM_trnsleitor3.py` emits nothing at the end of an SM
+function. Control then runs into the next function's declaration, which sets
+`LCL` from the current `SP` and pushes that function's locals, so it executes
+with a frame holding no return address and its own `<--` jumps to a garbage
+address.
+
+**We do** what the official tools do, which is to catch it twice.
+
+### 1. In the Jack compiler, statically
+
+Reject the file, as the official compiler does:
+
+```
+In Main.jack (line 4): In subroutine noReturn:
+    Program flow may reach end of subroutine without 'return'
+```
+
+No output is produced for the file at all — one bad subroutine fails the
+compilation. The rule, recovered by running the official compiler on eleven
+purpose-built subroutines, is a structural recursion. Define *completes(S)* as
+"control can reach the point just after S":
+
+| statement | completes? |
+|---|---|
+| `let`, `do` | yes |
+| `return` | no |
+| `if (c) {A} else {B}` | iff A completes or B completes |
+| `if (c) {A}`, no else | **always** |
+| `while (c) {A}` | **iff A completes** |
+| a list | iff every statement in it completes |
+
+A subroutine is accepted iff its body does not complete. A statement following
+one that does not complete is unreachable, and draws
+`Warning: Unreachable code` without failing the compilation.
+
+Two of those rows are worth staring at, because they are where the analysis
+knowingly parts company with the truth. The `if`-without-else row is
+*conservative*: the condition might be false, so the end is reachable. The
+`while` row is *optimistic*: a loop is treated as exiting only by completing
+its body, although it may run zero times. That is why
+`while (true) { return 1; }` is accepted — convenient, and the shape of many
+real main loops — and also why `while (false) { return 1; }` is accepted,
+which is simply wrong and will fall off the end.
+
+### 2. In the SM emulator, at run time
+
+Stepping from a function's last command into another function's declaration is
+a fault, stopping the program as the VM emulator stops it:
+
+```
+Missing return in Foo.a
+```
+
+This check is dynamic in the course and dynamic here. Measured: the same `.vm`
+file loads and runs without complaint when the offending function is never
+called.
+
+**Why both, rather than either.** The static check has a line number and fires
+before anything runs, which is what a student needs; but its `while` rule is
+unsound, so programs that fall through do get past it. The runtime check has no
+line number and only fires on the path actually taken; but nothing gets past
+it. Each covers the other's gap, which is presumably why the course has both.
+
+**Not adopted:** a *static* version of the SM-level check. The course has no
+such thing, and the instruction here is to match it. Q9's depth walk would
+supply it free if Q9 is adopted, catching the fall-through even on a path never
+taken; that remains Q9's business, not this entry's.
+
+**Touches.** `jack-to-sm`, which gains the analysis above; `sm-emulator`, which
+gains the runtime fault; the reference page, which states both.

@@ -343,9 +343,10 @@ It also carries the two checks the official compiler carries, both of which the
 prototype lacks and both of which its own sample trips
 (`spec/INVENTORY.md` §4a): an unqualified call is a method call and is an error
 inside a `function`, and control must not be able to reach the end of a
-subroutine without a `return` — a flow analysis over the statement tree, not a
-look at the last statement, and a rejection rather than an inserted return.
-Matching the book here, not exceeding it.
+subroutine without a `return` — the flow analysis written out in full as C6,
+and a rejection rather than an inserted return. The SM emulator carries the
+course's companion runtime check, also C6. Matching the book here, not
+exceeding it.
 
 **The library.** `Math`, `String`, `Array`, `Memory`, `Screen`, `Output`,
 `Keyboard`, `Sys`, available as `.sm` files. The standard implementations are
@@ -526,8 +527,7 @@ M9 and M10 follow at leisure.
 ## 7. Questions for the author
 
 1. Q5, Q7 and Q9 in `spec/INVENTORY.md`, all three about rules and
-   diagnostics rather than generated code, plus the companion to Q3: whether
-   control falling off the end of a function is an error.
+   diagnostics rather than generated code.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.
