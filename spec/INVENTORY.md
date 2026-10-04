@@ -373,13 +373,40 @@ and, equally, not in the assignment. The student's translator is theirs, cannot
 be relied on, and is not required to perform the check; a malformed program
 should simply be known to be malformed before any translator is blamed for it.
 
-**What it costs.** It is a restriction on SM programs, not only on compiler
-output: hand-written SM whose stack depth varies by path becomes illegal. No
-sample in `reference/` violates it, and it is hard to construct a program that
-wants to — but it is a real narrowing of the language and should be taken as
-such, not slipped in as a diagnostic.
+**What the course does: nothing of the kind.** Worth knowing, because adopting
+this makes the SM track stricter than the book.
 
-*Proposed:* adopt it, with the runtime bound kept as the backstop.
+* The course's VM has the same hazard. `call f n` always leaves a return value,
+  so a Jack `do` statement leaves one, and the course's own compiler removes it
+  with `pop temp 0` — the same move the SM prototype makes.
+* The course's `return` is equally forgiving. It ends with `SP = ARG+1`,
+  discarding whatever was left above the frame, exactly as `<--` does.
+* The VM language imposes no requirement on stack depth, and the course
+  supplies no verifier. A VM program whose depth at a label depends on the path
+  is legal and runs.
+
+So this is a deviation. Two readings:
+
+*Against.* A rule that is not in the book is a rule a student has to learn from
+us, and the book is the thing they are reading.
+
+*For.* The course's permissiveness here is the absence of a tool rather than a
+decision, and SM would be joining the norm rather than leaving it: the JVM's
+and the CLR's verifiers both check exactly this, and WebAssembly makes it
+unrepresentable by replacing labels with structured control flow.
+
+**What it costs in practice: close to nothing.** Ask who could ever be
+inconvenienced. In both parts of the first assignment the `.sm` files are ours,
+so the rule never fires. In the second assignment the SM is the output of the
+student's compiler, so it fires exactly when that compiler has the bug — which
+is the signal they need, delivered at the only moment it helps. Only someone
+hand-writing SM could be stopped by it, and only by writing a program that
+wants a path-dependent depth. Nothing in `reference/` does.
+
+*Proposed:* adopt it as an error, with the runtime bound kept as the backstop.
+The weaker form — report it as a warning, narrowing nothing — is available, but
+it buys little: the one population the rule ever reaches is students whose
+compiler is wrong, and a warning is what they would ignore.
 
 ## 4. Errors in the supplied samples
 
