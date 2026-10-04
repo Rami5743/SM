@@ -130,7 +130,8 @@ calendar time.
 
 ### M0 — Decide the specification *(small)*
 
-Answer the questions still open. Three points are settled and recorded in
+Every specification question is now answered, and `spec/INVENTORY.md` §3
+records each one with its reasoning. Seven points are settled and recorded in
 `spec/CORRECTIONS.md`, which is the normative list of our deviations from
 `reference/`: **C1**, the operand order of `->[]` follows the implementations —
 address below, value on top — and the prose is corrected to match; **C2**, the
@@ -143,7 +144,8 @@ offers, with the arithmetic and logical operators left symbolic in every view;
 **C6**, the course's two missing-return checks, static in our Jack compiler and
 dynamic in our emulator, with its flow analysis written out in full; **C7**,
 function names are global and must be distinct — a rule the document lacked —
-together with the three name-resolution diagnostics the course performs;
+together with the three name-resolution diagnostics the course performs and a
+fourth, a label declared twice in one function, which it does not;
 **C5**, constants are non-negative as in the course, negation is `(-)`, and an
 empty operand is an error rather than something the catch-all rule swallows.
 
@@ -591,9 +593,13 @@ M9 and M10 follow at leisure.
 
 ## 7. Questions for the author
 
-1. One row of Q5 — whether to reject a label declared twice in one function,
-   which the document forbids and the course does not check. It is the last
-   open question about the language.
+1. ~~The specification questions.~~ **All answered**, C1–C7 in
+   `spec/CORRECTIONS.md` for the seven that changed something, and Q3, Q4, Q7
+   and Q9 closed by keeping things as they are. One thing still wants a yes or
+   no: keeping the stack-depth walk as a continuous-integration lint over the
+   SM *our own* compiler generates — not in the language, not in the emulator,
+   declined as a rule by Q9 but the check that found the prototype's real
+   defect.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.

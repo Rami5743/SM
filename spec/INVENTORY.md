@@ -2,10 +2,10 @@
 
 This file records what was handed over, what the three existing implementations
 actually do, and every point on which they disagree with each other or with the
-prose documentation. Every item marked **Q** is a decision that has to be taken
-before M0 of [`../PLAN.md`](../PLAN.md); the "proposed" line is a
-recommendation, not a decision. Decisions are recorded in
-[`CORRECTIONS.md`](CORRECTIONS.md).
+prose documentation. The items marked **Q** were the decisions M0 of
+[`../PLAN.md`](../PLAN.md) had to take; **all of them are now taken**, and the
+ones that changed something are recorded in
+[`CORRECTIONS.md`](CORRECTIONS.md), C1 to C7.
 
 ## 1. What was supplied
 
@@ -89,9 +89,8 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 ## 3. Questions
 
 Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), the companion to
-Q3 (→ C6), most of **Q5** (→ C7), and **Q3**, **Q4**, **Q7** and **Q9**, all
-closed by keeping things as they are. Still open: one row of **Q5** — whether a label declared twice in one function
-is an error — and nothing else in the language. A decision that changes something becomes an entry
+Q3 (→ C6), **Q5** (→ C7), and **Q3**, **Q4**, **Q7** and **Q9**, all closed by
+keeping things as they are. **Nothing is open.** Every question in this section is decided. A decision that changes something becomes an entry
 in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
@@ -316,15 +315,12 @@ in the emulator and `sm-core`; the student's translator is never required to
 perform any of them, and no test in either package expects a diagnostic from
 it. See the principle in `../PLAN.md` §2.
 
-**DECIDED → C7** for everything but one row. Function names must be distinct,
-and that rule goes into the language definition; the three checks the course
-performs are adopted with its messages and line numbers; the fifth row belongs
-to Q9.
-
-*Still open, and the whole of what is left of this question:* the fourth row —
-a label declared twice in one function. The document forbids it, the course
-does not check it, and the standing instruction is to do as the course does.
-The cost of checking is nil, so this is purely the author's call.
+**DECIDED → C7.** Function names must be distinct, and that rule goes into the
+language definition. The three checks the course performs are adopted with its
+messages and line numbers, and so is a fourth it does not perform — a label
+declared twice in one function, the rule being the author's own and already in
+the document. The fifth row is not a name question and died with Q9: nothing
+checks an argument count, which is also what the course does.
 
 **Q6 — the mnemonics. DECIDED → C4: the mnemonics are the language; the words
 are a view.** The emulator renders any program word-for-word so the two can be

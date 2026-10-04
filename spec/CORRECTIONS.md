@@ -316,14 +316,17 @@ never calls:
 | jump to an undeclared label | `Unknown label - Sys.init$NoSuchLabel` |
 | two functions with the same name | `A.vm: subroutine f already exists` |
 
+And a fourth that the course does not check, the rule being the author's own
+and already in the document. Its message follows the course's wording for the
+case it does check:
+
+| mistake | message |
+|---|---|
+| the same label twice in one function | `A.sm: in line 4: label L already exists in function f` |
+
 Adopted with file and line numbers, as the course gives them. This also
 supplies what C3 asked for from the other side: with call targets resolved, a
 mistyped command stops being a jump to a garbage address.
-
-**Still open:** the fourth case, a label declared twice in one function. The
-document forbids it, the course does not check it, and the standing
-instruction is to do as the course does — so it is left for the author to say,
-the cost of checking being nil.
 
 **Whose job.** Ours. These live in the emulator and `sm-core`; the student's
 translator is never required to perform them, and no test in either package
