@@ -22,7 +22,6 @@ answers that changed something are [`spec/CORRECTIONS.md`](spec/CORRECTIONS.md),
 | 5 | SM reference page and rationale page | Pages within it |
 | 6 | `projects/07-sm/` | First assignment, part I: a directory of tests the student downloads |
 | 7 | `projects/08-sm/` | First assignment, part II |
-| 8 | `projects/11-sm/` | Second assignment |
 
 Everything runs client-side. The site is a static bundle on GitHub Pages; there
 is no backend, no account, and no upload. A student can also clone the
@@ -32,7 +31,7 @@ integration does.
 **The course's own tools are linked, not hosted** — its web IDE at
 `nand2tetris.github.io/web-ide/` and its download page. We ship nothing of
 theirs. This costs the site a side-by-side comparison of the two machines, and
-M10's import and export of `.vm` directories is what replaces it: a student
+M9's import and export of `.vm` directories is what replaces it: a student
 moves the program rather than running both at once.
 
 It costs our *testing* nothing, which is worth stating because it looks as
@@ -45,8 +44,15 @@ others.
 **Two of these are assignments; the rest is scaffolding.** The student writes
 exactly two programs: an **SM → Hack-assembly translator**, replacing projects
 7–8, and then a **Jack → SM compiler**, replacing project 11. Deliverables
-(6)–(7) are the first assignment, split into two parts as the course splits it,
-and (8) is the second. The SM ↔ VM translators are never assigned —
+(6)–(7) are the first assignment, split into two parts as the course splits it.
+**The second assignment needs no package at all**, which is worth saying
+because it looks as though it must: the course's project 11 directories hold
+nothing but `.jack` files — checked, all six of them — and Jack is unchanged
+here, so a `projects/11-sm/` would be a copy of `projects/11/` byte for byte.
+The student uses the course's own directory, compiles it with the compiler they
+wrote, and runs the result in our emulator. All that is ours is a page saying
+so, and an emulator that carries the library. The SM ↔ VM translators are
+never assigned —
 they exist so that a program can cross between the SM track and the course's own
 track, and so that each machine can be used to check the other.
 
@@ -56,8 +62,8 @@ otherwise have been polish: **the Jack operating system, compiled to SM**. A
 student's own compiler emits calls to `Math.multiply`, `String.new`,
 `Output.printString`; the course supplies the library as `.vm` files, so we must
 supply it as `.sm` files, and the emulator must own a screen buffer and a
-keyboard register for it to drive. Deliverable (8) cannot exist without that
-library, and the library is useless without those two devices.
+keyboard register for it to drive. The second assignment cannot happen without
+that library, and the library is useless without those two devices.
 
 ## 2. Principles
 
@@ -124,7 +130,6 @@ packages/
 web/             the site
 projects/07-sm/  first assignment, part I: commands without frames
 projects/08-sm/  first assignment, part II: control flow, functions, bootstrap
-projects/11-sm/  second assignment: the Jack to SM compiler
 reference/       the supplied material, verbatim and never edited
 oracle/          the same programs, repaired — what our ports are compared against
 tools/           .cmp generation, the wrapper round the course's tools, CI scripts
@@ -162,9 +167,8 @@ work seems related.
 | M5 the site | the build succeeds; both language trees carry the same pages and headings; a smoke test that the emulator page runs `FibonacciElement` from a cold load |
 | M6 the first assignment | every test in both packages passes both ways; a deliberately broken translator fails at least one |
 | M7 `jack-to-sm` | the parser against the course's project 10 `.xml` files via its `TextComparer`; then the layered suite the milestone describes, plus the depth-walk lint over our own generated SM |
-| M8 the second assignment | all six programs compile and run |
-| M9 the bridge | the round trips, by emulator output rather than by text |
-| M10 | the whole of the above, on every push, as the standing job |
+| M8 the bridge | the round trips, by what the programs do rather than by text |
+| M9 | the whole of the above, on every push, as the standing job |
 
 ### What the suite is measured against
 
@@ -406,6 +410,9 @@ current line.
   access is slower than the course's constant `this`, offset partly by cheaper
   calls — and it is the page where the mnemonics are argued, C4 having settled
   that the emulator renders both notations so the reader can judge.
+* **Projects** gathers the assignments: the two downloadable packages of M6,
+  and — for the second — a paragraph pointing at the course's own project 11
+  directory, since there is nothing for us to ship there.
 * **Links, not copies**, to the course's own tools: its web IDE and its
   download page.
 
@@ -532,8 +539,18 @@ above, once it works. `Memory` is the exception and the interesting case:
 and `->[]`, which is the clearest single illustration of what the design buys.
 `Screen` and `Output` need the devices added in M2.
 
-This library is not optional and not polish. A student who writes their own
-Jack → SM compiler can run nothing at all without it.
+**The emulator carries it**, so that a student's compiled output runs with
+nothing to link — which is what the course does: its VM emulator ships
+built-in implementations of all eight classes, and also supplies them as `.vm`
+files for anyone who wants the real thing. We do both, in SM.
+
+That is the whole of what the second assignment needs from us. A student does
+the course's project 11 unchanged, compiles it with the compiler they wrote,
+and runs the result here; the Projects page says so in a paragraph. There is
+no package, because there would be nothing in it.
+
+This library is therefore not optional and not polish. Without it a student who
+writes their own Jack → SM compiler can run nothing at all.
 
 **Testing it.** The course hands project 11 to the student with no automated
 tests at all, which is the right call for a student and the wrong one for us: a
@@ -580,7 +597,7 @@ gets a test suite the student package does not:
   `.cmp` files we can reuse directly. The rest are observational and become
   screen-buffer assertions. This is how the SM library in M7 gets checked, and
   it is a ready-made suite we would otherwise have had to invent.
-* *Differential testing,* once M9 exists: compile the same Jack source with our
+* *Differential testing,* once M8 exists: compile the same Jack source with our
   compiler and with the course's, run each on its own machine, compare what is
   observable. Broad but blunt — a mismatch implicates our compiler, their
   compiler or the bridge, and says nothing about which — so it is a net for
@@ -592,42 +609,7 @@ gets a test suite the student package does not:
 *Done when:* every layer above passes, and the course's project 11 programs
 behave in the SM emulator as their VM versions do.
 
-### M8 — `projects/11-sm`, the second assignment *(medium)*
-
-The package for the Jack → SM compiler. Unlike M6, **nothing in it is graded by
-a `.cmp` file**, because nothing in the course's project 11 is: the student is told to run the
-compiled program in the emulator and look at it — "make sure that it displays 7
-correctly", "play the game", "make sure that the actual results are identical to
-the expected results". That is a deliberate choice and a correct one. A
-compiler has no single right output — label names, evaluation order and
-temporaries are all free — so there is nothing to compare a student's output
-against, and the course does not pretend otherwise.
-
-So this package is the course's project 11 with the target changed: the same six
-programs, staged the same way — `Seven`, then `ConvertToBin`, then `Square`,
-`Average`, `ComplexArrays`, `Pong` — each with the same description of what the
-student should see, and each runnable in the SM emulator instead of the VM
-emulator. The work is in the porting and the instructions, not in inventing a
-grading regime.
-
-Two small places where the SM emulator can do better than the course without
-changing the character of the assignment, both optional extras rather than the
-means of grading: `ConvertToBin` is already defined by a RAM precondition and a
-RAM postcondition, so it can be offered with a `.tst` that sets `RAM[8000]` and
-checks `RAM[8001..8016]`; and any program can be re-run with the emulator's
-screen buffer compared against a recorded one, which turns "it looks right" into
-something a student can check twice.
-
-**Project 10 needs no counterpart.** The syntax analyser is a Jack-to-XML
-program with no target machine in it; the course's project 10, its
-`TextComparer` and its supplied `.xml` compare files carry over to the SM track
-unchanged. The SM assignment begins at code generation.
-
-*Done when:* all six programs are present, each runs in the SM emulator when
-compiled by the reference compiler, and each carries instructions a student can
-follow without the course's VM emulator at hand.
-
-### M9 — `sm-to-vm` and `vm-to-sm` *(large)*
+### M8 — `sm-to-vm` and `vm-to-sm` *(large)*
 
 Not an assignment: a bridge, so a program can cross between the two tracks and
 each machine can check the other. The two directions are not symmetric, and the
@@ -668,13 +650,13 @@ on the most significant bit.
 and VM → SM → VM both preserve what the program does — the SM side measured in
 our emulator, the VM side in the course's.
 
-### M10 — Polish *(small)*
+### M9 — Polish *(small)*
 
 Save and share a program by URL. Export a session as a downloadable folder.
 Import a course `.vm` directory and see it as SM, and export SM as `.vm` for
 the course's own emulator — with that emulator linked rather than hosted, this
 is how a student sees that the two machines are the same machine, and it is the
-reason M9 earns a place on the site and not only in the test suite. A
+reason M8 earns a place on the site and not only in the test suite. A
 difference table between SM and the course VM. Continuous integration running
 every `.tst` on every push.
 
@@ -684,12 +666,12 @@ There is one critical path and it runs through both assignments:
 
 ```
 M0 → M1 → M2 → M3 → M4 → M6        first assignment ready, both parts
-                  ↘  M7 → M8       second assignment ready
+                  ↘  M7            second assignment ready
 ```
 
 M5, the site, proceeds alongside M2–M4 and is needed before either package is
 usable. M7 depends on M2 (for the devices) and on M3 (for the test runner), not
-on M4 or M6, so the Jack half can start as soon as the emulator runs. M9 depends
+on M4 or M6, so the Jack half can start as soon as the emulator runs. M8 depends
 only on M1–M3 and is independent of everything else; it is the one large piece
 that can be dropped from a first release without costing a student anything.
 
@@ -697,10 +679,10 @@ Two releases suggest themselves:
 
 * **First:** M0–M6 plus the Reference and Rationale pages. The replacement for
   projects 7 and 8 is complete and can be taught on its own.
-* **Second:** M7–M8. The Jack assignment, which is what makes the SM track a
+* **Second:** M7. The Jack assignment, which is what makes the SM track a
   replacement for the course's whole back end rather than for one project.
 
-M9 and M10 follow at leisure.
+M8 and M9 follow at leisure.
 
 ## 7. Risks
 
@@ -715,8 +697,9 @@ M9 and M10 follow at leisure.
 * **The Jack library absorbing M7.** `Screen` and `Output` can take unbounded
   time. The mitigation is not to cut them — the second assignment needs them —
   but to order M7 so that `Math`, `Memory`, `Array` and `String` land first:
-  those alone let the early stages of M8 run, and the graphical stages can wait.
-  What can be cut from a release, if something must be, is M9.
+  those alone let `Seven`, `ConvertToBin`, `Average` and `ComplexArrays` run,
+  and the graphical ones can wait. What can be cut from a release, if something
+  must be, is M8.
 * **A quiet bug in our own compiler.** The student package cannot catch it —
   project 11 is graded by eye, by design — so the reference compiler is only as
   good as the suite described in M7. The layer that matters most there is the

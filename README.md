@@ -16,16 +16,21 @@ Planned deliverables (nothing is implemented yet):
 2. **translators** SM → VM and VM → SM;
 3. a **Jack → SM compiler**;
 4. a **reference page** for SM and a **rationale page** explaining the design;
-5. **`projects/07-sm/`** — a package parallel to unit 7 of the course: a set of
-   tests, each with SM source, a `.tst` script that runs it in the SM emulator,
-   and a `.tst`/`.cmp` pair that checks the `.asm` the student is asked to
-   produce by writing their own SM → Hack-assembly translator;
-6. **`projects/11-sm/`** — the same for the second assignment, in which the
-   student writes their own Jack → SM compiler.
+5. **`projects/07-sm/`** and **`projects/08-sm/`** — packages parallel to units
+   7 and 8 of the course: tests, each with SM source, a `.tst` script that runs
+   it in the SM emulator, and a `.tst`/`.cmp` pair that checks the `.asm` the
+   student is asked to produce by writing their own SM → Hack-assembly
+   translator.
 
-The student writes those two programs and nothing else; everything above them is
-scaffolding. The SM ↔ VM translators are never assigned — they are there so a
-program can cross between the SM track and the course's own track.
+The student writes two programs and nothing else: that translator, and then a
+Jack → SM compiler in place of the course's project 11. The second assignment
+needs no package of ours — the course's project 11 holds only `.jack` files and
+Jack is unchanged here — so the student uses the course's own directory and
+runs the result in our emulator, which carries the library.
+
+Everything else is scaffolding. The SM ↔ VM translators are never assigned —
+they are there so a program can cross between the SM track and the course's own
+track.
 
 Start here:
 
