@@ -338,9 +338,18 @@ program that grows the stack in a loop is legal SM, exactly as it is legal VM
 (Q9 declined), so the emulator reports the fault where it happens rather than
 refusing the program.
 
-*Done when:* `FibonacciElement` in SM computes the right value, and the RAM
-image after each step matches the one the course's CPU emulator reaches on the
-assembled output of `sm-to-asm`.
+*Done when:* `FibonacciElement` in SM computes the right value, every command
+behaves as section 6 of the reference says, and the faults above fire where
+they should.
+
+*Not here:* the second half of what this milestone originally claimed — that
+the RAM image agrees, step for step, with the course's CPU emulator on the
+assembled output of `sm-to-asm`. That cannot be checked until `sm-to-asm`
+exists, which is M4, and the plan's own order puts it after this. The check is
+M4's, and it is the one that would catch a divergence in the arithmetic, which
+is why the emulator reproduces the assembly's exact words — `<` leaves `x-y`
+on the stack rather than a canonical truth value — and does not merely get the
+truth bits right.
 
 ### M3 — `sm-tst` *(small)*
 

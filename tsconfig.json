@@ -11,7 +11,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@sm/core": ["packages/sm-core/src/index.ts"],
+      "@sm/emulator": ["packages/sm-emulator/src/index.ts"]
+    }
   },
   "include": ["packages/**/*.ts", "tools/**/*.ts"]
 }
