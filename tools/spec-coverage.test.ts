@@ -8,8 +8,9 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const root = join(import.meta.dirname, '..')
+const root = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const spec = readFileSync(join(root, 'spec/sm.md'), 'utf8')
 const allCmds = readFileSync(join(root, 'reference/tst/all_cmds.sm'), 'utf8')
 
@@ -50,7 +51,7 @@ function classify(cmd: string): string {
   throw new Error(`all_cmds.sm line not recognised by this test: ${cmd}`)
 }
 
-const commands = allCmds.split('\n').map(clean).filter((l) => l.length > 0)
+const commands = allCmds.split('\n').map(clean).filter((l: string) => l.length > 0)
 
 describe('spec/sm.md', () => {
   it('finds at least one command per line of all_cmds.sm', () => {
@@ -58,7 +59,9 @@ describe('spec/sm.md', () => {
   })
 
   // Order the longest spellings first so `<--` is not satisfied by `<-`.
-  const wanted = [...new Set(commands.map(classify))].sort((a, b) => b.length - a.length)
+  const wanted = [...new Set(commands.map(classify))].sort(
+    (a: string, b: string) => b.length - a.length,
+  )
 
   for (const spelling of wanted) {
     it(`documents ${spelling}`, () => {
