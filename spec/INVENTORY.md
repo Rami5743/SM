@@ -89,9 +89,9 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 ## 3. Questions
 
 Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), the companion to
-Q3 (→ C6), and **Q3**, **Q4** and **Q7**, all closed by keeping things as they
-are. Still open:
-**Q5** and **Q9**. A decision that changes something becomes an entry
+Q3 (→ C6), most of **Q5** (→ C7), and **Q3**, **Q4** and **Q7**, all closed by
+keeping things as they are. Still open:
+one row of **Q5**, and **Q9**. A decision that changes something becomes an entry
 in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
@@ -316,9 +316,15 @@ in the emulator and `sm-core`; the student's translator is never required to
 perform any of them, and no test in either package expects a diagnostic from
 it. See the principle in `../PLAN.md` §2.
 
-*Proposed:* adopt the three course rows verbatim, messages and line numbers
-included; adopt the fourth as well, the rule being the author's own and the
-cost nil; leave the fifth to Q9.
+**DECIDED → C7** for everything but one row. Function names must be distinct,
+and that rule goes into the language definition; the three checks the course
+performs are adopted with its messages and line numbers; the fifth row belongs
+to Q9.
+
+*Still open, and the whole of what is left of this question:* the fourth row —
+a label declared twice in one function. The document forbids it, the course
+does not check it, and the standing instruction is to do as the course does.
+The cost of checking is nil, so this is purely the author's call.
 
 **Q6 — the mnemonics. DECIDED → C4: the mnemonics are the language; the words
 are a view.** The emulator renders any program word-for-word so the two can be

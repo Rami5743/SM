@@ -266,3 +266,69 @@ taken; that remains Q9's business, not this entry's.
 
 **Touches.** `jack-to-sm`, which gains the analysis above; `sm-emulator`, which
 gains the runtime fault; the reference page, which states both.
+
+---
+
+## C7 — function names are distinct, and the course's name checks are adopted
+
+*Settles the first part of Q5. A rule added to the language definition, plus
+the diagnostics the course already performs.*
+
+**The reference.** The document states that the local names of a function must
+be distinct, and that the labels of a function must be distinct. It says
+nothing about function names. Nothing enforces any of the three.
+
+**We do.** Add the missing rule to the language definition:
+
+> **Function names are global to the program and must be distinct.** Two
+> declarations of the same name, whether in one file or across files, are an
+> error.
+
+The reason is in the language rather than in the translation: a call is the
+bare name, so two functions sharing one make every call to it ambiguous in the
+source. Measured, for completeness: the `FUNTION.` prefix is a constant,
+identical for every function, so two files declaring `!f()` emit `(FUNTION.f)`
+twice; the Hack assembler accepts that silently and resolves every call to the
+second definition.
+
+**While stating that rule, state the whole picture**, since it is short and the
+reference currently leaves it to be inferred. SM has four kinds of name, and
+they do not collide with one another:
+
+| kind | scope | how it is written at the point of use |
+|---|---|---|
+| local (argument or internal) | one function | `<- @x`, `-> @x` |
+| global | the program | `<- x`, `-> x` |
+| label | one function | `L:`, `--> L`, `?--> L` |
+| function | the program | `f` |
+
+A global and a function may share a name; so may a label and either. Only
+within a kind must names be distinct — and for a local or a label that means
+within its function, while for a global or a function it means across the
+program.
+
+**The checks, which are the course's own.** Measured on the course's VM
+emulator, all three at load time, each detected inside a function the program
+never calls:
+
+| mistake | message, in the course's wording |
+|---|---|
+| call to an undeclared function | `Nope.vm not found or function Nope.missing not found in Nope.vm` |
+| jump to an undeclared label | `Unknown label - Sys.init$NoSuchLabel` |
+| two functions with the same name | `A.vm: subroutine f already exists` |
+
+Adopted with file and line numbers, as the course gives them. This also
+supplies what C3 asked for from the other side: with call targets resolved, a
+mistyped command stops being a jump to a garbage address.
+
+**Still open:** the fourth case, a label declared twice in one function. The
+document forbids it, the course does not check it, and the standing
+instruction is to do as the course does — so it is left for the author to say,
+the cost of checking being nil.
+
+**Whose job.** Ours. These live in the emulator and `sm-core`; the student's
+translator is never required to perform them, and no test in either package
+expects a diagnostic from it.
+
+**Touches.** The reference page; `sm-core`'s resolution pass; the emulator's
+loader.
