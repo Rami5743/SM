@@ -103,10 +103,22 @@ that library, and the library is useless without those two devices.
   milestone adds stays in the regression suite for good, and the whole suite
   runs at every milestone boundary and on every push. §4 again.
 * **Each assignment is checked the way the course checks it, and no harder.**
-  The course automates project 7–8 with `.cmp` files and deliberately does not
-  automate project 11: there the student runs the compiled program and looks at
-  it. We copy both choices rather than improve on either. Our own tests are a
-  separate matter — see M7.
+  The course automates projects 7–8 with `.cmp` files and does not automate
+  project 11: there the student runs the compiled program and looks at it. We
+  copy both choices rather than improve on either. Our own tests are a separate
+  matter — see M7.
+
+  Worth recording *why*, because the obvious reason is the wrong one. It is not
+  that a compiler has no single right output — true, but beside the point,
+  since neither assignment compares the student's output. Projects 7–8 compare
+  the RAM after running, not the assembly, and two correct translators emit
+  different assembly. Both assignments are graded behaviourally. The difference
+  is in the programs: in projects 7–8 the semantics of the SM source pin the
+  whole RAM state, so every test can carry a `.cmp`; of project 11's six
+  programs, five end in a picture or an interactive session, and only
+  `ConvertToBin` was written with a RAM-in, RAM-out contract. So a future test
+  program whose result is a number rather than a picture can be automated
+  without breaking anything here.
 
 ## 3. Technical choices
 
