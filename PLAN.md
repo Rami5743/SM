@@ -155,7 +155,7 @@ work seems related.
 | M4 `sm-to-asm` | golden output for every sample, differing from the Python original only at the points `spec/CORRECTIONS.md` names |
 | M5 the site | the build succeeds; both language trees carry the same pages and headings; a smoke test that the emulator page runs `FibonacciElement` from a cold load |
 | M6 the first assignment | every test in both packages passes both ways; a deliberately broken translator fails at least one |
-| M7 `jack-to-sm` | the layered suite the milestone describes, plus the depth-walk lint over our own generated SM |
+| M7 `jack-to-sm` | the parser against the course's project 10 `.xml` files via its `TextComparer`; then the layered suite the milestone describes, plus the depth-walk lint over our own generated SM |
 | M8 the second assignment | all six programs compile and run |
 | M9 the bridge | the round trips, by emulator output rather than by text |
 | M10 | the whole of the above, on every push, as the standing job |
@@ -418,36 +418,27 @@ fails it.
 
 Two halves, and the second is the larger.
 
-**The front end, as a milestone of its own.** One tokenizer and one parser,
-producing an **AST with source positions**, used by everything downstream. This
-is written fresh and tested well beyond what project 10 asks, with the
-prototype as a reference rather than a basis — the author's instruction, and
-the prototype bears it out:
+**The front end is plumbing, not a topic.** The Jack grammar is the course's,
+unchanged — SM changes the target, not the language — so there is nothing to
+design and nothing here concerns the student, project 10 having carried over
+intact. It is written because the compiler needs a tree to walk.
 
-* *There are two parsers and no AST.* `parser.py` walks the tokens and writes
-  XML; `jack_compaler.py` walks the tokens again and writes SM directly. The
-  grammar is implemented twice and a fix to one does not reach the other. With
-  no tree in between there is nowhere to put a resolution pass, nowhere to hang
-  a source position, and no way to test parsing apart from code generation.
-* *They have already diverged.* `parser.py` tests for `"fild"` where
-  `jack_compaler.py` correctly tests for `"field"`, so the XML parser has not
-  parsed a class with fields for some time.
-* *Passing project 10 is not the bar, and in fact it no longer passes.* The
-  tokenizer labels its tokens `integrConstant` and `StringConstant`, where the
-  course's compare files expect `integerConstant` and `stringConstant`.
-* *The tokenizer carries no positions*, so no message from any later stage can
-  point at a line. It also indexes one past the end when a keyword ends the
-  file, drops a `//` comment that is not newline-terminated, and returns `None`
-  — an unpacking crash with no message — on a character it does not recognise.
+Two things it must have that the prototype's does not: **one** parser rather
+than two, and **source positions** on every node. The prototype parses Jack
+twice, once in `parser.py` to emit XML and again inside `jack_compaler.py` to
+emit SM, so the grammar is implemented twice and the two have already drifted
+apart — `parser.py` tests for `"fild"` where the compiler correctly tests for
+`"field"`, and has therefore not parsed a class with fields for some time. With
+no tree between parsing and emitting there is also nowhere to hang a position,
+which is why no message from any later stage can name a line.
 
-What we need beyond project 10's bar: positions on every node, a diagnostic
-rather than a crash on malformed input, and a tree that a symbol-resolution
-pass can run over before anything is emitted. Tested by round-tripping the
-pretty-printer, by a case per grammar production, and by a corpus of malformed
-inputs that must each produce a located message.
-
-Writing a parser is not the task; the compiler is. This is a milestone on the
-way, and it is sized accordingly.
+Testing it is nearly free, and that is the point of the grammar being the
+course's: our parser emits the project 10 XML and is compared against the
+course's own `.xml` files with its `TextComparer`. Six programs of known-good
+expected output that we did not have to write. Note that the prototype would
+not pass them as it stands — it labels its tokens `integrConstant` and
+`StringConstant` where the course expects `integerConstant` and
+`stringConstant`.
 
 **The compiler.** Over that tree: a symbol table across static / field /
 argument / local, fields reached through `this` with `[]` and `->[]`, and code
