@@ -173,13 +173,27 @@ exactly that. The bare jump would have left that `<--` jumping to a cell two
 below the stack base that nobody ever wrote, and so would have required the
 sentence to be rewritten.
 
-**One consequence to settle with it.** The bootstrap pushes `LCL` before
-anything has set it, so the value landing in `RAM[256]` is whatever the `LCL`
-register holds at reset. Left undefined, that cell is non-deterministic and any
-`.cmp` file covering it is unreliable. *Proposed:* the emulator defines
-`RAM[0..15]` as zero at reset, after which the bootstrap sets `SP`; `LCL`,
-`ARG`, `THIS` and `THAT` are never touched by SM and stay zero. The Hack CPU
-emulator must be made to agree, since the two have to match cell for cell.
+**One consequence to settle with it, and the course settles it.** The
+bootstrap pushes `LCL` before anything has set it, so the value landing in
+`RAM[256]` is whatever that register holds at reset. Left undefined, the cell
+is non-deterministic and any `.cmp` covering it is unreliable.
+
+The course is in the same position — its own bootstrap is `call Sys.init 0`,
+which pushes `LCL`, `ARG`, `THIS` and `THAT` before any of them is set — and
+it resolves the matter in the tool rather than in the specification. Measured:
+the supplied CPU emulator reports every one of `RAM[0..4]` and `RAM[256]` as
+`0` before a program has run. All of RAM is zero at reset.
+
+*Decided with Q3:* the same, and the simpler rule rather than the narrower one
+— **all of RAM is zero at reset**, not merely the registers. The bootstrap then
+sets `SP`; `LCL`, `ARG`, `THIS` and `THAT` are never touched by SM and stay
+zero. `packages/hack/` inherits the behaviour from the tool it reimplements, so
+the two agree by construction.
+
+Worth noting even so: the course's own `FibonacciElement.cmp` checks `RAM[0]`
+and `RAM[261]` and nothing in between, so it never depends on the frame cells.
+Ours should be written with the same restraint, whatever the reset rule
+guarantees.
 
 **Still open, and raised with this question rather than settled by it:** what
 happens when a function reaches its last line without a `<--`. The reference

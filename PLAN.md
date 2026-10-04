@@ -165,12 +165,12 @@ The memory-mapped devices — a screen buffer and a keyboard register at the Hac
 addresses — belong here rather than in a later milestone. They are cheap now and
 they are a prerequisite for M7, where the Jack library drives them.
 
-**A defined reset state.** `RAM[0..15]` is zero at reset, after which the
-bootstrap sets `SP`; `LCL`, `ARG`, `THIS` and `THAT` are never touched by SM
-and stay zero. Without this the value the bootstrap pushes from the
-uninitialised `LCL` is arbitrary, and every `.cmp` file covering that cell is
-unreliable. `packages/hack/` must agree, since the two are compared cell for
-cell.
+**A defined reset state.** All of RAM is zero at reset, as the course's CPU
+emulator does it — measured, not assumed. The bootstrap then sets `SP`; `LCL`,
+`ARG`, `THIS` and `THAT` are never touched by SM and stay zero. Without a rule
+here the value the bootstrap pushes from the uninitialised `LCL` is arbitrary
+and every `.cmp` covering that cell is unreliable. `packages/hack/` inherits
+the behaviour from the tool it reimplements.
 
 **Check the stack before running, and bound it while running.** Before
 execution, walk each function and compute the depth of the stack above its
