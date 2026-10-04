@@ -111,6 +111,12 @@ There is **one flat space of globals** and no convention about naming them. A
 Jack compiler will produce names like `Class.name` for a class's statics, but
 that is a property of its output and not a rule of this language.
 
+**A global's address is not fixed by this language.** A translator puts it
+wherever it likes among the registers set aside for the purpose, and two
+correct translators will not agree. So nothing that has to hold across
+translators — a `.cmp` file above all — may name a global's cell. Write the
+value to the stack and read it there.
+
 ---
 
 ## 3. Functions

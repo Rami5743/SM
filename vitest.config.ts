@@ -10,6 +10,7 @@ export default defineConfig({
       '@sm/core': pkg('sm-core'),
       '@sm/emulator': pkg('sm-emulator'),
       '@sm/tst': pkg('sm-tst'),
+      '@sm/to-asm': pkg('sm-to-asm'),
     },
   },
   test: {

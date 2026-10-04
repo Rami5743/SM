@@ -375,10 +375,18 @@ is to generate `.cmp` files and to be the thing a student's translator is
 measured against.
 
 *Done when:* its output agrees with `oracle/`'s copy of the Python translator
-on every sample, except at the points listed in `spec/CORRECTIONS.md` — which,
-for this milestone, means C2 and nothing else. Against `reference/`'s frozen
-copy it will differ further, by whatever `oracle/` has repaired; that is the
-point of the two copies and not a discrepancy to explain away.
+on every sample, instruction for instruction, except at the points listed in
+`spec/CORRECTIONS.md` — which, for this milestone, means C2 and nothing else.
+Against `reference/`'s frozen copy it will differ further, by whatever
+`oracle/` has repaired; that is the point of the two copies and not a
+discrepancy to explain away.
+
+*And, here rather than in M2 where it was first claimed:* the same program run
+in our emulator and in the course's CPU emulator on our assembled output
+reaches the same cells — the whole stack and `SP`, after arithmetic of every
+kind, a peek and a poke, and a global written and read back. That is the
+equivalence the student packages rest on, and it is what would catch a
+divergence in the arithmetic.
 
 ### M5 — The site, first cut *(medium)*
 
@@ -460,6 +468,22 @@ Each test is a directory containing SM source, a `<Name>SM.tst` that runs it in
 the SM emulator, a `<Name>.tst` that loads the `<Name>.asm` the student is
 expected to produce, one `<Name>.cmp` shared by both, and a README stating what
 the stage adds.
+
+**A `.cmp` names the stack and nothing else.** This is the course's own rule
+and the reason for it is sharp. Two kinds of cell cannot be named:
+
+* *A global's cell.* Its address is wherever the assembler put the symbol,
+  which depends on the order the symbols are met and on what scratch cells the
+  translator uses — so it depends on the **student's** translator, and a `.cmp`
+  naming it would be grading a free choice. Measured at M4: our globals begin
+  at 16 where the reference translator's begin at 17, because its return
+  sequence names its scratch cell first. Both are correct.
+* *A frame's return-address cell.* It holds a ROM address in the assembly and
+  a step index in the emulator. That is representation, not semantics.
+
+The course keeps the rule exactly. Its `StaticTest` writes three statics, reads
+them back, leaves the answer on the stack, and its `.cmp` names `RAM[256]`
+alone — which is also how a test here exercises globals without naming one.
 
 **Part I — `projects/07-sm/`.** Constants, globals, the arithmetic and logical
 operators, `[]` and `->[]`. One file at a time, no bootstrap.
