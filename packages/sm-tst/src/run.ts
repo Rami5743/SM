@@ -5,7 +5,7 @@
  * and the command line. Nothing here reaches for the file system.
  */
 import { parse, resolve, type SmFile } from '@sm/core'
-import { Emulator, LIBRARY_CLASSES, standardLibrary, withLibrary } from '@sm/emulator'
+import { Emulator, planFor, standardLibrary, withLibrary } from '@sm/emulator'
 import { addressOf, header, parseColumn, row, type ColumnSpec } from './format.js'
 import { parseScript, type ScriptCommand } from './script.js'
 
@@ -54,44 +54,18 @@ export function runScript(source: string, host: Host, options: RunOptions = {}):
       }
       return r.file
     })
-    // A package's part-I tests are fragments, which the language permits only
-    // as a teaching form; a script that loads one is asking for it.
-    const anyFragment = files.some((f) => f.fragment.length > 0)
-    const defined = new Set(files.flatMap((f) => f.functions.map((fn) => fn.decl.name)))
-
-    // With no Sys.init there is nothing to bootstrap into, so the script is
-    // planting a frame itself — the course's way of testing a function before
-    // the student has written a bootstrap. Inferred rather than declared, so
-    // that the script language stays the course's.
-    //
-    // A compiled Jack program is the other case with no Sys.init: there
-    // Sys.init is the library's, and the bootstrap is what calls it. The two
-    // are told apart by Main.main, which is what a Jack program has and an
-    // SM exercise does not.
-    const hasInit = defined.has('Sys.init')
-    const isJackProgram = !hasInit && defined.has('Main.main')
-    const entry = hasInit || isJackProgram || anyFragment ? 'bootstrap' : 'none'
-
-    // The library fills what the program did not supply, as the course's VM
-    // emulator does with its built-in OS: a name nothing defines, whose class
-    // the library has. A hand-written SM exercise names nothing of the kind
-    // and so is linked with nothing.
-    const called = files.flatMap((f) => [
-      ...f.fragment, ...f.functions.flatMap((fn) => fn.body),
-    ]).flatMap((c) => (c.kind === 'call' ? [c.name] : []))
-    const libraryClasses = new Set(LIBRARY_CLASSES)
-    const needsLibrary = isJackProgram
-      || called.some((n) => !defined.has(n) && libraryClasses.has(n.split('.')[0]!))
-
-    const all = needsLibrary
-      ? withLibrary(files, standardLibrary(), { seed: entry === 'bootstrap' ? ['Sys.init'] : [] })
+    // One rule for how a program wants to be loaded, shared with the site
+    // and the tests, so that a program behaves the same wherever it is run.
+    const plan = planFor(files)
+    const all = plan.library
+      ? withLibrary(files, standardLibrary(), { seed: plan.entry === 'bootstrap' ? ['Sys.init'] : [] })
       : files
 
     const problems = resolve({ files: all })
     if (problems.length > 0) {
       throw new Error(problems.map((d) => `${d.pos.file}: in line ${d.pos.line}: ${d.message}`).join('\n'))
     }
-    emulator.load(all, { allowFragment: anyFragment, entry })
+    emulator.load(all, { allowFragment: plan.allowFragment, entry: plan.entry })
     loaded = true
   }
 

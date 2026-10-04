@@ -6,9 +6,11 @@
  * scrambled one.
  */
 import { parse, printCommand, resolve, type SmFile, type Notation } from '@sm/core'
-import { ADDR, Emulator, SmFault } from '@sm/emulator'
+import { ADDR, Emulator, planFor, SmFault, standardLibrary, withLibrary } from '@sm/emulator'
 import { el } from '../lib/dom.js'
 import type { Strings } from '../lib/i18n.js'
+import { HANDOFF } from './compiler.js'
+import { screenView } from '../lib/screen.js'
 
 const EXAMPLES: ReadonlyArray<{ name: string; source: string }> = [
   {
@@ -59,12 +61,14 @@ export function emulatorPage(s: Strings): HTMLElement {
   let files: SmFile[] = []
   let notation: Notation = 'mnemonic'
   let fault = ''
+  let libraryLinked = false
 
   const listing = el('div', { class: 'listing code', dir: 'ltr' })
   const stackBody = el('div', { class: 'body' })
   const framesBody = el('div', { class: 'body' })
   const globalsBody = el('div', { class: 'body' })
   const status = el('span', { class: 'status' })
+  const screen = screenView(emulator)
   const faultLine = el('div', { class: 'fault' })
 
   const stepBtn = el('button', {}, s.step)
@@ -92,7 +96,7 @@ export function emulatorPage(s: Strings): HTMLElement {
   function load(): void {
     fault = ''
     const r = parse('program.sm', source.value)
-    const problems = [...r.diagnostics, ...resolve({ files: [r.file] })]
+    const problems = [...r.diagnostics]
     if (problems.length > 0) {
       fault = problems.map((d) => `program.sm: in line ${d.pos.line}: ${d.message}`).join('\n')
       files = []
@@ -100,8 +104,22 @@ export function emulatorPage(s: Strings): HTMLElement {
       return
     }
     files = [r.file]
+    // One rule for how a program wants to be loaded, the same one the .tst
+    // runner uses: see planFor.
+    const plan = planFor(files)
+    const all = plan.library
+      ? withLibrary(files, standardLibrary(), { seed: plan.entry === 'bootstrap' ? ['Sys.init'] : [] })
+      : files
+    const unresolved = resolve({ files: all })
+    if (unresolved.length > 0) {
+      fault = unresolved.map((d) => `${d.pos.file}: in line ${d.pos.line}: ${d.message}`).join('\n')
+      files = []
+      draw()
+      return
+    }
+    libraryLinked = plan.library
     try {
-      emulator.load(files, { allowFragment: r.file.fragment.length > 0 })
+      emulator.load(all, { allowFragment: plan.allowFragment, entry: plan.entry })
     } catch (error) {
       fault = error instanceof SmFault ? error.message : String(error)
     }
@@ -119,12 +137,14 @@ export function emulatorPage(s: Strings): HTMLElement {
 
   stepBtn.addEventListener('click', () => guard(() => emulator.step()))
   runBtn.addEventListener('click', () => guard(() => emulator.run(500_000)))
-  resetBtn.addEventListener('click', () => { fault = ''; guard(() => emulator.reset({ allowFragment: files[0]?.fragment.length ? true : false })) })
+  resetBtn.addEventListener('click', () => { fault = ''; load() })
   source.addEventListener('input', load)
 
   function draw(): void {
     faultLine.textContent = fault
-    status.textContent = `${emulator.steps} ${s.steps}${emulator.running ? '' : ` · ${s.halted}`}`
+    status.textContent = `${emulator.steps} ${s.steps}`
+      + (emulator.running ? '' : ` · ${s.halted}`)
+      + (libraryLinked ? ` · ${s.library} ${s.libraryOn}` : '')
     stepBtn.disabled = !emulator.running
     runBtn.disabled = !emulator.running
 
@@ -140,6 +160,7 @@ export function emulatorPage(s: Strings): HTMLElement {
       for (const c of file.fragment) listing.append(el('div', { class: 'line' }, printCommand(c, notation)))
     }
 
+    screen.draw()
     const stack = emulator.stack()
     stackBody.replaceChildren(table(stack.map((v, i) => [String(ADDR.STACK_BASE + i), String(v)])))
     framesBody.replaceChildren(table(emulator.frames().map((f) => [f.fn, String(f.lcl)])))
@@ -173,12 +194,24 @@ export function emulatorPage(s: Strings): HTMLElement {
         el('div', { style: 'height:0.75rem' }),
         panel(s.program, el('div', { class: 'body' }, listing))),
       el('div', {},
+        panel(s.screen, el('div', { class: 'body' }, screen.element, el('p', { class: 'hint' }, s.keyboardHint))),
+        el('div', { style: 'height:0.75rem' }),
         panel(s.stack, stackBody),
         el('div', { style: 'height:0.75rem' }),
         panel(s.frames, framesBody),
         el('div', { style: 'height:0.75rem' }),
         panel(s.globals, globalsBody))),
   )
+
+  try {
+    const handed = sessionStorage.getItem(HANDOFF)
+    if (handed !== null && handed !== '') {
+      sessionStorage.removeItem(HANDOFF)
+      source.value = handed
+    }
+  } catch {
+    // No storage, no hand-over; the page still works.
+  }
 
   load()
   return root

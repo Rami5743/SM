@@ -83,13 +83,13 @@ describe('the shell', () => {
   it('gathers every page on the home page', async () => {
     const page = await open('/')
     const cards = await page.$$eval('.cards .card h3', (hs) => hs.map((h) => h.textContent))
-    expect(cards).toEqual(['אמולטור', 'תיעוד', 'רציונל', 'תרגילים'])
+    expect(cards).toEqual(['אמולטור', 'קומפיילר', 'תיעוד', 'רציונל', 'תרגילים'])
     await page.close()
   })
 
   it('reaches every tab from every page', async () => {
     const page = await open('/')
-    for (const tab of ['אמולטור', 'תיעוד', 'רציונל', 'תרגילים', 'ראשי']) {
+    for (const tab of ['אמולטור', 'קומפיילר', 'תיעוד', 'רציונל', 'תרגילים', 'ראשי']) {
       await page.click(`nav a:text-is("${tab}")`)
       await page.waitForSelector(`nav a[aria-current="page"]:text-is("${tab}")`)
     }
@@ -162,6 +162,51 @@ describe('the emulator page', () => {
     // C4: the operators stay symbolic in every view.
     expect(text).toContain('+')
     expect(text).not.toContain('add')
+    await page.close()
+  })
+})
+
+describe('the compiler page', () => {
+  it('compiles Jack to SM as you type', async () => {
+    const page = await open('/compiler')
+    const sm = await page.textContent('.panel:has(h3:text-is("הפלט ב‑SM")) pre')
+    expect(sm).toContain('!Main.main()i,sum')
+    expect(sm).toContain('Math.multiply')
+    expect(await page.textContent('.fault')).toBe('')
+    await page.close()
+  })
+
+  // The check the course's compiler performs and the prototype does not.
+  it('rejects a subroutine control can fall out of, naming the line', async () => {
+    const page = await open('/compiler')
+    await page.selectOption('select', '2')
+    await page.waitForSelector('.fault:text-matches("without .return.")')
+    expect(await page.textContent('.fault')).toContain('In subroutine f')
+    await page.close()
+  })
+})
+
+describe('a compiled Jack program, end to end in the browser', () => {
+  it('goes from the compiler page to the emulator, links the library and draws', async () => {
+    const page = await open('/compiler')
+    await page.fill('textarea',
+      'class Main { function void main() { do Output.printString("SM"); return; } }')
+    await page.waitForSelector('.panel:has(h3) pre:text-matches("Output.printString")')
+    await page.click('button:text-is("שלח לאמולטור")')
+    await page.waitForSelector('canvas.screen')
+    // The library is linked because the program has Main.main and no
+    // Sys.init: that is the whole rule, and the status line says so.
+    await page.waitForSelector('.status:text-matches("ספרייה")')
+    await page.click('button:text-is("הרץ")')
+    const black = await page.$eval('canvas.screen', (canvas) => {
+      const context = (canvas as HTMLCanvasElement).getContext('2d')
+      if (context === null) return -1
+      const { data } = context.getImageData(0, 0, 512, 256)
+      let n = 0
+      for (let i = 0; i < data.length; i += 4) if (data[i] === 0) n++
+      return n
+    })
+    expect(black).toBeGreaterThan(0)
     await page.close()
   })
 })

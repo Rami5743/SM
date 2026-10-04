@@ -8,6 +8,7 @@ import { el } from './lib/dom.js'
 import { dirOf, LANGS, PAGES, STRINGS, type Lang, type PageId, type Strings } from './lib/i18n.js'
 import { href, parseRoute, switched, type Route } from './lib/router.js'
 import { emulatorPage } from './pages/emulator.js'
+import { compilerPage } from './pages/compiler.js'
 import { docPage, projectsPage } from './pages/doc.js'
 
 const BASE = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')
@@ -26,6 +27,7 @@ function pageFor(route: Route, s: Strings): HTMLElement {
   switch (route.page) {
     case 'home': return homePage(s, route)
     case 'emulator': return emulatorPage(s)
+    case 'compiler': return compilerPage(s)
     // The documents are English only for now; the banner says so rather than
     // the page being missing.
     case 'reference': return docPage(s.nav.reference, smMarkdown, route.lang === 'he' ? s.untranslated : undefined)

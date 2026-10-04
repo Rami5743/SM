@@ -89,3 +89,42 @@ export function withLibrary(
 
   return [...user, ...taken]
 }
+
+export interface LoadPlan {
+  readonly allowFragment: boolean
+  readonly entry: 'bootstrap' | 'none'
+  readonly library: boolean
+}
+
+/**
+ * How a set of files wants to be loaded, worked out from the files alone.
+ *
+ * There is one rule, and the .tst runner, the site and the tests all use it,
+ * so that a program behaves the same wherever it is run.
+ *
+ *   * A fragment is the teaching form of spec/sm.md section 8.1 and runs
+ *     from its first command.
+ *   * A program with its own `Sys.init` is bootstrapped into it.
+ *   * A program with `Main.main` and no `Sys.init` is a compiled Jack
+ *     program: `Sys.init` is the library's, and the bootstrap calls it.
+ *   * Anything else is a function under test with no bootstrap, which is how
+ *     the course tests one before the student has written a bootstrap: the
+ *     script plants the frame and the function, being first, simply runs.
+ *
+ * The library fills what the program did not supply, as the course's VM
+ * emulator does with its built-in OS: a called name that nothing defines,
+ * whose class the library has.
+ */
+export function planFor(files: readonly SmFile[]): LoadPlan {
+  const allowFragment = files.some((f) => f.fragment.length > 0)
+  const defined = new Set(files.flatMap((f) => f.functions.map((fn) => fn.decl.name)))
+  const hasInit = defined.has('Sys.init')
+  const isJackProgram = !hasInit && defined.has('Main.main')
+  const entry = hasInit || isJackProgram || allowFragment ? 'bootstrap' : 'none'
+
+  const available = new Set(LIBRARY_CLASSES)
+  const library = isJackProgram
+    || files.flatMap(callsIn).some((n) => !defined.has(n) && available.has(classOf(n)))
+
+  return { allowFragment, entry, library }
+}
