@@ -76,7 +76,7 @@ describe('spec/sm.md', () => {
   // Every decision recorded in CORRECTIONS.md must be visible in the reference,
   // so that a reader of one is never surprised by the other. The citation may
   // be parenthetical in prose or a cell in a table; either counts.
-  it.each(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'])('cites %s', (c) => {
+  it.each(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'])('cites %s', (c) => {
     expect(spec).toMatch(new RegExp(`\\b${c}\\b`))
   })
 })

@@ -344,3 +344,39 @@ expects a diagnostic from it.
 
 **Touches.** The reference page; `sm-core`'s resolution pass; the emulator's
 loader.
+
+---
+
+## C8 — a symbol may contain an underscore
+
+*A widening, found by M1's acceptance test, which the supplied samples
+themselves require.*
+
+**The reference.** The documentation says a symbol "starts with a letter and
+might include letters, digits and the character `.`". No underscore. Nothing
+enforces it — the supplied translator validates no name at all — so the
+restriction existed only on paper.
+
+**We do** allow it. A symbol begins with a letter or `_` and continues with
+letters, digits, `_` and `.`.
+
+**Why the paper rule cannot stand.** Three measurements, all run here:
+
+* *The supplied samples break it.* `reference/samples/fibonachie/Main.sm`, which
+  the supplied compiler produced, uses `fib_nam`, `while_strt.1`, `end_if.0`.
+  Enforcing the documented rule rejects the project's own example programs.
+* *Jack allows it.* The official compiler accepts `var int my_var;` and emits
+  it. So does the supplied tokenizer, whose pattern is `[a-zA-Z_]` followed by
+  `[a-zA-Z_0-9]`. A Jack → SM compiler forbidden the underscore would have to
+  mangle every such identifier, for nothing.
+* *Hack allows it.* The course's assembler takes `@a_b` and `(x_y)` without
+  complaint — checked: it allocated `a_b` at 16 and resolved the label.
+
+So the restriction has no implementation behind it at any of the three levels,
+and removing it costs nothing.
+
+**What stays excluded: a leading digit.** That one is load-bearing. `<-5`
+pushes a constant and `<-x` pushes a global, and the two are told apart by the
+first character of the operand.
+
+**Touches.** The reference page's definition of a symbol; the parser's pattern.

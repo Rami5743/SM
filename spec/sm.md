@@ -20,8 +20,12 @@ the differences; this document only states them.
 
 ### 1.1 Symbols
 
-A **symbol** begins with a letter and continues with letters, digits and the
-character `.`. Nothing else is a symbol.
+A **symbol** begins with a letter or `_` and continues with letters, digits,
+`_` and `.` (C8). Nothing else is a symbol.
+
+A symbol may not begin with a digit, and that exclusion is load-bearing: `<-5`
+pushes a constant and `<-x` pushes a global, and the two are told apart by the
+first character of the operand.
 
 The `.` carries no meaning to the machine. It is a character like any other,
 and a name that contains one is an ordinary name.
