@@ -130,6 +130,12 @@ offers, with the arithmetic and logical operators left symbolic in every view;
 **C5**, constants are non-negative as in the course, negation is `(-)`, and an
 empty operand is an error rather than something the catch-all rule swallows.
 
+Two further questions closed without a correction entry, because both keep
+`reference/` as it is: **Q3**, the bootstrap performs a full call to `Sys.init`
+rather than a jump — the bootstrap is a call like every other call, with no
+exception to teach and none to implement — and **Q4**, neither SM nor Jack
+gains anything, a discarded return value staying the compiler's own business.
+
 Write `spec/sm.md` as the normative reference: grammar, memory model, frame
 layout, the exact statement of where `SP` points, the most-significant-bit
 boolean convention, error conditions. Carry over `spec/CORRECTIONS.md` and the
@@ -158,6 +164,13 @@ stack recovered from `LCL` and the declarations.
 The memory-mapped devices — a screen buffer and a keyboard register at the Hack
 addresses — belong here rather than in a later milestone. They are cheap now and
 they are a prerequisite for M7, where the Jack library drives them.
+
+**A defined reset state.** `RAM[0..15]` is zero at reset, after which the
+bootstrap sets `SP`; `LCL`, `ARG`, `THIS` and `THAT` are never touched by SM
+and stay zero. Without this the value the bootstrap pushes from the
+uninitialised `LCL` is arbitrary, and every `.cmp` file covering that cell is
+unreliable. `packages/hack/` must agree, since the two are compared cell for
+cell.
 
 **Check the stack before running, and bound it while running.** Before
 execution, walk each function and compute the depth of the stack above its
@@ -504,9 +517,9 @@ M9 and M10 follow at leisure.
 
 ## 7. Questions for the author
 
-1. Q3, Q5, Q7 and Q9 in `spec/INVENTORY.md` — the four still open. Q3
-   (`Sys.init` jumped to or called) is the one that changes generated code;
-   the other three are rules and diagnostics.
+1. Q5, Q7 and Q9 in `spec/INVENTORY.md`, all three about rules and
+   diagnostics rather than generated code, plus the companion to Q3: whether
+   control falling off the end of a function is an error.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.

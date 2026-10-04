@@ -72,8 +72,8 @@ subtraction, `>` the reverse subtraction, `==` is `v | -v` followed by bitwise
 negation. No comparison emits a label or a jump — the point of the convention.
 `?-->` tests with `D;JLT`.
 
-**Bootstrap.** `SP = 256` (C2: `255`), then a *call* to `Sys.init` (Q3), then an
-infinite loop.
+**Bootstrap.** `SP = 256` (C2: `255`), then a *call* to `Sys.init` — kept, per
+Q3 — then an infinite loop.
 
 **Reserved assembly symbols** the runtime occupies: `SP`, `LCL`, `tmp`, `end`,
 and the prefixes `SM.`, `FUNTION.`, `LABEL.`, `call.`.
@@ -89,8 +89,10 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 ## 3. Questions
 
 Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), and
-**Q4**, closed with no change to either language. Still open: **Q3**, **Q5**,
-**Q7**, **Q9**. A decision that changes something becomes an entry in
+**Q3** and **Q4**, both closed by keeping things as they are. Still open:
+**Q5**, **Q7**, **Q9**, and the companion to Q3 — whether falling off the end
+of a function is an error. A decision that changes something becomes an entry
+in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
 
@@ -153,66 +155,38 @@ to a function that does not exist and thence into a jump to a garbage address,
 so call targets have to be resolved against the declarations for the rejection
 to mean anything.
 
-**Q3 — `Sys.init`: called or jumped to?**
+**Q3 — `Sys.init`: called or jumped to? DECIDED: a full call.** No entry in
+`CORRECTIONS.md` — this is what `reference/` already does, and it stays.
 
-The reference bootstrap is `SP = 256`, then a full call: push `LCL`, push the
-return label, jump, and a landing pad followed by an infinite loop. The design
-letter objects that there is no environment to save, since no function is
-running yet, and proposes a bare jump instead.
+The design letter argued for a bare jump, there being no environment to save,
+and a third option existed between them: push the return address but not `LCL`,
+dropping exactly the half that is meaningless. The full call wins on the
+simplest ground available — *the bootstrap is a call like every other call*,
+with no exception to state and none to implement, and the bootstrap is the
+first thing a student writes in part II of the assignment. The two cells and
+ten instructions it costs are paid once.
 
-**What is actually at stake.** Not cost. The call costs two cells and ten
-instructions, once, at startup. It is entirely a question of what happens when
-`Sys.init` returns — and the specification says it may: *"After its completion,
-the program will go into infinite loop."* Under the call, `<--` from `Sys.init`
-lands on the bootstrap's landing pad and does exactly that, for free. Under a
-bare jump it does not, and the arithmetic is worth following, because it is the
-whole question.
+It also keeps, for free, the sentence the specification already contains:
+*"After its completion, the program will go into infinite loop."* Under the
+call, `<--` from `Sys.init` lands on the bootstrap's landing pad and does
+exactly that. The bare jump would have left that `<--` jumping to a cell two
+below the stack base that nobody ever wrote, and so would have required the
+sentence to be rewritten.
 
-With a bare jump and `SP = 255`, the declaration `!Sys.init()` sets
-`LCL = SP - 1 = 254`. The body then runs correctly — locals are pushed and
-addressed from `LCL`, and the stack grows from 256 as it should. Only `<--`
-breaks: with `a = 0` it reloads `LCL` from `RAM[254]` and jumps to `RAM[255]`,
-two cells below the stack base that nobody ever wrote. The program jumps to a
-garbage address.
+**One consequence to settle with it.** The bootstrap pushes `LCL` before
+anything has set it, so the value landing in `RAM[256]` is whatever the `LCL`
+register holds at reset. Left undefined, that cell is non-deterministic and any
+`.cmp` file covering it is unreliable. *Proposed:* the emulator defines
+`RAM[0..15]` as zero at reset, after which the bootstrap sets `SP`; `LCL`,
+`ARG`, `THIS` and `THAT` are never touched by SM and stay zero. The Hack CPU
+emulator must be made to agree, since the two have to match cell for cell.
 
-**So there are three options, not two.**
-
-*A — keep the call.* `<--` from `Sys.init` behaves as the specification says.
-No special case anywhere: the bootstrap is a call like every other call, which
-matters because the bootstrap is the first thing the student implements. The
-emulator's frame chain has an ordinary bottom frame instead of one pointing
-below the stack base.
-
-*B — bare jump, and `<--` from `Sys.init` becomes a program error.* Saves two
-cells and ten instructions. Requires rewriting the specification sentence above,
-and requires the emulator to detect and report the return rather than let it
-jump. Note that it also puts a burden on the Jack side: `Sys.init` there is an
-ordinary `void` function, and nothing stops a student's version from reaching
-its end.
-
-*C — push the return address, but not `LCL`.* Saves one cell and five
-instructions, and `<--` still works: the frame's return slot is correct, the
-saved-`LCL` slot holds garbage that is loaded into `LCL` on the way out and
-never read again, because the next thing that happens is the infinite loop.
-
-**Recommendation: C, with A as the safe fallback — not B.**
-
-The letter's argument is that there is *no environment to save*. Taken
-literally, that is an argument for C and not for B: the meaningless thing being
-pushed is the saved `LCL`, and C drops precisely that. A return address is not
-environment — it is where to go — and `Sys.init` genuinely does have somewhere
-to go, because the specification promises it an infinite loop to fall into.
-
-Between C and A the margin is one cell, and A has the simpler story to tell a
-student: *the bootstrap is a call.* If the reference page would rather not
-explain why one half of a frame is pushed and the other is not, A is the honest
-choice and costs nothing that matters.
-
-**Also to be settled here, whichever is chosen:** what happens when a function
-reaches its last line without a `<--`. The reference translator emits nothing,
-so execution runs straight into the next function's declaration, which sets
-`LCL` from the current `SP` and pushes that function's locals — entering it with
-a frame that has no return address, so its own `<--` jumps to a garbage address.
+**Still open, and raised with this question rather than settled by it:** what
+happens when a function reaches its last line without a `<--`. The reference
+translator emits nothing, so execution runs straight into the next function's
+declaration, which sets `LCL` from the current `SP` and pushes that function's
+locals — entering it with a frame that has no return address, so its own `<--`
+jumps to a garbage address.
 
 Both supplied `Sys.init` files are one step from this. The hand-written one has
 a `<--`, but only after an infinite loop, so it is unreachable; the
@@ -222,6 +196,7 @@ Jack-generated one has no `<--` at all, because Jack's `Sys.init` body is
 *Proposed:* a diagnostic — control must not be able to fall off the end of a
 function. It costs nothing to add: the depth walk of Q9 already computes which
 points are reachable, so this is the same traversal asking one more question.
+If Q9 is declined, the traversal is still cheap on its own.
 
 **Q4 — discarding a return value. CLOSED: neither language changes.**
 
