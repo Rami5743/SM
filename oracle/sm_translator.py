@@ -77,15 +77,54 @@ class sm_trnsleitor:
         self.fold=fold
         self.file_out=open(fold+".asm","w")
         self.asm_line=0
+        # REPAIR (oracle): the bootstrap used to be written here, from the
+        # constructor, before anything had been read. That makes a fragment --
+        # a bare sequence of commands with no declaration, which is the whole
+        # of the first package of exercises -- impossible to translate, in two
+        # separate ways. Measured on the course's own tools, with the three
+        # lines `<-7`, `<-8`, `+`:
+        #
+        #   | RAM[0] |RAM[256]|RAM[257]|
+        #   |    258 |      0 |      0 |
+        #
+        # The 15 is nowhere. First, the bootstrap jumps to FUNTION.Sys.init,
+        # which no function defines, so the assembler allocates it as an
+        # ordinary variable and the jump lands in the middle of the program.
+        # Second, and independently, the fragment's instructions are written
+        # *after* the bootstrap's infinite loop, so nothing could reach them
+        # even if the jump were right.
+        #
+        # The bootstrap now waits until `translate` knows whether there is a
+        # Sys.init to call. Note that the constant stays 256: C2 is a design
+        # decision of the new system, not a defect of this one.
+
+    def write_bootstrap(self, call_sys_init):
         mov_A2SP="//SP=A\n"+add_tabs("D=A\n@SP\nM=D\n")
-        inif_loop="//infinite loop\n"+add_tabs("@end\n(end)\n0;JMP\n")
-        self.write("//inisialisation code\n"+add_tabs("@256\n"+mov_A2SP+"//call Sys.init\n"+add_tabs(self.call("Sys.init"))+inif_loop))
+        start="@256\n"+mov_A2SP
+        if call_sys_init:
+            start=start+"//call Sys.init\n"+add_tabs(self.call("Sys.init"))
+        self.write("//inisialisation code\n"+add_tabs(start))
+
+    def write_end_loop(self):
+        self.write("//infinite loop\n"+add_tabs("@end\n(end)\n0;JMP\n"))
     def translate(self, line_numbers=False):
         dir_list=sorted(os.listdir(self.fold))
-        for f in dir_list:
-            name,ext=os.path.splitext(f)
-            if ext==".sm":
-                self.translate_file(self.fold+"/"+f)
+        sources=[f for f in dir_list if os.path.splitext(f)[1]==".sm"]
+        # A program with no declaration anywhere is a fragment: no Sys.init to
+        # call, and its commands run straight after the bootstrap rather than
+        # after the loop that never ends.
+        has_function=False
+        for f in sources:
+            for line in open(self.fold+"/"+f):
+                if cline_line(line).startswith("!"):
+                    has_function=True
+        self.write_bootstrap(has_function)
+        if has_function:
+            self.write_end_loop()
+        for f in sources:
+            self.translate_file(self.fold+"/"+f)
+        if not has_function:
+            self.write_end_loop()
         self.file_out.close()
         # REPAIR (oracle): `add_numbrs` is the step that needs the assembler.
         # It is off unless asked for, so the translator runs.

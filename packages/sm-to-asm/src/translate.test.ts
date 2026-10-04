@@ -84,6 +84,41 @@ describe('against the oracle', () => {
   }
 })
 
+/**
+ * The fragment path, which the comparison above does not reach because both
+ * samples are whole programs. It was a hole in both translators: the supplied
+ * one wrote its bootstrap from the constructor, before it had read anything,
+ * so a fragment got a jump to a Sys.init nobody declares and its own
+ * instructions after the loop that never ends. Measured, the 15 was nowhere.
+ * Repaired in oracle/, and compared here.
+ */
+describe('a fragment', () => {
+  const FRAGMENT = '<-7\n<-8\n+\n'
+
+  it.skipIf(!havePython)('agrees with the oracle instruction for instruction', () => {
+    const work = mkdtempSync(join(tmpdir(), 'sm-frag-'))
+    try {
+      const src = join(work, 'p')
+      execFileSync('mkdir', ['-p', src])
+      writeFileSync(join(src, 'T.sm'), FRAGMENT)
+      execFileSync('python3', [join(root, 'oracle/run.py'), 'sm', src], { stdio: 'pipe' })
+      const theirs = instructions(readFileSync(`${src}.asm`, 'utf8'))
+
+      const r = parse('T.sm', FRAGMENT)
+      expect(r.diagnostics).toEqual([])
+      const ours = instructions(translate([r.file], { comments: false }))
+
+      expect(theirs[0]).toBe('@256')
+      expect(ours[0]).toBe('@255')
+      expect(ours.slice(1)).toEqual(theirs.slice(1))
+      // And nothing calls a Sys.init that is not there.
+      expect(ours.join('\n')).not.toContain('Sys.init')
+    } finally {
+      rmSync(work, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('through the course\'s own tools', () => {
   it.skipIf(!haveJava)('assembles and runs FibonacciElement to 8', () => {
     const work = mkdtempSync(join(tmpdir(), 'sm-hack-'))
