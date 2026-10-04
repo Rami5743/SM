@@ -1,0 +1,85 @@
+// The SM standard library. Part of the nand2tetris-SM alternative.
+
+/**
+ * Memory access and heap management.
+ *
+ * `peek` and `poke` are the place where SM shows what it buys. In the
+ * course's VM they need `pointer`, `that` and a segment to re-point; here
+ * `memory[address]` is `<- @memory  <- @address  +  []` — an address on the
+ * stack and one instruction. The trick of letting an array start at 0 is the
+ * course's own, and it is all that is needed.
+ */
+class Memory {
+    static Array memory;
+    /**
+     * The free list. A block begins with two words: its whole length,
+     * header included, and the next free block. A caller is handed the
+     * third word.
+     */
+    static Array freeList;
+
+    /** Initializes the library. */
+    function void init() {
+        let memory = 0;
+        let freeList = 2048;
+        let freeList[0] = 14336;
+        let freeList[1] = null;
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return memory[address];
+    }
+
+    /** Sets the RAM value at the given address. */
+    function void poke(int address, int value) {
+        let memory[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns a reference to it. */
+    function Array alloc(int size) {
+        var Array block, previous, carved;
+        var int need;
+        if (size < 1) {
+            do Sys.error(5);
+        }
+        let need = size + 2;
+        let previous = null;
+        let block = freeList;
+        while (~(block = null)) {
+            if (block[0] > (need + 1)) {
+                // Carve the tail off, which leaves the block in the list.
+                let block[0] = block[0] - need;
+                let carved = block + block[0];
+                let carved[0] = need;
+                let carved[1] = null;
+                return carved + 2;
+            }
+            if (~(block[0] < need)) {
+                // Take the whole block out of the list.
+                if (previous = null) {
+                    let freeList = block[1];
+                } else {
+                    let previous[1] = block[1];
+                }
+                let block[1] = null;
+                return block + 2;
+            }
+            let previous = block;
+            let block = block[1];
+        }
+        do Sys.error(6);
+        return 0;
+    }
+
+    /** De-allocates the given object, returning it to the free list. */
+    function void deAlloc(Array object) {
+        var Array block;
+        let block = object - 2;
+        let block[1] = freeList;
+        let freeList = block;
+        return;
+    }
+}

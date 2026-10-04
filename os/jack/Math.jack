@@ -1,0 +1,128 @@
+// The SM standard library. Part of the nand2tetris-SM alternative.
+//
+// The Jack side of the library is ordinary Jack: it is compiled by our own
+// compiler, exactly as a student's program is, and nothing here is privileged.
+// That is the point — the library is the compiler's largest test.
+
+/** A library of commonly used mathematical functions. */
+class Math {
+    static Array twoToThe;
+    /** The remainder left by the last divAbs. */
+    static int rest;
+
+    /** Initializes the library. */
+    function void init() {
+        var int i, v;
+        let twoToThe = Array.new(16);
+        let v = 1;
+        let i = 0;
+        while (i < 16) {
+            let twoToThe[i] = v;
+            let v = v + v;
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x) {
+        if (x < 0) {
+            return -x;
+        }
+        return x;
+    }
+
+    /** Whether bit i of x is set. */
+    function boolean bit(int x, int i) {
+        return ~((x & twoToThe[i]) = 0);
+    }
+
+    /** Returns the product of x and y, by shift and add. */
+    function int multiply(int x, int y) {
+        var int sum, shifted, i;
+        let sum = 0;
+        let shifted = x;
+        let i = 0;
+        while (i < 16) {
+            // The bit test is written out rather than called: multiply is
+            // the library's hottest function by a wide margin.
+            if (~((y & twoToThe[i]) = 0)) {
+                let sum = sum + shifted;
+            }
+            let shifted = shifted + shifted;
+            let i = i + 1;
+        }
+        return sum;
+    }
+
+    /** Returns the integer part of x/y. */
+    function int divide(int x, int y) {
+        var boolean negative;
+        var int result;
+        if (y = 0) {
+            do Sys.error(3);
+        }
+        let negative = ((x < 0) & (y > 0)) | ((x > 0) & (y < 0));
+        let result = Math.divAbs(Math.abs(x), Math.abs(y));
+        if (negative) {
+            return -result;
+        }
+        return result;
+    }
+
+    /**
+     * x / y for x and y both non-negative, leaving x - (result * y) in
+     * `rest`. Halving the problem costs one multiplication in all, not one
+     * per bit.
+     */
+    function int divAbs(int x, int y) {
+        var int q;
+        // y has overflowed to negative once it is past 16384 doubled.
+        if ((y > x) | (y < 0)) {
+            let rest = x;
+            return 0;
+        }
+        let q = Math.divAbs(x, y + y);
+        if (rest < y) {
+            return q + q;
+        }
+        let rest = rest - y;
+        return (q + q) + 1;
+    }
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x) {
+        var int y, j, t, square;
+        if (x < 0) {
+            do Sys.error(4);
+        }
+        let y = 0;
+        let j = 7;
+        while (~(j < 0)) {
+            let t = y + twoToThe[j];
+            let square = t * t;
+            // square > 0 rejects the products that have overflowed.
+            if ((~(square > x)) & (square > 0)) {
+                let y = t;
+            }
+            let j = j - 1;
+        }
+        return y;
+    }
+
+    /** Returns the greater of the two. */
+    function int max(int a, int b) {
+        if (a > b) {
+            return a;
+        }
+        return b;
+    }
+
+    /** Returns the smaller of the two. */
+    function int min(int a, int b) {
+        if (a < b) {
+            return a;
+        }
+        return b;
+    }
+}

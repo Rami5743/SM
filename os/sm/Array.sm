@@ -1,0 +1,10 @@
+!Array.new(size)
+<-@size
+Memory.alloc
+<--
+!Array.dispose(this)
+<-@this
+Memory.deAlloc
+->Sys.discard
+<-0
+<--

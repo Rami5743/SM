@@ -1,0 +1,16 @@
+// The SM standard library. Part of the nand2tetris-SM alternative.
+
+/** An array is a bare block of memory: it has no length and no type. */
+class Array {
+
+    /** Returns a new array of the given size. */
+    function Array new(int size) {
+        return Memory.alloc(size);
+    }
+
+    /** Disposes of this array. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+}

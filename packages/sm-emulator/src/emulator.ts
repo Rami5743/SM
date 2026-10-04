@@ -10,6 +10,7 @@
 import type { Command, SmFile } from '@sm/core'
 import { ADDR, Memory, toWord } from './memory.js'
 import { link, NO_FUNCTION, type Program, type Step } from './program.js'
+import { standardLibrary, withLibrary } from './library.js'
 
 export class SmFault extends Error {
   constructor(message: string, readonly where: string | undefined) {
@@ -43,6 +44,13 @@ export interface LoadOptions {
    * course does the same, and its own project-8 scripts rely on it.
    */
   readonly entry?: 'bootstrap' | 'none'
+  /**
+   * Link the standard library: the OS classes the program reaches and does
+   * not define itself, as `library.ts` explains. A compiled Jack program
+   * needs it; a hand-written SM program of projects 7 and 8 must not have
+   * it, or the library's `Sys.init` would supplant the program's.
+   */
+  readonly library?: boolean
 }
 
 export class Emulator {
@@ -56,7 +64,12 @@ export class Emulator {
   steps = 0
 
   load(files: readonly SmFile[], options: LoadOptions = {}): void {
-    this.program = link(files)
+    const all = options.library === true
+      ? withLibrary(files, standardLibrary(), {
+          seed: options.entry === 'none' ? [] : ['Sys.init'],
+        })
+      : files
+    this.program = link(all)
     this.reset(options)
   }
 
@@ -140,6 +153,16 @@ export class Emulator {
       fn = this.program.functions[step.fn]!.decl
     }
     return out
+  }
+
+  /** The function the program counter is in, if it is in one. */
+  at(): string | undefined {
+    return this.currentFunction()?.name
+  }
+
+  /** The linked program, which with `library` on is more than was loaded. */
+  get linked(): Program {
+    return this.program
   }
 
   private currentFunction() {
