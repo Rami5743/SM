@@ -319,11 +319,41 @@ are a view.** The emulator renders any program word-for-word so the two can be
 compared by eye, but only the structural commands have a word form — the
 arithmetic and logical operators stay symbolic everywhere.
 
-**Q7 — statics versus globals by naming convention.** A name containing `.` is
-a static of the file named before the dot; a name without a dot is a true
-global. This is a convention, not a rule the translator enforces.
-*Proposed:* have the tools warn when a file writes to a dotted name belonging to
-another file, and leave it legal.
+**Q7 — statics versus globals by naming convention.** SM has one flat space of
+global variables. The design letter separates two kinds within it by naming: a
+name containing `.` is a static belonging to the file named before the dot, a
+name without one is a true global. Nothing enforces this; both become ordinary
+assembly symbols, `SM.File.x` and `SM.x`.
+
+**Where it is merely tidy, and where it is load-bearing.** For the assignment
+it is tidy: the student's translator treats every global alike and never needs
+to know. It becomes load-bearing exactly once, in M9. The course's VM has a
+real per-file `static` segment, so translating SM to VM means deciding which
+globals are statics of which file — and the convention is the only information
+there is. A program that ignores it cannot be translated correctly.
+
+**Who produces which kind.** Jack statics compile to `Class.name`, so
+everything a Jack program produces is dotted, and Jack has no true globals at
+all. Undotted globals arise only in hand-written SM, and in VM → SM output,
+where the `temp` segment and `this`/`that`/`pointer` become reserved undotted
+names.
+
+**The question, then, is narrow:** is the dot a rule or a habit, and is a file
+writing to another file's dotted name wrong?
+
+*Against calling it wrong:* a shared variable deliberately named `Config.debug`
+and written from several files is a reasonable thing to want, and SM has no
+notion of privacy to appeal to.
+
+*For calling it wrong:* it is the one thing that makes the SM → VM direction
+decidable, and a program that breaks it is a program the bridge will silently
+mistranslate.
+
+*Proposed:* leave it legal and warn on a cross-file write to a dotted name,
+with the warning worded as what it is — not "this is forbidden" but "this
+global will not survive translation to the course's VM". If M9 is never built,
+the question costs nothing either way, which is a reason to decide it late
+rather than now.
 
 **Q8 — negative literals. DECIDED → C5: follow the course.** `<- n` takes a
 non-negative decimal; a negative value is `<- n` then `(-)`; a leading sign is
