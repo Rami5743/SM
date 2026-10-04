@@ -43,9 +43,8 @@ appear. So
 ? - - > loop
 ```
 
-are the same command, and `<- @ x` is `<-@x`. This follows the supplied
-implementation and is kept deliberately: it means no command has a
-whitespace rule of its own.
+are the same command, and `<- @ x` is `<-@x`. No command has a whitespace
+rule of its own.
 
 A `//` begins a comment, which runs to the end of the line. The comment is
 removed before the line is read.
@@ -78,9 +77,8 @@ followed by `(-)`.
 SM programs reach the heap, the screen and the keyboard through `[]` and
 `->[]`; nothing else is special about them.
 
-**All of RAM is zero at reset.** This matches the course's CPU emulator, where
-it was measured rather than assumed, and it is what makes a `.cmp` file
-reproducible.
+**All of RAM is zero at reset.** This matches the course's CPU emulator, and
+it is what makes a `.cmp` file reproducible.
 
 ### 2.2 The stack pointer
 
@@ -296,9 +294,10 @@ segments. A pointer is an ordinary value on the stack.
 
 ## 7. Errors
 
-Our tools diagnose everything below. **A student's translator is never required
-to**, exactly as the course never requires it of theirs: the programs it is
-given are well formed by construction, and a translator may assume so.
+The emulator and the tools on this site diagnose everything below. **A
+student's translator is never required to**, exactly as the course never
+requires it of theirs: the programs it is given are well formed by
+construction, and a translator may assume so.
 
 ### 7.1 Before the program runs
 
@@ -369,8 +368,7 @@ never spelled as words.
 
 A program can cross between the two machines, and `@sm/vm` translates it in
 either direction. What follows is where the two differ, which is where a
-translation has something to do. Nothing here is part of SM; it is here
-because this is the page a reader compares the two on.
+translation has something to do. Nothing here is part of SM.
 
 | | SM | the course's VM |
 |---|---|---|
