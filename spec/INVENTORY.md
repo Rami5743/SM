@@ -336,12 +336,13 @@ function, merging at labels and reporting a disagreement. The only input beyond
 the function itself is the arity of each callee, which a whole-program loader
 has.
 
-**A worked example**, which is the output of a compiler with the bug of Q4 —
-correct output would not reach the check. `Screen.drawPixel(x, y)` is
-`void` in Jack and takes two arguments; note that its being `void` is invisible
-here, since in SM every function returns a value and the depth arithmetic does
-not care what Jack called it. The caller must remove that value, and this
-compiler has not:
+**A worked example.** It is the output of a *hypothetical* compiler that omits
+the discard of Q4 — not of the supplied one, which emits `->tmp` after every
+`do` statement and is balanced throughout. Correct output would never reach
+this check. `Screen.drawPixel(x, y)` is `void` in Jack and takes two arguments;
+note that its being `void` is invisible here, since in SM every function
+returns a value and the depth arithmetic does not care what Jack called it. The
+caller must remove that value, and this one has not:
 
 ```
 while:
@@ -395,6 +396,12 @@ us, and the book is the thing they are reading.
 decision, and SM would be joining the norm rather than leaving it: the JVM's
 and the CLR's verifiers both check exactly this, and WebAssembly makes it
 unrepresentable by replacing labels with structured control flow.
+
+**It is not a defect report on the supplied compiler.** `jack_compaler.py`
+already keeps this discipline. The check exists because the second assignment
+hands that discipline to every student, and because a discipline nothing
+verifies is one that decays — as the XML parser in the same directory shows,
+having rotted to `"fild"` while the compiler beside it stayed correct.
 
 **What it costs in practice: close to nothing.** Ask who could ever be
 inconvenienced. In both parts of the first assignment the `.sm` files are ours,
