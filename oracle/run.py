@@ -2,7 +2,8 @@
 """
 Run the repaired reference implementations.
 
-  run.py sm <folder>     translate every .sm in the folder to <folder>.asm
+  run.py sm <folder> [--no-bootstrap]
+                         translate every .sm in the folder to <folder>.asm
   run.py jack <folder>   compile every .jack in the folder to .sm beside it
 
 These are the programs our ports are measured against. See README.md for why
@@ -16,13 +17,14 @@ sys.path.insert(0, HERE)
 
 
 def main(argv):
-    if len(argv) != 3 or argv[1] not in ('sm', 'jack'):
+    if len(argv) < 3 or argv[1] not in ('sm', 'jack'):
         print(__doc__.strip())
         return 2
     what, folder = argv[1], argv[2]
+    bootstrap = '--no-bootstrap' not in argv
     if what == 'sm':
         import sm_translator
-        sm_translator.translate_fold(folder)
+        sm_translator.translate_fold(folder, bootstrap=bootstrap)
         print(folder + '.asm')
     else:
         import jack_compiler

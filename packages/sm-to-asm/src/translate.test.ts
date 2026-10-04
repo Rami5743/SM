@@ -85,12 +85,18 @@ describe('against the oracle', () => {
 })
 
 /**
- * The fragment path, which the comparison above does not reach because both
- * samples are whole programs. It was a hole in both translators: the supplied
- * one wrote its bootstrap from the constructor, before it had read anything,
- * so a fragment got a jump to a Sys.init nobody declares and its own
- * instructions after the loop that never ends. Measured, the 15 was nowhere.
- * Repaired in oracle/, and compared here.
+ * A fragment: a bare sequence of commands with no declaration, which is the
+ * whole of the first package of exercises.
+ *
+ * It gets no bootstrap, which is the course's own scheme — measured across
+ * its scripts, every project-7 .tst and all but one of project 8's set RAM[0]
+ * by hand, the translator at that stage emitting none. The one exception is
+ * FibonacciElement, whose subject is the bootstrap.
+ *
+ * It was a hole in both translators before that. The supplied one wrote its
+ * bootstrap from the constructor, before it had read anything, so a fragment
+ * got a jump to a Sys.init nobody declares and its own instructions after the
+ * loop that never ends: measured, the 15 was nowhere.
  */
 describe('a fragment', () => {
   const FRAGMENT = '<-7\n<-8\n+\n'
@@ -108,14 +114,27 @@ describe('a fragment', () => {
       expect(r.diagnostics).toEqual([])
       const ours = instructions(translate([r.file], { comments: false }))
 
-      expect(theirs[0]).toBe('@256')
-      expect(ours[0]).toBe('@255')
-      expect(ours.slice(1)).toEqual(theirs.slice(1))
-      // And nothing calls a Sys.init that is not there.
+      // No bootstrap on either side, so these agree outright — C2 does not
+      // arise, there being no constant to differ over.
+      expect(ours).toEqual(theirs)
       expect(ours.join('\n')).not.toContain('Sys.init')
+      expect(ours[0]).toBe('@7')
     } finally {
       rmSync(work, { recursive: true, force: true })
     }
+  })
+
+  it('refuses to bootstrap into a Sys.init that is not there', () => {
+    const r = parse('T.sm', FRAGMENT)
+    expect(() => translate([r.file], { bootstrap: true })).toThrow(/no Sys.init to bootstrap/)
+  })
+
+  it('leaves the stack pointer to the test script, as the course does', () => {
+    const r = parse('T.sm', FRAGMENT)
+    const ins = instructions(translate([r.file], { comments: false }))
+    // Every push touches SP, so its absence is not the thing to look for.
+    // What must be absent is the bootstrap's own opening, which sets it.
+    expect(ins.slice(0, 4)).not.toEqual(['@255', 'D=A', '@SP', 'M=D'])
   })
 })
 
@@ -212,6 +231,10 @@ describe('our emulator and theirs agree', () => {
         'load p.asm,',
         'output-file p.out,',
         `output-list ${cells.map((c) => `RAM[${c}]%D1.8.1`).join(' ')};`,
+        // The script sets the stack pointer, as every project-7 script does,
+        // because a fragment's translation carries no bootstrap. Ours is 255
+        // where the course's is 256 (C2).
+        'set RAM[0] 255,',
         'repeat 4000 { ticktock; }',
         'output;',
       ].join('\n'))

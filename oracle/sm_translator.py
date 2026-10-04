@@ -107,7 +107,7 @@ class sm_trnsleitor:
 
     def write_end_loop(self):
         self.write("//infinite loop\n"+add_tabs("@end\n(end)\n0;JMP\n"))
-    def translate(self, line_numbers=False):
+    def translate(self, line_numbers=False, bootstrap=True):
         dir_list=sorted(os.listdir(self.fold))
         sources=[f for f in dir_list if os.path.splitext(f)[1]==".sm"]
         # A program with no declaration anywhere is a fragment: no Sys.init to
@@ -118,13 +118,17 @@ class sm_trnsleitor:
             for line in open(self.fold+"/"+f):
                 if cline_line(line).startswith("!"):
                     has_function=True
-        self.write_bootstrap(has_function)
-        if has_function:
+        # REPAIR (oracle), second part: the bootstrap is optional, as it is in
+        # the course. Measured across its own scripts: every project-7 .tst
+        # and all but one of project 8's set RAM[0] by hand, because the
+        # translator at that stage emits none. Only FibonacciElement, whose
+        # subject is the bootstrap, leaves it to the program.
+        want = bootstrap and has_function
+        if want:
+            self.write_bootstrap(True)
             self.write_end_loop()
         for f in sources:
             self.translate_file(self.fold+"/"+f)
-        if not has_function:
-            self.write_end_loop()
         self.file_out.close()
         # REPAIR (oracle): `add_numbrs` is the step that needs the assembler.
         # It is off unless asked for, so the translator runs.
@@ -334,9 +338,9 @@ def deep_num2str(l):
             pass
     return l    
 
-def translate_fold(fold, line_numbers=False):
+def translate_fold(fold, line_numbers=False, bootstrap=True):
     trnsleit=sm_trnsleitor(fold)
-    trnsleit.translate(line_numbers)
+    trnsleit.translate(line_numbers, bootstrap)
     return trnsleit
 
 

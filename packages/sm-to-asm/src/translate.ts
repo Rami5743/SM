@@ -33,6 +33,19 @@ export const RUNTIME = {
 export interface TranslateOptions {
   /** Comments make the output readable; a comparison turns them off. */
   readonly comments?: boolean
+  /**
+   * Whether to emit the bootstrap — set `SP`, call `Sys.init`, then loop.
+   *
+   * The course's scheme, measured across its own test scripts: every project-7
+   * script and all but one of project 8's set `RAM[0]` by hand, because the
+   * translator at that stage emits no bootstrap and the student has not met
+   * one. The single exception is `FibonacciElement`, whose whole subject is
+   * the bootstrap. We follow it exactly: a test sets the stack pointer itself
+   * unless the bootstrap is what it is testing.
+   *
+   * A fragment can never have one — there is no `Sys.init` to call.
+   */
+  readonly bootstrap?: boolean
 }
 
 class Writer {
@@ -83,28 +96,33 @@ export function translate(files: readonly SmFile[], options: TranslateOptions = 
     ]
   }
 
-  w.note('bootstrap')
-  // C2: 255, so that the first value pushed lands at 256.
-  w.emit('@255', 'D=A', '@SP', 'M=D')
-
   // A fragment is a bare sequence of commands with no declaration, the
   // teaching form of spec/sm.md section 8.1 used by the first package of
-  // exercises. It has no frame, so there is nothing to call: the commands
-  // simply follow the bootstrap and the program then loops for ever.
+  // exercises. It has no frame and no Sys.init, so it can have no bootstrap.
   const fragment = files.flatMap((f) => f.fragment)
+  const wantBootstrap = options.bootstrap ?? true
+
+  if (fragment.length > 0 && options.bootstrap === true) {
+    throw new Error('a fragment has no Sys.init to bootstrap into')
+  }
+
   if (fragment.length > 0) {
     const noFrame = { name: '', args: [], locals: [], pos: { file: '', line: 0 } }
     for (const command of fragment) {
       w.note(source(command))
       w.emit(...translateCommand(command, noFrame, new Map(), call))
     }
-  } else {
+    // No end loop either: the course's project-7 output simply stops, and its
+    // scripts run a fixed number of ticks.
+  } else if (wantBootstrap) {
+    w.note('bootstrap')
+    // C2: 255, so that the first value pushed lands at 256.
+    w.emit('@255', 'D=A', '@SP', 'M=D')
     w.note('call Sys.init')
     w.emit(...call('Sys.init'))
+    w.note('and then loop for ever')
+    w.emit(`@${RUNTIME.endLabel}`, `(${RUNTIME.endLabel})`, '0;JMP')
   }
-
-  w.note('and then loop for ever')
-  w.emit(`@${RUNTIME.endLabel}`, `(${RUNTIME.endLabel})`, '0;JMP')
 
   for (const file of files) {
     for (const fn of file.functions) {
