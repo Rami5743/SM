@@ -84,6 +84,13 @@ library, and the library is useless without those two devices.
   a translator may assume so. The consequence is a rule for M6, written out
   there: no test in the student package feeds a malformed program and expects a
   diagnostic.
+* **A milestone is not finished until its tests are.** The tests for a piece of
+  work are written with that work, not after it and not in a later milestone,
+  and they run automatically. A milestone whose code is complete and whose
+  tests are not is not complete. §4 says what this means in practice.
+* **Nothing that once passed is allowed to start failing.** Every test any
+  milestone adds stays in the regression suite for good, and the whole suite
+  runs at every milestone boundary and on every push. §4 again.
 * **Each assignment is checked the way the course checks it, and no harder.**
   The course automates project 7–8 with `.cmp` files and deliberately does not
   automate project 11: there the student runs the compiled program and looks at
@@ -123,7 +130,59 @@ module that was never supplied, and generating a `.cmp` for a student's `.asm`
 means assembling and running Hack code ourselves. It is a small, well-specified
 piece of work with a published reference implementation to check against.
 
-## 4. Milestones
+## 4. Testing and regression
+
+Two rules, and then what they amount to.
+
+**Every milestone ships its own tests.** They are written alongside the code,
+they run without anyone remembering to run them, and the milestone's *Done
+when* is not met until they are green. A milestone that lands code without
+tests has not landed.
+
+**Every test ever written keeps running.** The regression suite is cumulative:
+nothing leaves it because it is old or slow or belongs to a part of the system
+nobody is touching this week. It runs at every milestone boundary and on every
+push, and a failure in it blocks the work in hand regardless of whether that
+work seems related.
+
+### What each milestone contributes to the suite
+
+| milestone | what it adds, and what then runs forever |
+|---|---|
+| M1 `sm-core` | every sample in `reference/` parses; the pretty-printer round-trips each one |
+| M2 `sm-emulator` | step-by-step RAM agreement between the emulator and the assembled output of `sm-to-asm`; the runtime stack bound fires where it should |
+| M3 `sm-tst`, `hack` | one `.cmp` satisfied both by `smstep` over the `.sm` and by `ticktock` over the `.asm`; the Hack assembler against the course's, instruction for instruction |
+| M4 `sm-to-asm` | golden output for every sample, differing from the Python original only at the points `spec/CORRECTIONS.md` names |
+| M5 the site | the build succeeds; both language trees carry the same pages and headings; a smoke test that the emulator page runs `FibonacciElement` from a cold load |
+| M6 the first assignment | every test in both packages passes both ways; a deliberately broken translator fails at least one |
+| M7 `jack-to-sm` | the layered suite the milestone describes, plus the depth-walk lint over our own generated SM |
+| M8 the second assignment | all six programs compile and run |
+| M9 the bridge | the round trips, by emulator output rather than by text |
+| M10 | the whole of the above, on every push, as the standing job |
+
+### Three things that make the suite worth having
+
+**The course's own tools are the reference oracle.** They run headless from a
+`.tst` script — verified here on the compiler, the assembler, the CPU emulator
+and the VM emulator — so continuous integration can check our output against
+theirs rather than against our own expectations. This is the strongest kind of
+test available to this project and it costs a subprocess.
+
+**Every defect found gets a test before it is fixed.** The suite grows by one
+case per bug, which is what keeps a fix from being undone six months later by
+someone who does not know why the code looked strange. Three cases already
+exist to be written, from the defects in `spec/INVENTORY.md` §4a: the
+unqualified call that pushes an argument the function does not have, the XML
+parser that tests for `"fild"`, and the checked-in `.sm` that no longer matches
+its compiler.
+
+**Two tiers, so that the suite is actually run.** A fast tier — parsing, golden
+files, unit tests, the lint — on every commit, in seconds. A slow tier — whole
+programs, the Java tools, `Pong` — on every push and at every milestone
+boundary. A suite nobody waits for is a suite nobody runs, and then it is not a
+regression suite at all.
+
+## 5. Milestones
 
 Each milestone ends in something runnable. The estimates are relative sizes, not
 calendar time.
@@ -556,7 +615,7 @@ reason M9 earns a place on the site and not only in the test suite. A
 difference table between SM and the course VM. Continuous integration running
 every `.tst` on every push.
 
-## 5. Order of work
+## 6. Order of work
 
 There is one critical path and it runs through both assignments:
 
@@ -580,7 +639,7 @@ Two releases suggest themselves:
 
 M9 and M10 follow at leisure.
 
-## 6. Risks
+## 7. Risks
 
 * **`.cmp` files that do not hold.** Both parts of the first assignment rest on
   the SM emulator and the student's assembly output agreeing cell for cell. M3's acceptance
@@ -603,8 +662,13 @@ M9 and M10 follow at leisure.
 * **Prose drifting from code again.** Mitigated by making the reference page a
   rendering of the normative spec, with its examples executed by the emulator at
   build time.
+* **A regression suite that decays.** The usual failure is not that tests are
+  never written but that a slow one gets skipped, then quarantined, then
+  deleted. The two tiers in §4 exist to keep the fast one fast enough that
+  nobody is tempted; a test that becomes a nuisance is made quicker or moved
+  down a tier, never dropped.
 
-## 7. Questions for the author
+## 8. Questions for the author
 
 1. ~~The specification questions.~~ **All answered**, C1–C7 in
    `spec/CORRECTIONS.md` for the seven that changed something, and Q3, Q4, Q7

@@ -58,7 +58,7 @@ a function of signature `! f(x_0..x_{a-1}) y_0..y_{l-1}`:
 translator therefore needs **no function table and no second pass** — which is
 exactly what makes this a good first translator for a student. An SM → VM
 translator does need one, because the course VM writes the count at the call
-site; see §5 of `../PLAN.md`.
+site; see §6 of `../PLAN.md`.
 
 **Return.** `<--` saves the top of the stack, sets `SP = LCL - 1`, restores
 `LCL` from `RAM[LCL+a]`, pushes the saved value — which lands exactly on the
