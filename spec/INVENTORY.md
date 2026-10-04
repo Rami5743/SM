@@ -207,9 +207,10 @@ a `<--`, but only after an infinite loop, so it is unreachable; the
 Jack-generated one has no `<--` at all, because Jack's `Sys.init` body is
 `while (true) {}` with no `return`, and is saved only by that loop.
 
-**What the course does, measured rather than remembered.** The official
-`JackCompiler` was run on purpose-built inputs. It catches this, in the
-compiler, and refuses to emit anything:
+**What the course does, measured rather than remembered.** The official tools
+were run on purpose-built inputs. The course catches this at **both** levels.
+
+*In the Jack compiler, statically.* It refuses to emit anything:
 
 ```
 In Main.jack (line 4): In subroutine noReturn:
@@ -217,8 +218,8 @@ In Main.jack (line 4): In subroutine noReturn:
 ```
 
 No `.vm` file is produced at all — one bad subroutine rejects the whole
-compilation. And "may reach" is literal: it is a flow analysis over the
-statement tree, not a check that the last statement is a `return`.
+compilation. And "may reach" is literal: a flow analysis over the statement
+tree, not a look at the last statement.
 
 | source | verdict |
 |---|---|
@@ -226,27 +227,26 @@ statement tree, not a check that the last statement is a `return`.
 | `if (c) { return 1; }` with no `else` | rejected |
 | `while (true) { }` with nothing after it | rejected — a `while` is always assumed able to exit |
 
-**So the earlier claim here, that the course does nothing, was wrong — but only
-at one of the two levels.** The Jack compiler checks. The VM does not: a
-hand-written `.vm` function that runs past its last line falls into the next
-`function` declaration, and nothing complains. The two levels have to be kept
-apart in what we decide.
+*In the VM emulator, at run time.* A `.vm` function that runs past its last
+line stops the program with `Missing return in Foo.a`. This one is dynamic,
+not static: the same file loads and runs without complaint when that function
+is never called.
 
-**The supplied `Sys.jack` is rejected by the official compiler**, for exactly
-this, being the `while (true) { }` row of the table above. The grammar does
-permit it — `subroutineBody: '{' varDec* statements '}'` with
-`statements: statement*` — so the rule lives in the compiler rather than in the
-parser, which is where ours should carry it too.
+**The supplied `Sys.jack` is rejected by the official compiler**, being the
+`while (true) { }` row above. The Jack grammar does permit it —
+`subroutineBody: '{' varDec* statements '}'` with `statements: statement*` —
+so the rule lives in the compiler, which is where ours should carry it too.
 
-*Proposed, now in two parts:*
+*Proposed, and almost all of it is simply matching the book:*
 
-* *In our Jack → SM compiler:* reproduce the course's check exactly — reject,
-  with the same flow analysis, rather than inserting a `<--`. This is matching
-  the book, not exceeding it.
-* *In the SM tools:* a diagnostic that control cannot fall off the end of an SM
-  function. Here the course has no counterpart, so this stands or falls with
-  Q9 — and it comes free with it, the depth walk having already computed which
-  points are reachable.
+* *In our Jack → SM compiler:* the same static analysis, rejecting rather than
+  inserting a `<--`.
+* *In the SM emulator, at run time:* stepping from a function's last command
+  into another function's declaration is a fault, reported as the VM emulator
+  reports it. The emulator knows the declarations, so this is free.
+* *In the SM tools, statically:* the only part that goes beyond the course, and
+  the only part that depends on Q9 — the depth walk already computes
+  reachability, so it catches the same fault on a path that is never taken.
 
 **Q4 — discarding a return value. CLOSED: neither language changes.**
 
