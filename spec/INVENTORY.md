@@ -336,6 +336,32 @@ function, merging at labels and reporting a disagreement. The only input beyond
 the function itself is the arity of each callee, which a whole-program loader
 has.
 
+**A worked example**, which is the output of a compiler with the bug of Q4 —
+correct output would not reach the check. `Screen.drawPixel(x, y)` is
+`void` in Jack and takes two arguments; note that its being `void` is invisible
+here, since in SM every function returns a value and the depth arithmetic does
+not care what Jack called it. The caller must remove that value, and this
+compiler has not:
+
+```
+while:
+    <- @i          1
+    <- @n          2
+    <              1
+    ~              1
+    ?--> end       0
+    <- @x          1
+    <- @y          2
+    Screen.drawPixel   1     ← two arguments off, one value on
+    --> while      1         ← reaches the label at depth 1
+end:
+```
+
+The label is reached twice: by falling in from above at depth 0, and round the
+loop at depth 1. They disagree, and that disagreement *is* the missing discard.
+A correct compiler emits `-> tmp` before `--> while`, the arrival depth returns
+to 0, and the check passes.
+
 **What it buys.** The leak of Q4 is reported *before the program runs*, naming
 the function and the point where two paths disagree, instead of appearing as
 heap corruption after two thousand iterations of a game loop. It subsumes the
