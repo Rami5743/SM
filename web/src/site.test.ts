@@ -238,6 +238,21 @@ describe('the bridge page', () => {
     await page.close()
   })
 
+  // A `static i` belongs to its file, so several files is not the same as
+  // one concatenation, and the page keeps them apart.
+  it('imports a folder of .vm files and keeps each file\'s statics its own', async () => {
+    const page = await open('/bridge')
+    await page.setInputFiles('input[type=file]', [
+      { name: 'Class1.vm', mimeType: 'text/plain', buffer: Buffer.from('function Class1.get 0\npush static 0\nreturn\n') },
+      { name: 'Class2.vm', mimeType: 'text/plain', buffer: Buffer.from('function Class2.get 0\npush static 0\nreturn\n') },
+    ])
+    await page.waitForSelector('pre:text-matches("Class1.0")')
+    const sm = await page.textContent('.panel:has(h3:text-is("התוצאה")) pre')
+    expect(sm).toContain('<-Class1.0')
+    expect(sm).toContain('<-Class2.0')
+    await page.close()
+  })
+
   it('reports a bad VM command with a line number', async () => {
     const page = await open('/bridge')
     await page.fill('textarea', 'push constant 1\nwobble\n')

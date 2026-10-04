@@ -73,6 +73,8 @@ export function bridgePage(s: Strings): HTMLElement {
   const downloadBtn = el('button', {}, s.download)
   const sendBtn = el('button', {}, s.sendToEmulator)
   let produced: Record<string, string> = {}
+  /** Extra `.vm` files the reader opened, beside the one in the box. */
+  let imported: Record<string, string> = {}
 
   const which = el('select')
   which.append(
@@ -85,10 +87,31 @@ export function bridgePage(s: Strings): HTMLElement {
     convert()
   })
 
+  // A `static i` belongs to its file, so a program of several `.vm` files
+  // has to be translated as several, not as one concatenation.
+  const files = el('input', { type: 'file', multiple: 'multiple', accept: '.vm' })
+  files.addEventListener('change', () => {
+    const chosen = Array.from(files.files ?? [])
+    if (chosen.length === 0) return
+    void Promise.all(chosen.map(async (f) => [f.name, await f.text()] as const))
+      .then((pairs) => {
+        which.value = 'vm-to-sm'
+        direction = 'vm-to-sm'
+        imported = Object.fromEntries(
+          pairs.map(([name, text]) => [name.replace(/\.vm$/, ''), text]),
+        )
+        source.value = pairs.map(([name, text]) => `// ${name}\n${text}`).join('\n')
+        convert()
+      })
+  })
+
   function convert(): void {
     try {
       if (direction === 'vm-to-sm') {
-        const { sm } = vmToSm([parseVm('Main', source.value)])
+        const parts = Object.keys(imported).length > 0
+          ? Object.entries(imported).map(([name, text]) => parseVm(name, text))
+          : [parseVm('Main', source.value)]
+        const { sm } = vmToSm(parts)
         produced = { 'Main.sm': sm }
         output.textContent = sm
       } else {
@@ -139,7 +162,8 @@ export function bridgePage(s: Strings): HTMLElement {
     location.assign(location.pathname.replace(/bridge\/?$/, 'emulator'))
   })
 
-  source.addEventListener('input', convert)
+  // Typing replaces whatever was opened; the box is the source of truth.
+  source.addEventListener('input', () => { imported = {}; convert() })
 
   const panel = (title: string, body: HTMLElement) =>
     el('div', { class: 'panel' }, el('h3', {}, title), body)
@@ -149,7 +173,7 @@ export function bridgePage(s: Strings): HTMLElement {
     el('p', {}, s.bridgeBlurb, ' ',
       el('a', { href: 'https://nand2tetris.github.io/web-ide/vm', target: '_blank', rel: 'noreferrer' },
         s.courseTools)),
-    el('div', { class: 'controls' }, which, downloadBtn, sendBtn),
+    el('div', { class: 'controls' }, which, downloadBtn, sendBtn, files),
     faultLine,
     el('div', { class: 'emulator' },
       panel(s.source, el('div', { class: 'body' }, source)),

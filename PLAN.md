@@ -805,3 +805,57 @@ M8 and M9 follow at leisure.
    its own address, with both flags and their language names at the top of
    every page. Plus a home page gathering the pages, and tabs on each for
    moving between them.
+
+---
+
+## 9. What the building changed
+
+The plan above is what was planned. Everything in it was built; these are the
+places where measurement sent the work somewhere else, each recorded here so
+the plan is not left saying something the code does not do. The reasoning is
+in the commit that made the change, and the user-visible consequences are in
+`spec/sm.md` section 10 and `spec/CORRECTIONS.md`.
+
+* **`sm-to-vm` and `vm-to-sm` are one package, `@sm/vm`.** The VM syntax is
+  shared between them, and putting it inside one of a pair for the other to
+  import would be worse than a package that holds both directions.
+
+* **A translated program's globals live at the top of the heap, not in
+  RAM[16..255].** M8 planned the latter, those being the cells the course's
+  own statics occupy. Its VM emulator refuses a `that` outside the heap and
+  the screen, measured at the boundary: 2047 is rejected and 2048 is not. A
+  program that manages the heap itself must then be given a heap that ends
+  below its globals, which the bridge cannot do for it.
+
+* **SM → VM emits one file per class.** A single file was possible, the
+  translation emitting no statics, but the course's VM emulator requires
+  `function X.y` to be in `X.vm`.
+
+* **A fragment may hold labels and jumps.** The teaching form of section 8.1
+  has none, but a project 7 `.vm` file is exactly a bare run of commands and
+  the bridge gives it branches. `link` keeps a fragment's labels and
+  `resolve` checks them.
+
+* **The VM's `call` saves `THIS` and `THAT`; SM's frame has nothing to
+  save.** So VM → SM wraps every call in a save and a restore, in a program
+  that writes `pointer` at all. The course's `NestedCall` is written to test
+  exactly this, and it caught it.
+
+* **SM cannot pop into a computed address.** It can poke any address, but
+  `->[]` wants the address below the value and there is no swap, so a
+  translation that must store the top of the stack somewhere computed needs
+  one named cell. Stated in the reference rather than worked around.
+
+* **The library's `drawRun` and `drawVertical` carry the screen address
+  along the loop** instead of calling `drawPixel`, which takes a
+  multiplication and a division out of the inner loop. With `Math.multiply`
+  at sixteen iterations this is the difference between a screen that clears
+  in two million steps and one that does not clear at all.
+
+* **The course leaves the letter `A` blank in its character map**, as the
+  book's worked example. We fill it in.
+
+* **Two of the course's eleven project 7 and 8 programs cannot be checked
+  against their own compare files**: `SimpleFunction` and `NestedCall` plant
+  and inspect the VM's five-word frame, which is the thing SM replaces. They
+  are checked on what they compute instead.
