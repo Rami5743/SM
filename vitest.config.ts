@@ -15,6 +15,8 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    include: ['packages/**/*.test.ts', 'tools/**/*.test.ts'],
+    include: ['packages/**/*.test.ts', 'tools/**/*.test.ts', 'web/**/*.test.ts'],
+    testTimeout: 60_000,
+    hookTimeout: 180_000,
   },
 })

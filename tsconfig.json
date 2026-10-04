@@ -20,5 +20,5 @@
       "@sm/to-asm": ["packages/sm-to-asm/src/index.ts"]
     }
   },
-  "include": ["packages/**/*.ts", "tools/**/*.ts"]
+  "include": ["packages/**/*.ts", "tools/**/*.ts", "web/src/**/*.ts"]
 }
