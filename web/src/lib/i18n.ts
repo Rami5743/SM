@@ -56,11 +56,20 @@ export interface Strings {
   readonly library: string
   readonly libraryOn: string
   readonly noWarnings: string
+  readonly download: string
+  readonly copyLink: string
+  readonly copied: string
+  readonly result: string
+  readonly smToVm: string
+  readonly vmToSm: string
+  readonly bridgeBlurb: string
 }
 
-export type PageId = 'home' | 'emulator' | 'compiler' | 'reference' | 'rationale' | 'projects'
+export type PageId =
+  | 'home' | 'emulator' | 'compiler' | 'bridge' | 'reference' | 'rationale' | 'projects'
 
-export const PAGES: readonly PageId[] = ['home', 'emulator', 'compiler', 'reference', 'rationale', 'projects']
+export const PAGES: readonly PageId[] =
+  ['home', 'emulator', 'compiler', 'bridge', 'reference', 'rationale', 'projects']
 
 const he: Strings = {
   siteName: 'SM',
@@ -69,6 +78,7 @@ const he: Strings = {
     home: 'ראשי',
     emulator: 'אמולטור',
     compiler: 'קומפיילר',
+    bridge: 'גשר',
     reference: 'תיעוד',
     rationale: 'רציונל',
     projects: 'תרגילים',
@@ -77,6 +87,7 @@ const he: Strings = {
     home: 'כל העמודים במקום אחד.',
     emulator: 'הרצת קוד, צעד אחר צעד, עם המחסנית והמסגרות והזיכרון.',
     compiler: 'מ‑Jack ל‑SM, עם הבדיקות של הקורס.',
+    bridge: 'אותה תוכנית בשתי המכונות, לשני הכיוונים.',
     reference: 'התיעוד המחייב של השפה: הפקודות, מודל הזיכרון, המסגרת, השגיאות.',
     rationale: 'למה המכונה הזאת שונה מזו של הקורס, ומה זה עולה.',
     projects: 'שתי חבילות התרגילים, והמשימה השנייה.',
@@ -112,6 +123,13 @@ const he: Strings = {
   library: 'ספרייה',
   libraryOn: 'קושרה',
   noWarnings: 'אין אזהרות.',
+  download: 'הורד',
+  copyLink: 'העתק קישור',
+  copied: 'הקישור הועתק.',
+  result: 'התוצאה',
+  smToVm: 'מ‑SM ל‑VM',
+  vmToSm: 'מ‑VM ל‑SM',
+  bridgeBlurb: 'את הפלט אפשר להריץ באמולטור של הקורס:',
 }
 
 const en: Strings = {
@@ -121,6 +139,7 @@ const en: Strings = {
     home: 'Home',
     emulator: 'Emulator',
     compiler: 'Compiler',
+    bridge: 'Bridge',
     reference: 'Reference',
     rationale: 'Rationale',
     projects: 'Projects',
@@ -129,6 +148,7 @@ const en: Strings = {
     home: 'Every page in one place.',
     emulator: 'Run a program, a step at a time, with the stack, the frames and the memory.',
     compiler: 'Jack to SM, with the course’s own checks.',
+    bridge: 'The same program on both machines, in either direction.',
     reference: 'The normative reference: the commands, the memory model, the frame, the errors.',
     rationale: 'Why this machine differs from the course’s, and what that costs.',
     projects: 'The two packages of exercises, and the second assignment.',
@@ -164,6 +184,13 @@ const en: Strings = {
   library: 'Library',
   libraryOn: 'linked',
   noWarnings: 'No warnings.',
+  download: 'Download',
+  copyLink: 'Copy a link',
+  copied: 'Link copied.',
+  result: 'The result',
+  smToVm: 'SM to VM',
+  vmToSm: 'VM to SM',
+  bridgeBlurb: 'What comes out runs in the course’s own emulator:',
 }
 
 export const STRINGS: Readonly<Record<Lang, Strings>> = { he, en }

@@ -10,6 +10,7 @@
  */
 import { compileClass, JackError, parseClass } from '@sm/jack'
 import { el } from '../lib/dom.js'
+import { download } from '../lib/zip.js'
 import type { Strings } from '../lib/i18n.js'
 
 /** Where a compiled program waits while the reader walks to the emulator. */
@@ -86,6 +87,10 @@ export function compilerPage(s: Strings): HTMLElement {
   const faultLine = el('div', { class: 'fault' })
   const warningLine = el('div', { class: 'warning' })
   const sendBtn = el('button', {}, s.sendToEmulator)
+  const downloadBtn = el('button', {}, s.download)
+  downloadBtn.addEventListener('click', () => {
+    download(`${nameOf(source.value)}.sm`, output.textContent ?? '')
+  })
 
   const examples = el('select')
   for (const [i, ex] of EXAMPLES.entries()) examples.append(el('option', { value: String(i) }, ex.name))
@@ -106,11 +111,13 @@ export function compilerPage(s: Strings): HTMLElement {
       warningLine.textContent = result.warnings.length > 0 ? result.warnings.join('\n') : ''
       output.textContent = result.sm
       sendBtn.disabled = false
+      downloadBtn.disabled = false
     } catch (error) {
       faultLine.textContent = error instanceof JackError ? error.message : String(error)
       warningLine.textContent = ''
       output.textContent = ''
       sendBtn.disabled = true
+      downloadBtn.disabled = true
     }
   }
 
@@ -131,7 +138,7 @@ export function compilerPage(s: Strings): HTMLElement {
   const root = el('div', {},
     el('h1', {}, s.nav.compiler),
     el('div', { class: 'controls' },
-      sendBtn,
+      sendBtn, downloadBtn,
       el('label', {}, `${s.examples} `, examples)),
     faultLine,
     warningLine,

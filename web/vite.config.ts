@@ -13,6 +13,8 @@ export default defineConfig({
       '@sm/emulator': pkg('sm-emulator'),
       '@sm/tst': pkg('sm-tst'),
       '@sm/to-asm': pkg('sm-to-asm'),
+      '@sm/jack': pkg('jack-to-sm'),
+      '@sm/vm': pkg('sm-vm'),
     },
   },
   build: { outDir: 'dist', emptyOutDir: true },

@@ -11,6 +11,8 @@ import { el } from '../lib/dom.js'
 import type { Strings } from '../lib/i18n.js'
 import { HANDOFF } from './compiler.js'
 import { screenView } from '../lib/screen.js'
+import { shareLink, sharedProgram } from '../lib/share.js'
+import { download } from '../lib/zip.js'
 
 const EXAMPLES: ReadonlyArray<{ name: string; source: string }> = [
   {
@@ -71,6 +73,8 @@ export function emulatorPage(s: Strings): HTMLElement {
   const screen = screenView(emulator)
   const faultLine = el('div', { class: 'fault' })
 
+  const shareBtn = el('button', {}, s.copyLink)
+  const downloadBtn = el('button', {}, s.download)
   const stepBtn = el('button', {}, s.step)
   const runBtn = el('button', {}, s.run)
   const resetBtn = el('button', {}, s.reset)
@@ -140,6 +144,17 @@ export function emulatorPage(s: Strings): HTMLElement {
   resetBtn.addEventListener('click', () => { fault = ''; load() })
   source.addEventListener('input', load)
 
+  // The program travels in the fragment, which never reaches a server, so
+  // a link carries the whole thing and there is nothing to host.
+  shareBtn.addEventListener('click', () => {
+    const link = shareLink(source.value)
+    history.replaceState(null, '', link)
+    void navigator.clipboard?.writeText(link)
+    fault = s.copied
+    draw()
+  })
+  downloadBtn.addEventListener('click', () => download('program.sm', source.value))
+
   function draw(): void {
     faultLine.textContent = fault
     status.textContent = `${emulator.steps} ${s.steps}`
@@ -183,7 +198,7 @@ export function emulatorPage(s: Strings): HTMLElement {
   root.append(
     el('h1', {}, s.nav.emulator),
     el('div', { class: 'controls' },
-      stepBtn, runBtn, resetBtn,
+      stepBtn, runBtn, resetBtn, shareBtn, downloadBtn,
       el('label', {}, `${s.examples} `, examples),
       el('label', {}, `${s.notation} `, notationSelect),
       status),
@@ -203,8 +218,11 @@ export function emulatorPage(s: Strings): HTMLElement {
         panel(s.globals, globalsBody))),
   )
 
+  const shared = sharedProgram()
+  if (shared !== undefined) source.value = shared
+
   try {
-    const handed = sessionStorage.getItem(HANDOFF)
+    const handed = shared !== undefined ? null : sessionStorage.getItem(HANDOFF)
     if (handed !== null && handed !== '') {
       sessionStorage.removeItem(HANDOFF)
       source.value = handed

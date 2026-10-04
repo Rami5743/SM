@@ -83,13 +83,13 @@ describe('the shell', () => {
   it('gathers every page on the home page', async () => {
     const page = await open('/')
     const cards = await page.$$eval('.cards .card h3', (hs) => hs.map((h) => h.textContent))
-    expect(cards).toEqual(['אמולטור', 'קומפיילר', 'תיעוד', 'רציונל', 'תרגילים'])
+    expect(cards).toEqual(['אמולטור', 'קומפיילר', 'גשר', 'תיעוד', 'רציונל', 'תרגילים'])
     await page.close()
   })
 
   it('reaches every tab from every page', async () => {
     const page = await open('/')
-    for (const tab of ['אמולטור', 'קומפיילר', 'תיעוד', 'רציונל', 'תרגילים', 'ראשי']) {
+    for (const tab of ['אמולטור', 'קומפיילר', 'גשר', 'תיעוד', 'רציונל', 'תרגילים', 'ראשי']) {
       await page.click(`nav a:text-is("${tab}")`)
       await page.waitForSelector(`nav a[aria-current="page"]:text-is("${tab}")`)
     }
@@ -207,6 +207,60 @@ describe('a compiled Jack program, end to end in the browser', () => {
       return n
     })
     expect(black).toBeGreaterThan(0)
+    await page.close()
+  })
+})
+
+describe('the bridge page', () => {
+  it('reads a course .vm file as SM', async () => {
+    const page = await open('/bridge')
+    const sm = await page.textContent('.panel:has(h3:text-is("התוצאה")) pre')
+    // `eq` has to leave all ones or zero, which SM reaches through a branch.
+    expect(sm).toContain('<-17')
+    expect(sm).toContain('==')
+    expect(sm).toContain('?-->vm.true.0')
+    // `pop this 0` through an address, with the value stepping aside.
+    expect(sm).toContain('->[]')
+    await page.close()
+  })
+
+  it('writes SM as .vm, split by class', async () => {
+    const page = await open('/bridge')
+    await page.selectOption('.controls select', 'sm-to-vm')
+    await page.waitForSelector('pre:text-matches("function Sys.init")')
+    const vm = await page.textContent('.panel:has(h3:text-is("התוצאה")) pre')
+    // The course's VM emulator insists that Sys.init live in Sys.vm.
+    expect(vm).toContain('// Sys.vm')
+    expect(vm).toContain('// Main.vm')
+    // `<` is a subtraction, which is what SM says it is.
+    expect(vm).toContain('sub')
+    expect(vm).toContain('push constant 0\n  lt\n  if-goto done')
+    await page.close()
+  })
+
+  it('reports a bad VM command with a line number', async () => {
+    const page = await open('/bridge')
+    await page.fill('textarea', 'push constant 1\nwobble\n')
+    await page.waitForSelector('.fault:text-matches("not a VM command")')
+    expect(await page.textContent('.fault')).toContain('in line 2')
+    await page.close()
+  })
+})
+
+describe('a program in the address bar', () => {
+  it('comes back from the link', async () => {
+    const page = await open('/emulator')
+    await page.fill('textarea', '<-7\n<-8\n+\n')
+    await page.click('button:text-is("העתק קישור")')
+    await page.waitForSelector('.fault:text-is("הקישור הועתק.")')
+    const url = page.url()
+    expect(url).toContain('#p=')
+
+    const reopened = await browser.newPage()
+    await reopened.goto(url)
+    await reopened.waitForSelector('textarea')
+    expect(await reopened.inputValue('textarea')).toBe('<-7\n<-8\n+\n')
+    await reopened.close()
     await page.close()
   })
 })
