@@ -257,7 +257,7 @@ operators, `[]` and `->[]`. One file at a time, no bootstrap.
 | `StackTest` | all nine arithmetic and logical commands, and the most-significant-bit boolean convention | `StackTest` |
 | `GlobalTest` | `<- x` and `-> x` | `BasicTest` |
 | `PointerTest` | `[]` and `->[]`, including the operand order of C1 | `PointerTest` |
-| `StaticTest` | the dotted-name convention (Q7) | `StaticTest` |
+| `StaticTest` | a dotted name is an ordinary global, the `.` being a character a symbol may contain | `StaticTest` |
 
 **Part II — `projects/08-sm/`.** Labels, `-->`, `?-->`, the declaration, the
 call, `<--`, the bootstrap, several files at once — and local variables, for the
@@ -270,7 +270,7 @@ reason below.
 | `SimpleFunction` | one declaration, locals, `<--` | `SimpleFunction` |
 | `NestedCall` | a frame surviving a call | `NestedCall` |
 | `FibonacciElement` | several files, recursion, `Sys.init`, the bootstrap | `FibonacciElement` |
-| `StaticsTest` | dotted names across files, inside functions | `StaticsTest` |
+| `StaticsTest` | the same globals reached from several files, inside functions | `StaticsTest` |
 
 **Where the split falls differently from the course, and why.** The course puts
 `push local 0` in project 7, because a local there is a numeric offset from a
@@ -442,10 +442,17 @@ each machine can check the other. The two directions are not symmetric, and the
 asymmetries are the interesting part.
 
 **SM → VM.** Needs a function table, hence two passes: the course VM writes the
-argument count at the *call* site, where SM does not have it. Globals map to
-`static` of a synthetic file, dotted names to the static of the file they name
-(Q7). `[]` becomes `pop pointer 1; push that 0`; `->[]`, with the address below
-the value, becomes `pop temp 0; pop pointer 1; push temp 0; pop that 0`.
+argument count at the *call* site, where SM does not have it.
+
+Globals do **not** map to the `static` segment. They cannot: `static i` in one
+`.vm` file is a different cell from `static i` in another, so the VM has no
+shared-global storage, whatever the globals are named. Each SM global gets a
+fixed address instead, reached through `pointer`/`that` — uniform for every
+global, needing no naming convention, and faithful, since the course's own
+statics are cells at fixed addresses in `RAM[16..255]` too (Q7).
+
+`[]` becomes `pop pointer 1; push that 0`; `->[]`, with the address below the
+value, becomes `pop temp 0; pop pointer 1; push temp 0; pop that 0`.
 
 The boolean conventions differ and this is where the work is. SM gives meaning
 to the most significant bit alone; the VM uses all-bits `0` and `-1`. Emitting
@@ -526,8 +533,8 @@ M9 and M10 follow at leisure.
 
 ## 7. Questions for the author
 
-1. Q5, Q7 and Q9 in `spec/INVENTORY.md`, all three about rules and
-   diagnostics rather than generated code.
+1. Q5 and Q9 in `spec/INVENTORY.md`, both about rules and diagnostics rather
+   than generated code.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.
