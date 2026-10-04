@@ -90,10 +90,12 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 
 Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), the companion to
 Q3 (→ C6), **Q5** (→ C7), and **Q3**, **Q4**, **Q7** and **Q9**, all closed by
-keeping things as they are. **Nothing is open.** Every question in this section is decided. A decision that changes something becomes an entry
-in
-[`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
-deviations from `reference/`.
+keeping things as they are.
+
+**Nothing in this section is open.** Each decision that changed something is an
+entry in [`CORRECTIONS.md`](CORRECTIONS.md), C1 to C7, which is the normative
+list of our deviations from `reference/`. The questions are kept here with
+their reasoning so that a settled one is not reopened from memory.
 
 **Q1 — operand order of `->[]`. DECIDED → C1: the code is right, the prose is
 wrong.**
@@ -194,7 +196,7 @@ and `RAM[261]` and nothing in between, so it never depends on the frame cells.
 Ours should be written with the same restraint, whatever the reset rule
 guarantees.
 
-**Still open, and raised with this question rather than settled by it:** what
+**The companion question, raised with this one and settled separately:** what
 happens when a function reaches its last line without a `<--`. The reference
 translator emits nothing, so execution runs straight into the next function's
 declaration, which sets `LCL` from the current `SP` and pushes that function's
