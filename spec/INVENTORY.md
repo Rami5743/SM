@@ -15,13 +15,18 @@ Kept verbatim under [`../reference/`](../reference/).
 |---|---|---|
 | Language reference | `SM_doc_details_tex.tex` / `.pdf`, `SM_doc_details.txt` | Prose spec; the two differ slightly |
 | Implementation notes | `SM_doc_implimintation.txt` | Hand-written Hack-assembly fragment per SM command |
-| SM → Hack assembly | `SM_trnsleitor3.py` (+ `2`, and two backups) | Works; depends on an `asembly_OO` module that was **not** supplied |
+| SM → Hack assembly | `SM_trnsleitor3.py` (+ `2`, and two backups) | Translates correctly, but will not import: it needs an `asembly_OO` module that was **not** supplied, used only by a step that runs after translation |
 | Jack → SM | `jack_compaler.py`, `parser.py`, `tokenazr.py` | Covers the full Jack grammar; emits SM |
 | Earlier design drafts | `VM1_doc.txt`, `VM1_par_doc.txt`, `VM1_no_par_doc.txt`, `VM1_par_doc_re.txt`, `VM1_doc_details.txt` | Numeric-address predecessors of SM; historical |
 | Sample programs | `FibonacciElement_sm/`, `FibonacciSeries_sm/`, `fibonachie/`, `tst/test1/all_cmds.sm` | See §4 |
 
-Two things the material does **not** contain and that we must supply: the Hack
-assembler module `asembly_OO`, and any SM emulator at all.
+**The one thing the material does not contain is an SM emulator.** The missing
+`asembly_OO` is not a second gap: it is imported at module level, which is why
+the translator will not run, but it is used only by `add_numbrs`, a step that
+executes *after* translation is complete and only annotates each SM line with
+the Hack instruction number it produced. The repair is to make that step
+optional. We write no Hack assembler — the course's is used where one is
+needed (`../PLAN.md` §3).
 
 ## 2. The machine as the reference implementation actually builds it
 
@@ -58,7 +63,7 @@ a function of signature `! f(x_0..x_{a-1}) y_0..y_{l-1}`:
 translator therefore needs **no function table and no second pass** — which is
 exactly what makes this a good first translator for a student. An SM → VM
 translator does need one, because the course VM writes the count at the call
-site; see §6 of `../PLAN.md`.
+site; see M9 in `../PLAN.md`.
 
 **Return.** `<--` saves the top of the stack, sets `SP = LCL - 1`, restores
 `LCL` from `RAM[LCL+a]`, pushes the saved value — which lands exactly on the

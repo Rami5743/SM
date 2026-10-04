@@ -5,8 +5,9 @@ the SM stack machine.
 
 Companion document: [`spec/INVENTORY.md`](spec/INVENTORY.md) — what the supplied
 material contains, how the existing Python translator actually behaves, and the
-specification questions (**Q1**–**Q9**) that have to be answered before coding
-starts. This plan refers to them by number.
+nine specification questions **Q1**–**Q9**, all of them now answered. The seven
+answers that changed something are [`spec/CORRECTIONS.md`](spec/CORRECTIONS.md),
+**C1**–**C7**. This plan refers to both by number.
 
 ---
 
@@ -17,10 +18,11 @@ starts. This plan refers to them by number.
 | 1 | SM emulator | In-browser, no server |
 | 2 | SM → VM and VM → SM translators | In-browser, plus a command-line entry point |
 | 3 | Jack → SM compiler | In-browser, plus a command-line entry point |
-| 4 | SM reference page and rationale page | Static pages of the same site |
-| 5 | `projects/07-sm/` | First assignment, part I: a directory of tests the student downloads |
-| 6 | `projects/08-sm/` | First assignment, part II |
-| 7 | `projects/11-sm/` | Second assignment |
+| 4 | The site | Home page, tabs, and two language trees with Hebrew the default |
+| 5 | SM reference page and rationale page | Pages within it |
+| 6 | `projects/07-sm/` | First assignment, part I: a directory of tests the student downloads |
+| 7 | `projects/08-sm/` | First assignment, part II |
+| 8 | `projects/11-sm/` | Second assignment |
 
 Everything runs client-side. The site is a static bundle on GitHub Pages; there
 is no backend, no account, and no upload. A student can also clone the
@@ -34,17 +36,17 @@ M10's import and export of `.vm` directories is what replaces it: a student
 moves the program rather than running both at once.
 
 It costs our *testing* nothing, which is worth stating because it looks as
-though it might. The course's desktop tools run headless from a `.tst` script —
-verified here, on the compiler, the assembler, the CPU emulator and the VM
-emulator — so continuous integration can use them as a reference oracle
-(M7's differential testing, M9's round trips) without their appearing on the
-site.
+though it might. The course's desktop tools run headless — verified here on the
+compiler, the assembler, the CPU emulator and the VM emulator — so continuous
+integration can reach them without their appearing on the site. §4 says exactly
+how far each of them can be trusted, which is further for some than for
+others.
 
 **Two of these are assignments; the rest is scaffolding.** The student writes
 exactly two programs: an **SM → Hack-assembly translator**, replacing projects
 7–8, and then a **Jack → SM compiler**, replacing project 11. Deliverables
-(5)–(6) are the first assignment, split into two parts as the course splits it,
-and (7) is the second. The SM ↔ VM translators are never assigned —
+(6)–(7) are the first assignment, split into two parts as the course splits it,
+and (8) is the second. The SM ↔ VM translators are never assigned —
 they exist so that a program can cross between the SM track and the course's own
 track, and so that each machine can be used to check the other.
 
@@ -54,7 +56,7 @@ otherwise have been polish: **the Jack operating system, compiled to SM**. A
 student's own compiler emits calls to `Math.multiply`, `String.new`,
 `Output.printString`; the course supplies the library as `.vm` files, so we must
 supply it as `.sm` files, and the emulator must own a screen buffer and a
-keyboard register for it to drive. Deliverable (7) cannot exist without that
+keyboard register for it to drive. Deliverable (8) cannot exist without that
 library, and the library is useless without those two devices.
 
 ## 2. Principles
@@ -68,14 +70,17 @@ library, and the library is useless without those two devices.
   (see `spec/INVENTORY.md` §2). Our reference translator must honour that, or
   the student's assignment is harder than the design claims.
 * **The student never needs our source.** Each package is self-contained:
-  sources, the emulator, `.tst` scripts, `.cmp` files. Our own SM → assembly
-  translator is a build tool for generating `.cmp` files, and is not shipped.
+  sources, the emulator, and whatever that assignment is graded by — `.tst` and
+  `.cmp` files for the first, a description of what to look for in the second,
+  which is how the course grades each of them. Our own SM → assembly translator
+  is a build tool for generating those `.cmp` files, and is not shipped.
   The Jack → SM compiler is different: the course ships a reference compiler
   alongside project 11 precisely so a student can compare, and we do the same.
-* **Round trips are the test suite.** SM → VM → SM and VM → SM → VM over the
-  course's own project 7/8 programs, compared by emulator output rather than by
-  text, is a stronger correctness statement than any set of unit tests, and it
-  is what proves the SM track is a genuine alternative rather than a fork.
+* **Round trips prove the tracks are one machine.** SM → VM → SM and
+  VM → SM → VM over the course's own project 7/8 programs, compared by what the
+  programs do rather than by text, is what shows the SM track to be a genuine
+  alternative and not a fork. As a *test* it is broad and blunt — §4 — so it
+  demonstrates the claim rather than carrying the suite.
 * **Validating the input is our job, not the student's.** Our tools — the
   emulator, `sm-core`, our own translator and compiler — check that an `.sm`
   program is well formed and say precisely what is wrong with it when it is not.
@@ -120,8 +125,9 @@ web/             the site
 projects/07-sm/  first assignment, part I: commands without frames
 projects/08-sm/  first assignment, part II: control flow, functions, bootstrap
 projects/11-sm/  second assignment: the Jack to SM compiler
-reference/       the supplied material, verbatim
-tools/           .cmp generation, CI scripts
+reference/       the supplied material, verbatim and never edited
+oracle/          the same programs, repaired — what our ports are compared against
+tools/           .cmp generation, the wrapper round the course's tools, CI scripts
 ```
 
 **We do not reimplement the Hack assembler or the CPU emulator.** They exist,
@@ -152,7 +158,7 @@ work seems related.
 | M1 `sm-core` | every sample in `reference/` parses; the pretty-printer round-trips each one |
 | M2 `sm-emulator` | step-by-step RAM agreement between the emulator and the assembled output of `sm-to-asm`; the runtime stack bound fires where it should |
 | M3 `sm-tst` | one `.cmp` satisfied both by `smstep` over the `.sm` in our runner and by `ticktock` over the `.asm` in the course's emulator |
-| M4 `sm-to-asm` | golden output for every sample, differing from the Python original only at the points `spec/CORRECTIONS.md` names |
+| M4 `sm-to-asm` | golden output for every sample, differing from `oracle/`'s translator only at the points `spec/CORRECTIONS.md` names |
 | M5 the site | the build succeeds; both language trees carry the same pages and headings; a smoke test that the emulator page runs `FibonacciElement` from a cold load |
 | M6 the first assignment | every test in both packages passes both ways; a deliberately broken translator fails at least one |
 | M7 `jack-to-sm` | the parser against the course's project 10 `.xml` files via its `TextComparer`; then the layered suite the milestone describes, plus the depth-walk lint over our own generated SM |
@@ -189,7 +195,9 @@ programs at all, and neither is real work: `jack_compaler.py` calls
 which matters less than it looks, since that module is used only by
 `add_numbrs`, a step that runs *after* translation is complete and exists only
 to annotate each SM line with the Hack instruction number it produced. The
-repair is to make that step optional, not to write an assembler. The third is behavioural — the `<-@this`
+repair is to make that step optional, not to write an assembler.
+
+The third is behavioural — the `<-@this`
 defect — and it needs a decision of its own, because the Jack source of the
 sample is at fault too: repairing the sample to call `Main.fibonachie(...)`
 makes both compilers agree, while making the compiler *reject* the unqualified
@@ -197,10 +205,10 @@ call, as the official one does, is a separate repair and the one our own
 compiler will carry.
 
 **The course's tools are a reference too, used with more care — not an
-oracle.** They
-run headless, verified here on the compiler, the assembler, the CPU emulator
-and the VM emulator, so continuous integration can reach them. But they mostly
-do a *different job* from ours, and two of the four comparisons are indirect:
+oracle.** They run headless, verified here on the compiler, the assembler, the
+CPU emulator and the VM emulator, so continuous integration can reach them.
+But they mostly do a *different job* from ours, and only one of them yields a
+direct comparison at all:
 
 | their tool | how we use it |
 |---|---|
@@ -246,34 +254,29 @@ regression suite at all.
 Each milestone ends in something runnable. The estimates are relative sizes, not
 calendar time.
 
-### M0 — Decide the specification *(small)*
+### M0 — Write the specification *(small)*
 
-Every specification question is now answered, and `spec/INVENTORY.md` §3
-records each one with its reasoning. Seven points are settled and recorded in
-`spec/CORRECTIONS.md`, which is the normative list of our deviations from
-`reference/`: **C1**, the operand order of `->[]` follows the implementations —
-address below, value on top — and the prose is corrected to match; **C2**, the
-bootstrap sets `SP = 255`, so the stack starts at `RAM[256]`; **C3**, the
-equality mnemonic is `==` and `=` is an error, which in turn requires that every
-called name resolve to a declared function — without that check the parser's
-catch-all rule turns any typo into a jump to a garbage address; **C4**, the
-mnemonics are the language and the word forms are a rendering the emulator
-offers, with the arithmetic and logical operators left symbolic in every view;
-**C6**, the course's two missing-return checks, static in our Jack compiler and
-dynamic in our emulator, with its flow analysis written out in full; **C7**,
-function names are global and must be distinct — a rule the document lacked —
-together with five name-resolution diagnostics: the three the course performs,
-a label declared twice in one function, which it does not, and a reference to
-an undeclared local, which SM can catch statically where the course's numbered
-locals force a runtime fault;
-**C5**, constants are non-negative as in the course, negation is `(-)`, and an
-empty operand is an error rather than something the catch-all rule swallows.
+The deciding is done. Every question is answered and `spec/INVENTORY.md` §3
+records each with its reasoning; seven answers changed something and are
+`spec/CORRECTIONS.md`, the normative list of our deviations from `reference/`:
 
-Two further questions closed without a correction entry, because both keep
-`reference/` as it is: **Q3**, the bootstrap performs a full call to `Sys.init`
-rather than a jump — the bootstrap is a call like every other call, with no
-exception to teach and none to implement — and **Q4**, neither SM nor Jack
-gains anything, a discarded return value staying the compiler's own business.
+| | |
+|---|---|
+| **C1** | `->[]` follows the implementations — address below, value on top — and the prose is corrected to match |
+| **C2** | the bootstrap sets `SP = 255`, so the stack starts at `RAM[256]` |
+| **C3** | the equality mnemonic is `==` and `=` is an error, which requires that every called name resolve to a declared function — without that, the parser's catch-all rule turns any typo into a jump to a garbage address |
+| **C4** | the mnemonics are the language; the word forms are a rendering, with the arithmetic and logical operators symbolic in every view |
+| **C5** | constants are non-negative as in the course, negation is `(-)`, and an empty operand is an error rather than something the catch-all rule swallows |
+| **C6** | the course's two missing-return checks — static in our Jack compiler, dynamic in our emulator — with its flow analysis written out in full |
+| **C7** | function names are global and must be distinct, a rule the document lacked, with five name-resolution diagnostics: the three the course performs, a label declared twice in one function, which it does not, and a reference to an undeclared local, which SM catches statically where the course's numbered locals force a runtime fault |
+
+Four questions closed with no entry, all by keeping things as they are:
+**Q3**, the bootstrap performs a full call to `Sys.init` rather than a jump;
+**Q4**, neither language gains a discard, where a compiler puts a thrown-away
+value staying its own business; **Q7**, SM has one flat space of globals and
+the dotted naming is a Jack artefact; and **Q9**, a program that grows the
+stack in a loop is legal SM, the emulator bounding the stack at run time
+rather than refusing the program.
 
 Write `spec/sm.md` as the normative reference: grammar, memory model, frame
 layout, the exact statement of where `SP` points, the most-significant-bit
@@ -294,8 +297,9 @@ round-trips them.
 
 ### M2 — `sm-emulator` *(medium)*
 
-An interpreter over a 32K 16-bit RAM image laid out exactly as
-`spec/INVENTORY.md` §2 describes, so that a RAM dump taken from the SM emulator
+An interpreter over a 32K 16-bit RAM image laid out as `spec/INVENTORY.md` §2
+describes it and `spec/CORRECTIONS.md` amends it, so that a RAM dump from the
+SM emulator
 and one taken from the Hack CPU emulator running the student's `.asm` are
 comparable cell for cell. Step, run, reset, breakpoints. A trace of the frame
 stack recovered from `LCL` and the declarations.
@@ -417,10 +421,10 @@ assignment tractable: part I is the commands that need no frame, part II is
 frames, control flow and the bootstrap, which is the hard half.
 
 **Every program in both packages is valid SM, and nothing here grades error
-handling.** The validation we build — undeclared call targets (C3), the name
-rules (Q5), the stack-depth walk (Q9) — belongs to our tools and exists so that
-a student can tell a bad `.sm` file from a bug in the translator they are
-writing. It is not part of the assignment, and a test that fed a malformed
+handling.** The validation we build — resolved call targets (C3), the name
+rules and their five diagnostics (C7), the missing-return checks (C6) — belongs
+to our tools and exists so that a student can tell a bad `.sm` file from a bug
+in the translator they are writing. It is not part of the assignment, and a test that fed a malformed
 program and expected a message would be quietly assigning work the course never
 assigns.
 
@@ -500,8 +504,8 @@ which is why no message from any later stage can name a line.
 
 Testing it is nearly free, and that is the point of the grammar being the
 course's: our parser emits the project 10 XML and is compared against the
-course's own `.xml` files with its `TextComparer`. Six programs of known-good
-expected output that we did not have to write. Note that the prototype would
+course's own `.xml` files with its `TextComparer`. Three test sets, seven class
+files, of known-good expected output that we did not have to write. Note that the prototype would
 not pass them as it stands — it labels its tokens `integrConstant` and
 `StringConstant` where the course expects `integerConstant` and
 `stringConstant`.
@@ -590,8 +594,8 @@ behave in the SM emulator as their VM versions do.
 
 ### M8 — `projects/11-sm`, the second assignment *(medium)*
 
-The package for the Jack → SM compiler. Unlike M6 it carries **no `.cmp` files**,
-because the course's project 11 carries none: the student is told to run the
+The package for the Jack → SM compiler. Unlike M6, **nothing in it is graded by
+a `.cmp` file**, because nothing in the course's project 11 is: the student is told to run the
 compiled program in the emulator and look at it — "make sure that it displays 7
 correctly", "play the game", "make sure that the actual results are identical to
 the expected results". That is a deliberate choice and a correct one. A
@@ -661,7 +665,8 @@ VM `if-goto L` becomes `<-0 / == / ~ / ?--> L`: equal-to-zero, negated, tested
 on the most significant bit.
 
 *Done when:* for every program in the course's projects 7 and 8, SM → VM → SM
-and VM → SM → VM both preserve the emulator's output.
+and VM → SM → VM both preserve what the program does — the SM side measured in
+our emulator, the VM side in the course's.
 
 ### M10 — Polish *(small)*
 
