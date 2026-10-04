@@ -193,6 +193,20 @@ a `<--`, but only after an infinite loop, so it is unreachable; the
 Jack-generated one has no `<--` at all, because Jack's `Sys.init` body is
 `while (true) {}` with no `return`, and is saved only by that loop.
 
+**What the course does: the same thing, which is nothing.** A VM function that
+runs past its last line falls into the next `function` declaration exactly as
+an SM one does, and the course supplies no check. So this, like Q9, would make
+the SM track stricter than the book rather than bring it into line.
+
+Nor does Jack forbid the source that leads here. The grammar is
+`subroutineBody: '{' varDec* statements '}'` with `statements: statement*`, so
+a body with no return statement parses. Every example in the course's own
+material does end a `void` subroutine with `return;`, and chapter 9 may well
+state the rule in prose — this has not been verified, and the chapter 9 slide
+deck does not. On what can be checked, the supplied `Sys.jack` is legal Jack,
+and the prototype compiling it to a function with no `<--` is the compiler's
+gap rather than the source's.
+
 *Proposed:* a diagnostic — control must not be able to fall off the end of a
 function. It costs nothing to add: the depth walk of Q9 already computes which
 points are reachable, so this is the same traversal asking one more question.
