@@ -259,60 +259,65 @@ compiler puts a value it is throwing away stays what it always was — the
 compiler writer's choice, with nothing observable depending on it. What is *not*
 a free choice is whether to discard at all.
 
-**Q5 — the name rules are unenforced, and one of them is missing.**
+**Q5 — name resolution: what the course checks, and the two rows beyond it.**
 
-*First, a correction to how this entry used to read.* It claimed a function and
-a global variable may not share a name, on the grounds that a bare symbol is a
-call. That is wrong: the two are written differently at the point of use —
-`<- foo` pushes the global, `foo` calls the function — and they reach the
-assembler as `SM.foo` and `FUNTION.foo`. They coexist perfectly well. The same
-goes for a label and a variable, which the document already permits, and for a
-label and a function.
+*Two corrections to how this entry used to read.* It claimed a function and a
+global may not share a name — wrong; they are written differently at the point
+of use, `<- foo` against `foo`, and reach the assembler as `SM.foo` and
+`FUNTION.foo`. And it justified requiring unique function names by saying they
+"become a single flat space of `FUNTION.` labels", which is the consequence and
+not the reason. The reason is that **the language offers no other way to name a
+function**: a call is the bare name, so two functions sharing one make every
+call to it ambiguous in the source, however it is translated.
 
-So the rules themselves are in reasonable shape. The problems are elsewhere.
+**Measured, since the prefixes were raised as possibly sufficient.** They are
+not: `FUNTION.` is a constant, identical for every function. Translating two
+files that each declare `!f()` emits
 
-**One rule is missing.** The document says local names within a function must be
-distinct, and that labels within a function must be distinct. It never says that
-**function names must be unique across the whole program** — which they must,
-since they become a single flat space of `FUNTION.` labels. Two files each
-declaring `!f()` produce two definitions of the same assembly label.
+```
+(FUNTION.f)
+(FUNTION.f)
+```
 
-**No rule is enforced, and every violation is silent.** This is the real
-content of the question, and it is the same defect that C3 ran into from the
-other side. Nothing in the pipeline resolves names:
+and the Hack assembler accepts that silently — assembled, it resolves every
+`@FUNTION.f` to the **second** definition. The prefixes separate functions from
+variables and labels, which is what §2 says they do; they do not separate
+functions from each other.
 
-| mistake | what happens today |
-|---|---|
-| call to a function that does not exist | `@FUNTION.f` is allocated as a variable; jump to a garbage address |
-| jump to a label that does not exist | the same, with `@LABEL.f.x` |
-| two functions with the same name | two definitions of one assembly label |
-| two labels with the same name in one function | the same |
-| an argument and an internal variable with the same name | `dict(zip(...))` keeps the last; the argument becomes unreachable |
-| a declaration's argument count disagreeing with what callers push | nothing; the frame is simply wrong |
+**What the course's VM emulator does, measured on purpose-built inputs.** Every
+check below is at load time: each was detected inside a function the program
+never calls, and no output was produced.
 
-Not one of these produces a message. Every one of them produces a program that
-assembles cleanly and then misbehaves far from its cause.
+| mistake | the course | SM today |
+|---|---|---|
+| call to an undefined function | `Sys.vm: in line 2: Nope.vm not found or function Nope.missing not found in Nope.vm` | silent; `@FUNTION.f` becomes a variable, jump to a garbage address |
+| jump to an undefined label | `Sys.vm: in line 2: Unknown label - Sys.init$NoSuchLabel` | silent, the same way |
+| two functions with the same name | `A.vm: subroutine f already exists` | silent; the assembler keeps the last |
+| the same label twice in one function | **nothing** | silent |
+| argument count disagreeing with the declaration | nothing at load; may surface later as `Stack overflow in Sys.init.3` | silent |
 
-**Where the checks have to live: the emulator — and nowhere near the
-assignment.** The obvious home for name resolution is the translator, but the
-translator is the student's, and we neither write it nor can rely on it. If the
-checks live only there, a student with a malformed `.sm` file cannot tell a bug
-in the program from a bug in the translator they are in the middle of writing,
-which is the worst possible confusion to hand someone at that moment. So the
-emulator carries the full set, and a program it rejects is known to be bad
-before any translator touches it.
+So three of the five rows are *exactly what the course does*, with file and line
+numbers, and adopting them is copying the book.
 
-The converse matters just as much: **the student's translator is never required
-to perform any of these checks**, and no test in `projects/07-sm` may expect a
-diagnostic from it. The course assumes error-free input throughout — its
-project 11 page says outright that the supplied programs are error-free, so a
-failure means a bug in the student's program and not in the test — and we assume
-the same. Validation is a service our tools provide, not a requirement we
-impose.
+**The fourth row** — a label declared twice in one function — the course lets
+through. The documentation already forbids it in prose, so this is a question
+of whether to enforce a rule the author wrote but the book does not check.
 
-*Proposed:* add the missing rule; state all of them in one place in the
-reference; implement the whole table above as diagnostics in the emulator, with
-`sm-core` exposing them so our own tools get them too.
+**The fifth row is not a name question at all, and belongs to Q9.** The course
+can compare a count because `call f n` carries one at the call site. SM carries
+none — the arity is the callee's alone, which is the property that lets the
+student's translator work in one pass — so there is nothing to compare. The
+depth walk of Q9 is what would catch it: too few arguments drives the depth
+negative, too many leave it high at the `<--` or at a label merge.
+
+**Whose job, as always.** Ours. These are input-validation checks and they live
+in the emulator and `sm-core`; the student's translator is never required to
+perform any of them, and no test in either package expects a diagnostic from
+it. See the principle in `../PLAN.md` §2.
+
+*Proposed:* adopt the three course rows verbatim, messages and line numbers
+included; adopt the fourth as well, the rule being the author's own and the
+cost nil; leave the fifth to Q9.
 
 **Q6 — the mnemonics. DECIDED → C4: the mnemonics are the language; the words
 are a view.** The emulator renders any program word-for-word so the two can be
