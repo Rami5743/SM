@@ -10,7 +10,7 @@
 
 SM היא מכונת מחסנית. היא חלופה למכונה הווירטואלית של
 N. Nisan and S. Schocken, *The Elements of Computing Systems* (MIT Press, 2005),
-והיא מכוונת לאותו מחשב `Hack`. [`RATIONALE.md`](RATIONALE.md) מנמק את ההבדלים;
+והיא מכוונת לאותו מחשב `Hack`. [`RATIONALE.he.md`](RATIONALE.he.md) מנמק את ההבדלים;
 המסמך הזה רק מציין אותם.
 
 ---

@@ -106,6 +106,22 @@ describe('the shell', () => {
     await page.close()
   })
 
+  it('serves each document in one language only, in its own direction', async () => {
+    for (const [path, dir, has, hasNot] of [
+      ['/reference', 'rtl', 'שפת SM', 'The SM language'],
+      ['/en/reference', 'ltr', 'The SM language', 'שפת SM'],
+      ['/rationale', 'rtl', 'בעבודה', 'Work in progress'],
+      ['/en/rationale', 'ltr', 'Work in progress', 'בעבודה'],
+    ] as const) {
+      const page = await open(path)
+      expect([path, await page.getAttribute('article', 'dir')]).toEqual([path, dir])
+      const text = await page.textContent('article')
+      expect([path, text?.includes(has)]).toEqual([path, true])
+      expect([path, text?.includes(hasNot)]).toEqual([path, false])
+      await page.close()
+    }
+  })
+
   it('serves the reference in the language of the page, right to left', async () => {
     const hebrew = await open('/reference')
     expect(await hebrew.getAttribute('article', 'dir')).toBe('rtl')

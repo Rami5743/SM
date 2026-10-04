@@ -5,6 +5,7 @@
 import smMarkdown from '../../spec/sm.md?raw'
 import smHebrewMarkdown from '../../spec/sm.he.md?raw'
 import rationaleMarkdown from '../../spec/RATIONALE.md?raw'
+import rationaleHebrewMarkdown from '../../spec/RATIONALE.he.md?raw'
 import { el } from './lib/dom.js'
 import { dirOf, LANGS, PAGES, STRINGS, type Lang, type PageId, type Strings } from './lib/i18n.js'
 import { href, parseRoute, switched, type Route } from './lib/router.js'
@@ -31,11 +32,15 @@ function pageFor(route: Route, s: Strings): HTMLElement {
     case 'emulator': return emulatorPage(s)
     case 'compiler': return compilerPage(s)
     case 'bridge': return bridgePage(s)
+    // Each language gets its own document, not one document holding both.
     case 'reference':
       return route.lang === 'he'
         ? docPage(smHebrewMarkdown, 'rtl')
         : docPage(smMarkdown, 'ltr')
-    case 'rationale': return docPage(rationaleMarkdown, dirOf(route.lang))
+    case 'rationale':
+      return route.lang === 'he'
+        ? docPage(rationaleHebrewMarkdown, 'rtl')
+        : docPage(rationaleMarkdown, 'ltr')
     case 'projects': return projectsPage(s)
   }
 }
