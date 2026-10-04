@@ -160,9 +160,40 @@ work seems related.
 | M9 the bridge | the round trips, by emulator output rather than by text |
 | M10 | the whole of the above, on every push, as the standing job |
 
-### Three things that make the suite worth having
+### What the suite is measured against
 
-**The course's tools are a reference, used with care — not an oracle.** They
+**The supplied implementations, as a corrected working copy.**
+`SM_trnsleitor3.py` and `jack_compaler.py` are what our ports must reproduce;
+they are the reference for this project in a way the course's tools are not.
+But they contain defects — three are already known
+(`spec/INVENTORY.md` §4a) — so reproducing them faithfully would mean
+reproducing those too.
+
+So there are two copies, and the distinction is the whole practice:
+
+* `reference/` is **frozen**. It is the historical record of what was handed
+  over and is never edited, so that any claim about the original can be
+  checked against it.
+* `oracle/` is the **working copy**: the same programs, repaired. Every repair
+  is a commit that says what the defect was and why the new behaviour is
+  right. Our ports are compared against this copy, never against `reference/`.
+
+The set of commits to `oracle/` is then a second record alongside
+`spec/CORRECTIONS.md` — that one says where we depart from the *documentation*,
+this one says where we depart from the *code*.
+
+Three repairs are already identified. Two are needed merely to run the
+programs at all: `SM_trnsleitor3.py` imports an `asembly_OO` module that was
+never supplied, and `jack_compaler.py` calls `compale_folder` at import time
+with a hard-coded Windows path. The third is behavioural — the `<-@this`
+defect — and it needs a decision of its own, because the Jack source of the
+sample is at fault too: repairing the sample to call `Main.fibonachie(...)`
+makes both compilers agree, while making the compiler *reject* the unqualified
+call, as the official one does, is a separate repair and the one our own
+compiler will carry.
+
+**The course's tools are a reference too, used with more care — not an
+oracle.** They
 run headless, verified here on the compiler, the assembler, the CPU emulator
 and the VM emulator, so continuous integration can reach them. But they mostly
 do a *different job* from ours, and two of the four comparisons are indirect:
@@ -187,15 +218,11 @@ the end. C6 adopts that unsoundness deliberately, which is the point: a
 divergence from the reference is a decision to be taken and written down, not
 an exception quietly added to a comparison script.
 
-**So: a frozen copy we own and may correct.** The tools ship as compiled jars
-with no source, so the copy cannot be the program; it is the *expectations*.
-Vendor the tools at a pinned version so the reference does not move under us,
-capture their behaviour once into files we keep, and compare against those
-files rather than re-running the tools as an authority. When one of the
-captured expectations turns out to be wrong, correct our copy in a commit that
-says why — so the set of corrections is itself the record of where we know we
-differ from the course, readable in one place instead of inferred from
-scattered test exclusions.
+**They cannot be given the same treatment**, which is worth noting rather than
+discovering later: they ship as compiled jars with no source, so there is no
+copy to repair. What we can do instead is pin the version, capture their
+behaviour once into expectation files we keep, and compare against those —
+correcting an expectation, when it proves wrong, in a commit that says why.
 
 **Every defect found gets a test before it is fixed.** The suite grows by one
 case per bug, which is what keeps a fix from being undone six months later by
@@ -310,9 +337,11 @@ A clean port of `SM_trnsleitor3.py`. It stays out of the shipped site; its job
 is to generate `.cmp` files and to be the thing a student's translator is
 measured against.
 
-*Done when:* its output agrees with the Python original on every sample, except
-at the points listed in `spec/CORRECTIONS.md` — which, for this milestone,
-means C2 and nothing else.
+*Done when:* its output agrees with `oracle/`'s copy of the Python translator
+on every sample, except at the points listed in `spec/CORRECTIONS.md` — which,
+for this milestone, means C2 and nothing else. Against `reference/`'s frozen
+copy it will differ further, by whatever `oracle/` has repaired; that is the
+point of the two copies and not a discrepancy to explain away.
 
 ### M5 — The site, first cut *(medium)*
 
