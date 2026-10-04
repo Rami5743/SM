@@ -162,11 +162,40 @@ work seems related.
 
 ### Three things that make the suite worth having
 
-**The course's own tools are the reference oracle.** They run headless from a
-`.tst` script — verified here on the compiler, the assembler, the CPU emulator
-and the VM emulator — so continuous integration can check our output against
-theirs rather than against our own expectations. This is the strongest kind of
-test available to this project and it costs a subprocess.
+**The course's tools are a reference, used with care — not an oracle.** They
+run headless, verified here on the compiler, the assembler, the CPU emulator
+and the VM emulator, so continuous integration can reach them. But they mostly
+do a *different job* from ours, and two of the four comparisons are indirect:
+
+| their tool | comparison | kind |
+|---|---|---|
+| Assembler | same `.asm` in, same `.hack` out | direct, byte for byte |
+| CPU emulator | same `.asm` and `.tst`, same `.out` | direct |
+| Jack compiler (project 10 XML) | same `.jack` in, same XML out, their `.cmp` files, their `TextComparer` | direct |
+| Jack compiler (code generation) | theirs emits VM, ours emits SM | **behavioural only** — compile both, run each on its own machine, compare what is observable |
+| VM emulator | it runs VM, ours runs SM | **behavioural only**, and through our own bridge |
+
+The two direct rows are worth a great deal. The two behavioural ones are worth
+less than they look: a mismatch there has three suspects — our tool, their
+tool, and the translation between — and nothing in the failure says which.
+
+**The reference can be wrong, and is certainly incomplete.** Incomplete first:
+there is no reference anything for SM, their `.cmp` files cover only their own
+programs, and project 11 ships none at all. Wrong second, demonstrably — their
+return analysis accepts `while (false) { return 1; }`, which plainly falls off
+the end. C6 adopts that unsoundness deliberately, which is the point: a
+divergence from the reference is a decision to be taken and written down, not
+an exception quietly added to a comparison script.
+
+**So: a frozen copy we own and may correct.** The tools ship as compiled jars
+with no source, so the copy cannot be the program; it is the *expectations*.
+Vendor the tools at a pinned version so the reference does not move under us,
+capture their behaviour once into files we keep, and compare against those
+files rather than re-running the tools as an authority. When one of the
+captured expectations turns out to be wrong, correct our copy in a commit that
+says why — so the set of corrections is itself the record of where we know we
+differ from the course, readable in one place instead of inferred from
+scattered test exclusions.
 
 **Every defect found gets a test before it is fixed.** The suite grows by one
 case per bug, which is what keeps a fix from being undone six months later by
@@ -511,10 +540,11 @@ gets a test suite the student package does not:
   screen-buffer assertions. This is how the SM library in M7 gets checked, and
   it is a ready-made suite we would otherwise have had to invent.
 * *Differential testing,* once M9 exists: compile the same Jack source with our
-  compiler and with the course's, run both, compare observable behaviour. The
-  strongest test of the lot. The course's compiler and VM emulator both run
-  headless from the command line, so this is a continuous-integration job and
-  needs nothing hosted.
+  compiler and with the course's, run each on its own machine, compare what is
+  observable. Broad but blunt — a mismatch implicates our compiler, their
+  compiler or the bridge, and says nothing about which — so it is a net for
+  what the layers above missed, not a substitute for them. It needs nothing
+  hosted: both of their tools run headless.
 * *Pong as the integration test,* for the same reason the course uses it: it
   exercises objects, statics, arrays, strings, screen and keyboard at once.
 
