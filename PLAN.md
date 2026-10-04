@@ -27,6 +27,19 @@ is no backend, no account, and no upload. A student can also clone the
 repository and run every tool from the command line, which is what continuous
 integration does.
 
+**The course's own tools are linked, not hosted** — its web IDE at
+`nand2tetris.github.io/web-ide/` and its download page. We ship nothing of
+theirs. This costs the site a side-by-side comparison of the two machines, and
+M10's import and export of `.vm` directories is what replaces it: a student
+moves the program rather than running both at once.
+
+It costs our *testing* nothing, which is worth stating because it looks as
+though it might. The course's desktop tools run headless from a `.tst` script —
+verified here, on the compiler, the assembler, the CPU emulator and the VM
+emulator — so continuous integration can use them as a reference oracle
+(M7's differential testing, M9's round trips) without their appearing on the
+site.
+
 **Two of these are assignments; the rest is scaffolding.** The student writes
 exactly two programs: an **SM → Hack-assembly translator**, replacing projects
 7–8, and then a **Jack → SM compiler**, replacing project 11. Deliverables
@@ -397,8 +410,9 @@ gets a test suite the student package does not:
   it is a ready-made suite we would otherwise have had to invent.
 * *Differential testing,* once M9 exists: compile the same Jack source with our
   compiler and with the course's, run both, compare observable behaviour. The
-  strongest test of the lot, and the reason M9 earns its place even though no
-  student needs it.
+  strongest test of the lot. The course's compiler and VM emulator both run
+  headless from the command line, so this is a continuous-integration job and
+  needs nothing hosted.
 * *Pong as the integration test,* for the same reason the course uses it: it
   exercises objects, statics, arrays, strings, screen and keyboard at once.
 
@@ -483,8 +497,10 @@ and VM → SM → VM both preserve the emulator's output.
 ### M10 — Polish *(small)*
 
 Save and share a program by URL. Export a session as a downloadable folder.
-Import a course `.vm` directory and see it as SM, and the reverse — the most
-direct way to show a student that the two machines are the same machine. A
+Import a course `.vm` directory and see it as SM, and export SM as `.vm` for
+the course's own emulator — with that emulator linked rather than hosted, this
+is how a student sees that the two machines are the same machine, and it is the
+reason M9 earns a place on the site and not only in the test suite. A
 difference table between SM and the course VM. Continuous integration running
 every `.tst` on every push.
 
@@ -548,7 +564,6 @@ M9 and M10 follow at leisure.
    analyser has no target machine in it, so the course's own project 10 carries
    over unchanged, `TextComparer` and `.xml` compare files included. The SM
    assignment starts at code generation.
-4. Should the site host the course's own VM emulator as well, so a student can
-   compare the two machines side by side, or only link to it?
+4. ~~Host the course's VM emulator, or link to it?~~ **Answered:** link only.
 5. Language of the site: English throughout, or English reference with a Hebrew
    rationale?
