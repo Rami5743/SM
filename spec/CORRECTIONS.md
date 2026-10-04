@@ -316,13 +316,23 @@ never calls:
 | jump to an undeclared label | `Unknown label - Sys.init$NoSuchLabel` |
 | two functions with the same name | `A.vm: subroutine f already exists` |
 
-And a fourth that the course does not check, the rule being the author's own
-and already in the document. Its message follows the course's wording for the
-case it does check:
+And two more. The first the course does not check, the rule being the author's
+own and already in the document. The second it does check, but only at run
+time:
 
-| mistake | message |
-|---|---|
-| the same label twice in one function | `A.sm: in line 4: label L already exists in function f` |
+| mistake | message | note |
+|---|---|---|
+| the same label twice in one function | `A.sm: in line 4: label L already exists in function f` | the course does not check it |
+| `<- @x` or `-> @x` where `x` is not a local of the enclosing function | `A.sm: in line 7: f has no local named x` | the course catches the analogue at run time: `Out of segment space in Foo.f.1` |
+
+The second is worth a sentence, because it is a place where SM is *better
+placed* than the course rather than stricter than it. The course's locals are
+numeric offsets, so `push local 5` in a function with two locals cannot be
+judged until the offset is computed — a runtime fault. SM's locals are names
+resolved against the declaration, so the same mistake is a name that does not
+exist, caught by the same pass as the other four and reported with a line
+number before anything runs. Nothing is being tightened; the design simply
+allows the check to happen earlier.
 
 Adopted with file and line numbers, as the course gives them. This also
 supplies what C3 asked for from the other side: with call targets resolved, a

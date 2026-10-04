@@ -144,8 +144,10 @@ offers, with the arithmetic and logical operators left symbolic in every view;
 **C6**, the course's two missing-return checks, static in our Jack compiler and
 dynamic in our emulator, with its flow analysis written out in full; **C7**,
 function names are global and must be distinct — a rule the document lacked —
-together with the three name-resolution diagnostics the course performs and a
-fourth, a label declared twice in one function, which it does not;
+together with five name-resolution diagnostics: the three the course performs,
+a label declared twice in one function, which it does not, and a reference to
+an undeclared local, which SM can catch statically where the course's numbered
+locals force a runtime fault;
 **C5**, constants are non-negative as in the course, negation is `(-)`, and an
 empty operand is an error rather than something the catch-all rule swallows.
 
@@ -432,7 +434,18 @@ gets a test suite the student package does not:
   found the real defect in the supplied prototype (`spec/INVENTORY.md` §4a).
   It is a continuous-integration check over the SM *we* generate and nothing
   more — Q9 declined it as a rule of the language, so the emulator neither
-  performs it nor knows of it.
+  performs it nor knows of it. Approved on that basis, and it lives in
+  `tools/`, never in `sm-core` beside the real diagnostics, so that nobody
+  later wires it into the emulator and narrows the language by the back door.
+
+  One tension to remember rather than solve now. Leaving a statement call's
+  value on the stack in *straight-line* code is legal and costs nothing, `<--`
+  sweeping it, so we may one day want our compiler to do exactly that and save
+  five instructions per call. The lint's "exactly one value at `<--`" clause
+  would forbid our own legal optimisation. If we ever take it, that clause is
+  what relaxes — and the arity mistake it was catching is then caught instead
+  by C7's check that `<- @x` names a declared local, which is where the
+  prototype's defect really belongs.
 * *Golden output.* The SM text emitted for those same snippets, checked in. We
   own both sides here, so pinning the exact output is legitimate and catches
   unintended changes; it is exactly what we must *not* ask of a student.
@@ -595,11 +608,8 @@ M9 and M10 follow at leisure.
 
 1. ~~The specification questions.~~ **All answered**, C1–C7 in
    `spec/CORRECTIONS.md` for the seven that changed something, and Q3, Q4, Q7
-   and Q9 closed by keeping things as they are. One thing still wants a yes or
-   no: keeping the stack-depth walk as a continuous-integration lint over the
-   SM *our own* compiler generates — not in the language, not in the emulator,
-   declined as a rule by Q9 but the check that found the prototype's real
-   defect.
+   and Q9 closed by keeping things as they are. Nothing is waiting: M0 can be
+   written.
 2. ~~Which translators does the student write?~~ **Answered:** the SM → assembly
    translator, and afterwards the Jack → SM compiler. The SM ↔ VM translators
    are ours.
