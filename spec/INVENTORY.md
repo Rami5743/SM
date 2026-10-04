@@ -89,8 +89,9 @@ Locals produce no symbol at all, being `LCL`-relative offsets.
 ## 3. Questions
 
 Decided so far: **Q1** (→ C1), **Q2** (→ C3), **Q6** (→ C4), **Q8** (→ C5), the companion to
-Q3 (→ C6), and **Q3** and **Q4**, both closed by keeping things as they are. Still open:
-**Q5**, **Q7** and **Q9**. A decision that changes something becomes an entry
+Q3 (→ C6), and **Q3**, **Q4** and **Q7**, all closed by keeping things as they
+are. Still open:
+**Q5** and **Q9**. A decision that changes something becomes an entry
 in
 [`CORRECTIONS.md`](CORRECTIONS.md), which is the normative list of our
 deviations from `reference/`.
@@ -324,41 +325,38 @@ are a view.** The emulator renders any program word-for-word so the two can be
 compared by eye, but only the structural commands have a word form — the
 arithmetic and logical operators stay symbolic everywhere.
 
-**Q7 — statics versus globals by naming convention.** SM has one flat space of
-global variables. The design letter separates two kinds within it by naming: a
-name containing `.` is a static belonging to the file named before the dot, a
-name without one is a true global. Nothing enforces this; both become ordinary
-assembly symbols, `SM.File.x` and `SM.x`.
+**Q7 — statics versus globals. CLOSED: not an SM question.** No entry in
+`CORRECTIONS.md`.
 
-**Where it is merely tidy, and where it is load-bearing.** For the assignment
-it is tidy: the student's translator treats every global alike and never needs
-to know. It becomes load-bearing exactly once, in M9. The course's VM has a
-real per-file `static` segment, so translating SM to VM means deciding which
-globals are statics of which file — and the convention is the only information
-there is. A program that ignores it cannot be translated correctly.
+**SM has one kind of global variable and no convention about naming it.** The
+separation between a static and a global is a *Jack* notion — `static` against
+`field`, class-level against per-object — and Jack has no globals outside
+classes at all. Compiling a Jack class does produce SM globals named
+`Class.name`, so SM code that came from Jack satisfies the convention; but that
+is a property of the compiler's output, not a rule the language imposes on
+anybody else. A hand-written SM program may name its globals as it likes, and
+the `.` is simply a character that a symbol may contain.
 
-**Who produces which kind.** Jack statics compile to `Class.name`, so
-everything a Jack program produces is dotted, and Jack has no true globals at
-all. Undotted globals arise only in hand-written SM, and in VM → SM output,
-where the `temp` segment and `this`/`that`/`pointer` become reserved undotted
-names.
+This entry previously treated the convention as an SM-level rule awaiting a
+decision about enforcement. There is nothing to enforce.
 
-**The question, then, is narrow:** is the dot a rule or a habit, and is a file
-writing to another file's dotted name wrong?
+**It also claimed the convention was load-bearing for the SM → VM bridge. That
+is wrong too**, and the correction belongs here because it changes how M9 is
+written. The reasoning was that the course's VM has a per-file `static`
+segment, so something must say which globals belong to which file. But the
+course's VM has no shared-global storage of any kind — `static i` in one file
+is a different cell from `static i` in another — so mapping SM globals onto
+`static` cannot work regardless of what they are called.
 
-*Against calling it wrong:* a shared variable deliberately named `Config.debug`
-and written from several files is a reasonable thing to want, and SM has no
-notion of privacy to appeal to.
+The translation that does work needs no convention at all: give each SM global
+a fixed address and reach it through `pointer`/`that`, which is uniform for
+dotted and undotted names alike. It is also the honest translation, since the
+course's own statics live at `RAM[16..255]` and an SM global is exactly a cell
+at a fixed address.
 
-*For calling it wrong:* it is the one thing that makes the SM → VM direction
-decidable, and a program that breaks it is a program the bridge will silently
-mistranslate.
-
-*Proposed:* leave it legal and warn on a cross-file write to a dotted name,
-with the warning worded as what it is — not "this is forbidden" but "this
-global will not survive translation to the course's VM". If M9 is never built,
-the question costs nothing either way, which is a reason to decide it late
-rather than now.
+**What the reference page should say:** globals are one flat space of named
+cells. The dotted naming appears once, in the Jack chapter, as what the
+compiler emits for a class's statics.
 
 **Q8 — negative literals. DECIDED → C5: follow the course.** `<- n` takes a
 non-negative decimal; a negative value is `<- n` then `(-)`; a leading sign is
