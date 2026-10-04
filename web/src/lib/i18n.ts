@@ -41,11 +41,8 @@ export interface Strings {
   readonly steps: string
   readonly examples: string
   readonly courseTools: string
-  readonly courseToolsBlurb: string
-  readonly untranslated: string
   readonly p1: string
   readonly p2: string
-  readonly p3: string
   readonly screen: string
   readonly keyboard: string
   readonly keyboardHint: string
@@ -63,6 +60,8 @@ export interface Strings {
   readonly smToVm: string
   readonly vmToSm: string
   readonly bridgeBlurb: string
+  readonly openFiles: string
+  readonly openFolder: string
 }
 
 export type PageId =
@@ -81,7 +80,7 @@ const he: Strings = {
     bridge: 'גשר',
     reference: 'תיעוד',
     rationale: 'רציונל',
-    projects: 'תרגילים',
+    projects: 'משימות',
   },
   blurb: {
     home: 'כל העמודים במקום אחד.',
@@ -90,7 +89,7 @@ const he: Strings = {
     bridge: 'אותה תוכנית בשתי המכונות, לשני הכיוונים.',
     reference: 'התיעוד המחייב של השפה: הפקודות, מודל הזיכרון, המסגרת, השגיאות.',
     rationale: 'למה המכונה הזאת שונה מזו של הקורס, ומה זה עולה.',
-    projects: 'שתי חבילות התרגילים, והמשימה השנייה.',
+    projects: 'שתי חבילות התרגילים.',
   },
   run: 'הרץ',
   step: 'צעד',
@@ -100,19 +99,16 @@ const he: Strings = {
   globals: 'גלובליים',
   ram: 'זיכרון',
   source: 'קוד מקור',
-  program: 'התוכנית כפי שנקראה',
+  program: 'הפקודות',
   notation: 'סימון',
   mnemonics: 'מנמוניקות',
   words: 'מילים',
   halted: 'נעצר',
   steps: 'צעדים',
   examples: 'דוגמאות',
-  courseTools: 'הכלים של הקורס',
-  courseToolsBlurb: 'אנחנו לא מארחים אותם, רק מקשרים.',
-  untranslated: 'העמוד הזה עדיין לא תורגם, ומוצג באנגלית.',
+  courseTools: 'קישורים לכלים של הקורס',
   p1: 'החלק הראשון של המתרגם: הפקודות שאינן דורשות מסגרת.',
   p2: 'החלק השני: בקרת זרימה, פונקציות, ולבסוף האתחול.',
-  p3: 'המשימה השנייה היא יחידה 11 של הקורס עצמו, בלי שינוי. מקמפלים עם הקומפיילר שכתבתם, ומריצים כאן.',
   screen: 'מסך',
   keyboard: 'מקלדת',
   keyboardHint: 'לחצו כאן ואז הקישו; המקש נכתב ל‑24576.',
@@ -130,6 +126,8 @@ const he: Strings = {
   smToVm: 'מ‑SM ל‑VM',
   vmToSm: 'מ‑VM ל‑SM',
   bridgeBlurb: 'את הפלט אפשר להריץ באמולטור של הקורס:',
+  openFiles: 'קבצים',
+  openFolder: 'תיקייה',
 }
 
 const en: Strings = {
@@ -151,7 +149,7 @@ const en: Strings = {
     bridge: 'The same program on both machines, in either direction.',
     reference: 'The normative reference: the commands, the memory model, the frame, the errors.',
     rationale: 'Why this machine differs from the course’s, and what that costs.',
-    projects: 'The two packages of exercises, and the second assignment.',
+    projects: 'The two packages of exercises.',
   },
   run: 'Run',
   step: 'Step',
@@ -161,19 +159,16 @@ const en: Strings = {
   globals: 'Globals',
   ram: 'RAM',
   source: 'Source',
-  program: 'The program as read',
+  program: 'Commands',
   notation: 'Notation',
   mnemonics: 'Mnemonics',
   words: 'Words',
   halted: 'halted',
   steps: 'steps',
   examples: 'Examples',
-  courseTools: 'The course’s own tools',
-  courseToolsBlurb: 'Linked, not hosted.',
-  untranslated: 'This page is not translated yet, and is shown in English.',
+  courseTools: 'Links to the course’s own tools',
   p1: 'The first half of the translator: the commands that need no frame.',
   p2: 'The second: control flow, functions, and finally the bootstrap.',
-  p3: 'The second assignment is the course\u2019s own project 11, unchanged. Compile it with the compiler you wrote, and run the result here.',
   screen: 'Screen',
   keyboard: 'Keyboard',
   keyboardHint: 'Click here and type; the key goes to 24576.',
@@ -191,6 +186,8 @@ const en: Strings = {
   smToVm: 'SM to VM',
   vmToSm: 'VM to SM',
   bridgeBlurb: 'What comes out runs in the course’s own emulator:',
+  openFiles: 'Files',
+  openFolder: 'Folder',
 }
 
 export const STRINGS: Readonly<Record<Lang, Strings>> = { he, en }

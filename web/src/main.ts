@@ -3,6 +3,7 @@
  * languages with Hebrew the default.
  */
 import smMarkdown from '../../spec/sm.md?raw'
+import smHebrewMarkdown from '../../spec/sm.he.md?raw'
 import rationaleMarkdown from '../../spec/RATIONALE.md?raw'
 import { el } from './lib/dom.js'
 import { dirOf, LANGS, PAGES, STRINGS, type Lang, type PageId, type Strings } from './lib/i18n.js'
@@ -30,10 +31,11 @@ function pageFor(route: Route, s: Strings): HTMLElement {
     case 'emulator': return emulatorPage(s)
     case 'compiler': return compilerPage(s)
     case 'bridge': return bridgePage(s)
-    // The documents are English only for now; the banner says so rather than
-    // the page being missing.
-    case 'reference': return docPage(s.nav.reference, smMarkdown, route.lang === 'he' ? s.untranslated : undefined)
-    case 'rationale': return docPage(s.nav.rationale, rationaleMarkdown, route.lang === 'he' ? s.untranslated : undefined)
+    case 'reference':
+      return route.lang === 'he'
+        ? docPage(smHebrewMarkdown, 'rtl')
+        : docPage(smMarkdown, 'ltr')
+    case 'rationale': return docPage(rationaleMarkdown, dirOf(route.lang))
     case 'projects': return projectsPage(s)
   }
 }

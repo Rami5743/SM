@@ -11,6 +11,7 @@ import { el } from '../lib/dom.js'
 import type { Strings } from '../lib/i18n.js'
 import { HANDOFF } from './compiler.js'
 import { screenView } from '../lib/screen.js'
+import { fileOpener, type Opened } from '../lib/open-files.js'
 import { shareLink, sharedProgram } from '../lib/share.js'
 import { download } from '../lib/zip.js'
 
@@ -72,6 +73,18 @@ export function emulatorPage(s: Strings): HTMLElement {
   const status = el('span', { class: 'status' })
   const screen = screenView(emulator)
   const faultLine = el('div', { class: 'fault' })
+
+  // Several .sm files concatenate without ceremony: a file is only a
+  // container, and function names are global to the program, so one box can
+  // hold a whole program however it arrived.
+  const opened = (files: readonly Opened[]): void => {
+    source.value = files.length === 1
+      ? files[0]!.text
+      : files.map((f) => `// ${f.name}\n${f.text.replace(/\n*$/, '\n')}`).join('\n')
+    load()
+  }
+  const openFiles = fileOpener({ extension: '.sm', folder: false, label: s.openFiles, onOpen: opened })
+  const openFolder = fileOpener({ extension: '.sm', folder: true, label: s.openFolder, onOpen: opened })
 
   const shareBtn = el('button', {}, s.copyLink)
   const downloadBtn = el('button', {}, s.download)
@@ -198,7 +211,7 @@ export function emulatorPage(s: Strings): HTMLElement {
   root.append(
     el('h1', {}, s.nav.emulator),
     el('div', { class: 'controls' },
-      stepBtn, runBtn, resetBtn, shareBtn, downloadBtn,
+      stepBtn, runBtn, resetBtn, shareBtn, downloadBtn, openFiles, openFolder,
       el('label', {}, `${s.examples} `, examples),
       el('label', {}, `${s.notation} `, notationSelect),
       status),

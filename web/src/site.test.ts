@@ -10,7 +10,8 @@
  */
 import { createServer, type Server } from 'node:http'
 import { execFileSync } from 'node:child_process'
-import { readFileSync, existsSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium, type Browser, type Page } from 'playwright'
@@ -83,13 +84,13 @@ describe('the shell', () => {
   it('gathers every page on the home page', async () => {
     const page = await open('/')
     const cards = await page.$$eval('.cards .card h3', (hs) => hs.map((h) => h.textContent))
-    expect(cards).toEqual(['אמולטור', 'קומפיילר', 'גשר', 'תיעוד', 'רציונל', 'תרגילים'])
+    expect(cards).toEqual(['אמולטור', 'קומפיילר', 'גשר', 'תיעוד', 'רציונל', 'משימות'])
     await page.close()
   })
 
   it('reaches every tab from every page', async () => {
     const page = await open('/')
-    for (const tab of ['אמולטור', 'קומפיילר', 'גשר', 'תיעוד', 'רציונל', 'תרגילים', 'ראשי']) {
+    for (const tab of ['אמולטור', 'קומפיילר', 'גשר', 'תיעוד', 'רציונל', 'משימות', 'ראשי']) {
       await page.click(`nav a:text-is("${tab}")`)
       await page.waitForSelector(`nav a[aria-current="page"]:text-is("${tab}")`)
     }
@@ -105,10 +106,16 @@ describe('the shell', () => {
     await page.close()
   })
 
-  it('shows a banner where a page is not translated, rather than nothing', async () => {
-    const page = await open('/reference')
-    expect(await page.textContent('.banner')).toContain('לא תורגם')
-    await page.close()
+  it('serves the reference in the language of the page, right to left', async () => {
+    const hebrew = await open('/reference')
+    expect(await hebrew.getAttribute('article', 'dir')).toBe('rtl')
+    expect(await hebrew.textContent('article h1')).toContain('שפת SM')
+    await hebrew.close()
+
+    const english = await open('/en/reference')
+    expect(await english.getAttribute('article', 'dir')).toBe('ltr')
+    expect(await english.textContent('article h1')).toContain('The SM language')
+    await english.close()
   })
 })
 
@@ -242,7 +249,7 @@ describe('the bridge page', () => {
   // one concatenation, and the page keeps them apart.
   it('imports a folder of .vm files and keeps each file\'s statics its own', async () => {
     const page = await open('/bridge')
-    await page.setInputFiles('input[type=file]', [
+    await page.setInputFiles('.opener:has-text("קבצים") input', [
       { name: 'Class1.vm', mimeType: 'text/plain', buffer: Buffer.from('function Class1.get 0\npush static 0\nreturn\n') },
       { name: 'Class2.vm', mimeType: 'text/plain', buffer: Buffer.from('function Class2.get 0\npush static 0\nreturn\n') },
     ])
@@ -276,6 +283,46 @@ describe('a program in the address bar', () => {
     await reopened.waitForSelector('textarea')
     expect(await reopened.inputValue('textarea')).toBe('<-7\n<-8\n+\n')
     await reopened.close()
+    await page.close()
+  })
+})
+
+describe('opening a program from disk', () => {
+  /** A webkitdirectory input takes a path, not buffers, so make one. */
+  function folder(files: Record<string, string>): string {
+    const dir = mkdtempSync(join(tmpdir(), 'sm-open-'))
+    for (const [name, text] of Object.entries(files)) writeFileSync(join(dir, name), text)
+    return dir
+  }
+
+  it('the emulator takes a folder of .sm files, and ignores what is not one', async () => {
+    const page = await open('/emulator')
+    await page.setInputFiles('.opener:has-text("תיקייה") input', folder({
+      'Sys.sm': '!Sys.init()\n<-9\nMain.twice\n<--\n',
+      'Main.sm': '!Main.twice(n)\n<-@n\n<-@n\n+\n<--\n',
+      'notes.txt': 'not a program',
+    }))
+    await page.waitForSelector('textarea')
+    const text = await page.inputValue('textarea')
+    expect(text).toContain('// Main.sm')
+    expect(text).toContain('// Sys.sm')
+    expect(text).not.toContain('not a program')
+
+    // And it is a program, not just text: it runs and returns 18.
+    await page.click('button:text-is("הרץ")')
+    await page.waitForSelector('.status:text-matches("נעצר")')
+    const rows = await page.$$eval('.panel:has(h3:text-is("מחסנית")) table.cells tr td',
+      (tds) => tds.map((t) => t.textContent))
+    expect(rows).toEqual(['256', '18'])
+    await page.close()
+  })
+
+  it('the bridge takes a folder of .vm files', async () => {
+    const page = await open('/bridge')
+    await page.setInputFiles('.opener:has-text("תיקייה") input', folder({
+      'Class1.vm': 'function Class1.get 0\npush static 3\nreturn\n',
+    }))
+    await page.waitForSelector('pre:text-matches("Class1.3")')
     await page.close()
   })
 })

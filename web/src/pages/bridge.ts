@@ -10,6 +10,7 @@
 import { parse, resolve } from '@sm/core'
 import { BridgeError, parseVm, smToVm, VmError, vmToSm } from '@sm/vm'
 import { el } from '../lib/dom.js'
+import { fileOpener, type Opened } from '../lib/open-files.js'
 import type { Strings } from '../lib/i18n.js'
 import { download, zip } from '../lib/zip.js'
 import { HANDOFF } from './compiler.js'
@@ -88,22 +89,17 @@ export function bridgePage(s: Strings): HTMLElement {
   })
 
   // A `static i` belongs to its file, so a program of several `.vm` files
-  // has to be translated as several, not as one concatenation.
-  const files = el('input', { type: 'file', multiple: 'multiple', accept: '.vm' })
-  files.addEventListener('change', () => {
-    const chosen = Array.from(files.files ?? [])
-    if (chosen.length === 0) return
-    void Promise.all(chosen.map(async (f) => [f.name, await f.text()] as const))
-      .then((pairs) => {
-        which.value = 'vm-to-sm'
-        direction = 'vm-to-sm'
-        imported = Object.fromEntries(
-          pairs.map(([name, text]) => [name.replace(/\.vm$/, ''), text]),
-        )
-        source.value = pairs.map(([name, text]) => `// ${name}\n${text}`).join('\n')
-        convert()
-      })
-  })
+  // has to be translated as several, not as one concatenation. A course
+  // program is a directory, so a directory is what the page takes.
+  const opened = (files: readonly Opened[]): void => {
+    which.value = 'vm-to-sm'
+    direction = 'vm-to-sm'
+    imported = Object.fromEntries(files.map((f) => [f.name.replace(/\.vm$/, ''), f.text]))
+    source.value = files.map((f) => `// ${f.name}\n${f.text.replace(/\n*$/, '\n')}`).join('\n')
+    convert()
+  }
+  const openFiles = fileOpener({ extension: '.vm', folder: false, label: s.openFiles, onOpen: opened })
+  const openFolder = fileOpener({ extension: '.vm', folder: true, label: s.openFolder, onOpen: opened })
 
   function convert(): void {
     try {
@@ -173,7 +169,7 @@ export function bridgePage(s: Strings): HTMLElement {
     el('p', {}, s.bridgeBlurb, ' ',
       el('a', { href: 'https://nand2tetris.github.io/web-ide/vm', target: '_blank', rel: 'noreferrer' },
         s.courseTools)),
-    el('div', { class: 'controls' }, which, downloadBtn, sendBtn, files),
+    el('div', { class: 'controls' }, which, downloadBtn, sendBtn, openFiles, openFolder),
     faultLine,
     el('div', { class: 'emulator' },
       panel(s.source, el('div', { class: 'body' }, source)),

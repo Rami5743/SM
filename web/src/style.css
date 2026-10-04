@@ -189,3 +189,16 @@ article blockquote { border-inline-start: 3px solid var(--accent); margin-inline
   white-space: pre-wrap;
   color: #a60;
 }
+
+/* A file or folder picker, dressed as a button. The input itself is
+   hidden: a label wrapping it opens it on a click. */
+.opener {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  cursor: pointer;
+  font: inherit;
+}
+.opener:hover { border-color: var(--accent); }
+.opener input { display: none; }
