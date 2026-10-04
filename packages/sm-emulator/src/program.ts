@@ -31,6 +31,13 @@ export interface Program {
   /** Label name to step index, per function. */
   readonly labels: readonly ReadonlyMap<string, number>[]
   /**
+   * The same for a fragment's own labels. A fragment is a bare run of
+   * commands and the teaching form of spec/sm.md section 8.1 has no jumps
+   * in it, but a `.vm` file of the course's project 7 is exactly such a run
+   * and the VM→SM bridge gives one branches, so the labels are kept.
+   */
+  readonly fragmentLabels: ReadonlyMap<string, number>
+  /**
    * How many steps at the start of `steps` are fragment commands — those that
    * preceded any declaration. The language permits them only in the teaching
    * form of spec/sm.md section 8.1, so a loader decides whether to allow
@@ -58,8 +65,10 @@ export function link(files: readonly SmFile[]): Program {
   const functions: LoadedFunction[] = []
   const byName = new Map<string, number>()
   const labels: Map<string, number>[] = []
+  const fragmentLabels = new Map<string, number>()
   for (const file of files) {
     for (const command of file.fragment) {
+      if (command.kind === 'label') fragmentLabels.set(command.name, steps.length)
       steps.push({ kind: 'command', fn: NO_FUNCTION, command })
     }
   }
@@ -83,5 +92,5 @@ export function link(files: readonly SmFile[]): Program {
     }
   }
 
-  return { steps, functions, byName, labels, fragmentEnd }
+  return { steps, functions, byName, labels, fragmentLabels, fragmentEnd }
 }

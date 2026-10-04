@@ -362,3 +362,70 @@ notations can be compared by looking at them.
 
 The arithmetic and logical operators are symbolic in every rendering and are
 never spelled as words.
+
+---
+
+## 10. SM and the course's VM, side by side
+
+A program can cross between the two machines, and `@sm/vm` translates it in
+either direction. What follows is where the two differ, which is where a
+translation has something to do. Nothing here is part of SM; it is here
+because this is the page a reader compares the two on.
+
+| | SM | the course's VM |
+|---|---|---|
+| the stack pointer | `SP` names the top element; an empty stack based at 256 is `SP = 255` | `SP` names the first free cell; the same stack is `SP = 256` |
+| the frame | one pointer: arguments, the saved `LCL`, the return address, internal variables | five: the return address and the saved `LCL`, `ARG`, `THIS`, `THAT` |
+| where the arity is written | at the declaration, `!f(a,b)` | at the call, `call f 2` |
+| a local | named, `<- @count` | numbered, `push local 3` |
+| indirection | `[]` and `->[]` over an address on the stack | `pointer`, `this`, `that`, re-pointed before each use |
+| a boolean | the most significant bit, and nothing else | all ones for true, zero for false |
+| `<` | `x - y`, so the whole value is the difference | `lt`, so the whole value is all-ones or zero |
+| the conditional jump | `?-->` branches when the most significant bit is set | `if-goto` branches when the value is not zero |
+| shared storage | globals, named, reachable from anywhere | `static i`, per file, reachable only within it |
+
+### What each direction costs
+
+**SM to the VM.** The arity has to move from the declaration to the call
+site, so the translator needs a function table and a second pass — the one
+thing an SM-to-assembly translator is free of.
+
+The comparisons are translated as what SM says they are: `<` becomes `sub`,
+`>` becomes `sub, neg`, and `==` becomes `sub` and then `~(v | -v)` through
+a `temp`, because the VM cannot duplicate a value. Emitting `lt`, `gt` and
+`eq` instead would be right for a program that only branches on the result
+and wrong for one that does arithmetic with it, and both are legal SM. The
+conditional jump then carries the whole difference: `?--> L` becomes
+`push constant 0; lt; if-goto L`.
+
+Globals cannot become statics, `static i` being a different cell in each
+file, so each global gets a fixed address reached through `pointer 1` and
+`that 0`. The course's VM emulator refuses a `that` outside the heap and
+the screen, so those addresses are at the top of the heap. A program that
+manages the heap itself must then be given a heap that ends below them.
+
+A fragment cannot cross at all: the VM has no place for a command outside a
+function.
+
+**The VM to SM.** The argument count has to be recovered, from the call
+sites and from the largest `argument i` a body touches; a function called
+with two different counts cannot be translated, because SM declares the
+count once.
+
+`this i` becomes an address, an addition and `[]`. `pop this i` costs one
+instruction more, and the reason is worth stating: `->[]` wants the address
+below the value, the value is already on top, and SM cannot swap the top
+two cells. So the value steps aside into a global for one instruction. SM
+can poke any address it can compute, but it cannot pop into one without a
+named cell to hold the value.
+
+The comparisons go the other way: `eq`, `gt` and `lt` must leave all ones
+or zero, and an SM comparison leaves its answer in the most significant bit
+alone, so a branch turns the one into the other. `if-goto` becomes `<-0`,
+`==`, `~`, `?-->`.
+
+The VM's `call` saves `THIS` and `THAT` and its `return` puts them back;
+SM's frame has no segments to save. Where a program writes `pointer` at
+all, every call is wrapped in a save and a restore through two internal
+variables of the caller — four instructions a call, and none for a program
+that never re-points.

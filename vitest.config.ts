@@ -12,6 +12,7 @@ export default defineConfig({
       '@sm/tst': pkg('sm-tst'),
       '@sm/to-asm': pkg('sm-to-asm'),
       '@sm/jack': pkg('jack-to-sm'),
+      '@sm/vm': pkg('sm-vm'),
     },
   },
   test: {

@@ -18,7 +18,8 @@
       "@sm/emulator": ["packages/sm-emulator/src/index.ts"],
       "@sm/tst": ["packages/sm-tst/src/index.ts"],
       "@sm/to-asm": ["packages/sm-to-asm/src/index.ts"],
-      "@sm/jack": ["packages/jack-to-sm/src/index.ts"]
+      "@sm/jack": ["packages/jack-to-sm/src/index.ts"],
+      "@sm/vm": ["packages/sm-vm/src/index.ts"]
     }
   },
   "include": ["packages/**/*.ts", "tools/**/*.ts", "web/src/**/*.ts"]

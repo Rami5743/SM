@@ -80,7 +80,11 @@ export function parseColumn(text: string): ColumnSpec {
 export function addressOf(target: string): number {
   const ram = /^RAM\[(\d+)\]$/.exec(target)
   if (ram) return Number(ram[1])
-  const named: Record<string, number> = { sp: 0, lcl: 1, arg: 2, this: 3, that: 4 }
+  // `local` and `argument` are what the course's VM-emulator scripts call
+  // the same two cells; a translated VM program reads them there.
+  const named: Record<string, number> = {
+    sp: 0, lcl: 1, local: 1, arg: 2, argument: 2, this: 3, that: 4,
+  }
   const address = named[target.toLowerCase()]
   if (address === undefined) throw new Error(`unknown target ${JSON.stringify(target)}`)
   return address

@@ -37,8 +37,6 @@ export function resolve(program: Program): readonly Diagnostic[] {
   }
 
   for (const file of program.files) {
-    for (const cmd of file.fragment) checkCall(cmd, declared, diagnostics)
-
     for (const fn of file.functions) {
       const locals = new Set<string>()
       for (const name of [...fn.decl.args, ...fn.decl.locals]) {
@@ -50,17 +48,7 @@ export function resolve(program: Program): readonly Diagnostic[] {
         locals.add(name)
       }
 
-      const labels = new Set<string>()
-      for (const cmd of fn.body) {
-        if (cmd.kind !== 'label') continue
-        if (labels.has(cmd.name)) {
-          diagnostics.push(
-            error(cmd.pos, `label ${cmd.name} already exists in function ${fn.decl.name}`),
-          )
-        }
-        labels.add(cmd.name)
-      }
-
+      const labels = labelsOf(fn.body, fn.decl.name, diagnostics)
       for (const cmd of fn.body) {
         switch (cmd.kind) {
           case 'goto':
@@ -86,7 +74,49 @@ export function resolve(program: Program): readonly Diagnostic[] {
     }
   }
 
+  // A fragment's own labels and calls. The teaching form of spec/sm.md
+  // section 8.1 has no jumps, but the VM→SM bridge gives a project 7 `.vm`
+  // file branches, and a jump to nowhere should be caught here rather than
+  // at run time.
+  for (const file of program.files) {
+    if (file.fragment.length === 0) continue
+    const labels = labelsOf(file.fragment, '<fragment>', diagnostics)
+    for (const cmd of file.fragment) {
+      switch (cmd.kind) {
+        case 'goto':
+        case 'ifGoto':
+          if (!labels.has(cmd.name)) {
+            diagnostics.push(error(cmd.pos, `unknown label - <fragment>$${cmd.name}`))
+          }
+          break
+        case 'pushLocal':
+        case 'popLocal':
+          diagnostics.push(error(cmd.pos, `${cmd.name} is a local, and a fragment has no frame`))
+          break
+        default:
+          checkCall(cmd, declared, diagnostics)
+      }
+    }
+  }
+
   return diagnostics
+}
+
+/** The labels a run of commands declares, reporting any declared twice. */
+function labelsOf(
+  commands: readonly Command[],
+  owner: string,
+  diagnostics: Diagnostic[],
+): Set<string> {
+  const labels = new Set<string>()
+  for (const cmd of commands) {
+    if (cmd.kind !== 'label') continue
+    if (labels.has(cmd.name)) {
+      diagnostics.push(error(cmd.pos, `label ${cmd.name} already exists in function ${owner}`))
+    }
+    labels.add(cmd.name)
+  }
+  return labels
 }
 
 function checkCall(

@@ -305,7 +305,9 @@ export class Emulator {
 
   private labelTarget(name: string, step: Step): number {
     const where = step.fn === NO_FUNCTION ? '<fragment>' : this.program.functions[step.fn]!.decl.name
-    const target = step.fn === NO_FUNCTION ? undefined : this.program.labels[step.fn]?.get(name)
+    const target = step.fn === NO_FUNCTION
+      ? this.program.fragmentLabels.get(name)
+      : this.program.labels[step.fn]?.get(name)
     if (target === undefined) throw new SmFault(`unknown label - ${where}$${name}`, undefined)
     return target
   }
