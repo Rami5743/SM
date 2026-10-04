@@ -339,6 +339,14 @@ argument / local, fields reached through `this` with `[]` and `->[]`, and code
 generation per construct. Q4 is settled — a statement call's value is discarded,
 and where it goes is this compiler's own business.
 
+It also carries the two checks the official compiler carries, both of which the
+prototype lacks and both of which its own sample trips
+(`spec/INVENTORY.md` §4a): an unqualified call is a method call and is an error
+inside a `function`, and control must not be able to reach the end of a
+subroutine without a `return` — a flow analysis over the statement tree, not a
+look at the last statement, and a rejection rather than an inserted return.
+Matching the book here, not exceeding it.
+
 **The library.** `Math`, `String`, `Array`, `Memory`, `Screen`, `Output`,
 `Keyboard`, `Sys`, available as `.sm` files. The standard implementations are
 themselves written in Jack, so most of this is compiling them with the compiler
