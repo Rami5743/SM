@@ -116,7 +116,6 @@ packages/
   vm-to-sm/
   jack-to-sm/
   sm-to-asm/     reference translator — build tool, not shipped to students
-  hack/          Hack assembler + CPU emulator, needed to check .asm output
 web/             the site
 projects/07-sm/  first assignment, part I: commands without frames
 projects/08-sm/  first assignment, part II: control flow, functions, bootstrap
@@ -125,10 +124,11 @@ reference/       the supplied material, verbatim
 tools/           .cmp generation, CI scripts
 ```
 
-`packages/hack/` is unavoidable: the Python translator imports an `asembly_OO`
-module that was never supplied, and generating a `.cmp` for a student's `.asm`
-means assembling and running Hack code ourselves. It is a small, well-specified
-piece of work with a published reference implementation to check against.
+**We do not reimplement the Hack assembler or the CPU emulator.** They exist,
+they work, and the student has them already. Where a `.asm` has to be
+assembled and run — generating a `.cmp`, checking our translator against the
+emulator — `tools/` calls the course's own, pinned and invoked headless. None
+of this reaches the site, which runs SM and nothing else.
 
 ## 4. Testing and regression
 
@@ -151,7 +151,7 @@ work seems related.
 |---|---|
 | M1 `sm-core` | every sample in `reference/` parses; the pretty-printer round-trips each one |
 | M2 `sm-emulator` | step-by-step RAM agreement between the emulator and the assembled output of `sm-to-asm`; the runtime stack bound fires where it should |
-| M3 `sm-tst`, `hack` | one `.cmp` satisfied both by `smstep` over the `.sm` and by `ticktock` over the `.asm`; the Hack assembler against the course's, instruction for instruction |
+| M3 `sm-tst` | one `.cmp` satisfied both by `smstep` over the `.sm` in our runner and by `ticktock` over the `.asm` in the course's emulator |
 | M4 `sm-to-asm` | golden output for every sample, differing from the Python original only at the points `spec/CORRECTIONS.md` names |
 | M5 the site | the build succeeds; both language trees carry the same pages and headings; a smoke test that the emulator page runs `FibonacciElement` from a cold load |
 | M6 the first assignment | every test in both packages passes both ways; a deliberately broken translator fails at least one |
@@ -183,9 +183,13 @@ The set of commits to `oracle/` is then a second record alongside
 this one says where we depart from the *code*.
 
 Three repairs are already identified. Two are needed merely to run the
-programs at all: `SM_trnsleitor3.py` imports an `asembly_OO` module that was
-never supplied, and `jack_compaler.py` calls `compale_folder` at import time
-with a hard-coded Windows path. The third is behavioural — the `<-@this`
+programs at all, and neither is real work: `jack_compaler.py` calls
+`compale_folder` at import time with a hard-coded Windows path, and
+`SM_trnsleitor3.py` imports an `asembly_OO` module that was never supplied —
+which matters less than it looks, since that module is used only by
+`add_numbrs`, a step that runs *after* translation is complete and exists only
+to annotate each SM line with the Hack instruction number it produced. The
+repair is to make that step optional, not to write an assembler. The third is behavioural — the `<-@this`
 defect — and it needs a decision of its own, because the Jack source of the
 sample is at fault too: repairing the sample to call `Main.fibonachie(...)`
 makes both compilers agree, while making the compiler *reject* the unqualified
@@ -198,15 +202,14 @@ run headless, verified here on the compiler, the assembler, the CPU emulator
 and the VM emulator, so continuous integration can reach them. But they mostly
 do a *different job* from ours, and two of the four comparisons are indirect:
 
-| their tool | comparison | kind |
-|---|---|---|
-| Assembler | same `.asm` in, same `.hack` out | direct, byte for byte |
-| CPU emulator | same `.asm` and `.tst`, same `.out` | direct |
-| Jack compiler (project 10 XML) | same `.jack` in, same XML out, their `.cmp` files, their `TextComparer` | direct |
-| Jack compiler (code generation) | theirs emits VM, ours emits SM | **behavioural only** — compile both, run each on its own machine, compare what is observable |
-| VM emulator | it runs VM, ours runs SM | **behavioural only**, and through our own bridge |
+| their tool | how we use it |
+|---|---|
+| Assembler, CPU emulator | **not compared — used.** We build no counterpart, so there is nothing to check them against |
+| Jack compiler, project 10 XML | **direct comparison**: same `.jack` in, same XML out, against their `.cmp` files with their `TextComparer` |
+| Jack compiler, code generation | **behavioural only** — theirs emits VM, ours SM; compile both, run each on its own machine, compare what is observable |
+| VM emulator | **behavioural only**, and through our own bridge |
 
-The two direct rows are worth a great deal. The two behavioural ones are worth
+The one direct row is worth a great deal. The two behavioural ones are worth
 less than they look: a mismatch there has three suspects — our tool, their
 tool, and the translation between — and nothing in the failure says which.
 
@@ -305,8 +308,8 @@ they are a prerequisite for M7, where the Jack library drives them.
 emulator does it — measured, not assumed. The bootstrap then sets `SP`; `LCL`,
 `ARG`, `THIS` and `THAT` are never touched by SM and stay zero. Without a rule
 here the value the bootstrap pushes from the uninitialised `LCL` is arbitrary
-and every `.cmp` covering that cell is unreliable. `packages/hack/` inherits
-the behaviour from the tool it reimplements.
+and every `.cmp` covering that cell is unreliable. Nothing of ours has to
+agree with that, since the Hack side *is* the course's own emulator.
 
 **Bound the stack at run time, and only at run time.** `SP` passing 2047 is an
 overflow into the heap, and the emulator stops the program and names the
@@ -316,20 +319,25 @@ program that grows the stack in a loop is legal SM, exactly as it is legal VM
 refusing the program.
 
 *Done when:* `FibonacciElement` in SM computes the right value, and the RAM
-image after each step matches the one produced by running the output of
-`sm-to-asm` through `packages/hack/`.
+image after each step matches the one the course's CPU emulator reaches on the
+assembled output of `sm-to-asm`.
 
-### M3 — `sm-tst` and `packages/hack` *(medium)*
+### M3 — `sm-tst` *(small)*
 
 The `.tst` scripting language of the course, as far as our tools need it:
 `load`, `output-file`, `compare-to`, `output-list RAM[i]%D1.6.1`, `set`,
 `repeat { }`, `output`, and a `smstep` command standing where the course's
-`vmstep` stands. The same runner drives the browser and the CLI. Alongside it, a
-Hack assembler and CPU emulator, so a `.tst` naming a `.asm` file runs too.
+`vmstep` stands. The same runner drives the browser and the command line.
+
+A `.tst` that names a `.asm` is not ours to run: `tools/` hands it to the
+course's CPU emulator, which is also what the student will use. So this
+milestone is one runner for SM and a wrapper, not two emulators.
 
 *Done when:* one `.cmp` file is satisfied both by `smstep` over the `.sm`
-sources and by `ticktock` over the assembled output of `sm-to-asm`. That
-equivalence is the whole premise of the student packages.
+sources, in our runner, and by `ticktock` over the assembled output of
+`sm-to-asm`, in theirs. That equivalence across the two tools is the whole
+premise of the student packages, and proving it early is why this milestone
+comes before any test is written.
 
 ### M4 — `sm-to-asm`, the reference translator *(medium)*
 
