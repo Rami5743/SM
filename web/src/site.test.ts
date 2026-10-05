@@ -558,7 +558,7 @@ describe('direction, character by character', () => {
     await page.addStyleTag({ content: 'code, .code, pre, .cells { unicode-bidi: normal !important; }' })
     const problems = await page.evaluate(DIRECTION_AUDIT)
     expect(problems.length).toBeGreaterThan(10)
-    expect(problems.map((p) => `${p.logical} -> ${p.visual}`)).toContain('<-@x -> x@-<')
+    expect(problems.map((p) => `${p.logical} -> ${p.visual}`)).toContain('->[] -> ][>-')
     expect(problems.map((p) => `${p.logical} -> ${p.visual}`)).toContain('0..32767 -> 32767..0')
     await page.close()
   })

@@ -40,8 +40,14 @@ appear. So
 ? - - > loop
 ```
 
-are the same command, and `<- @ x` is `<-@x`. No command has a whitespace
-rule of its own.
+are the same command, and so are
+
+```
+<- @ x
+<-@x
+```
+
+No command has a whitespace rule of its own.
 
 A `//` begins a comment, which runs to the end of the line. The comment is
 removed before the line is read.
@@ -84,8 +90,14 @@ This differs from the course's VM.
 A push onto the stack increments `SP` and then writes; a pop off the stack
 reads and then decrements.
 
-The bootstrap sets `SP = 255`, so an **empty stack is `SP = 255`** and the
-first value pushed lands at `RAM[256]` (C2).
+The bootstrap sets
+
+```
+SP = 255
+```
+
+so an **empty stack is 255**, and the first value pushed lands at
+`RAM[256]` (C2).
 
 `SP` passing 2047 is an overflow into the heap.
 
@@ -155,10 +167,18 @@ frame pointer:
 | the return address | `LCL + a + 1` |
 | internal variable `j` | `LCL + a + 2 + j` |
 
-A call pushes the caller's `LCL` and then the return address. The declaration
-sets `LCL = SP - (a+1)` and pushes `l` zeros. The return saves the top of the
-stack, sets `SP = LCL - 1`, restores `LCL` from `RAM[LCL + a]`, pushes the
-saved value, and jumps to the return address.
+A call pushes the caller's `LCL` and then the return address. The
+declaration sets the frame pointer and pushes `l` zeros; the return restores
+it:
+
+```
+LCL = SP - (a+1)
+SP  = LCL - 1
+LCL = RAM[LCL + a]
+```
+
+The return also saves the top of the stack, pushes it back after the
+restore, and jumps to the return address.
 
 There is a single frame pointer, `LCL`. Arguments and internal variables are
 at known offsets from it.
@@ -217,7 +237,13 @@ A bare `<-` and a bare `->` are syntax errors.
 
 Each takes its operands from the top of the stack and replaces them with its
 result. **In every two-operand command the deeper operand is the left-hand
-one** — `x` in `x - y`, in `x < y`, in `x > y`.
+one** — `x` in each of these:
+
+```
+x - y
+x < y
+x > y
+```
 
 | command | stack before → after | meaning |
 |---|---|---|
@@ -310,8 +336,14 @@ whole programs.
 
 ### 8.2 Starting and stopping
 
-Execution begins with the bootstrap, which sets `SP = 255` and then **calls**
-`Sys.init`.
+Execution begins with the bootstrap:
+
+```
+SP = 255
+Sys.init
+```
+
+The call to `Sys.init` is an ordinary **call**.
 
 `Sys.init` takes no arguments. When it returns, the program enters an infinite
 loop; the bootstrap is where that return lands.
