@@ -13,8 +13,9 @@ To see what the program is supposed to do before translating it, run
 ## What the script does for you
 
 Your translator does not yet emit a bootstrap — that comes at the end of part
-II — so the script sets the stack pointer itself. An empty stack is `SP = 255`,
-so the first value pushed lands at `RAM[256]`.
+II — so the script sets the stack pointer itself. `SP` names the first free
+cell, so an empty stack is `SP = 256` and the first value pushed lands
+there.
 
 The comparison names the stack and nothing else. It cannot name a global's
 cell: where your translator puts a global is your own business, and two

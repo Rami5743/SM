@@ -31,7 +31,7 @@ The first four scripts plant the frame a caller would have left:
 set RAM[310] 6,       // the argument
 set RAM[311] 0,       // the caller's frame pointer
 set RAM[312] 9999,    // a return address outside the program
-set RAM[0] 312,       // SP, from which the declaration derives LCL
+set RAM[0] 313,       // SP, from which the declaration derives LCL
 ```
 
 Four lines. The course's equivalent needs twelve, because its frame saves four
@@ -48,7 +48,7 @@ through unassembled ROM until the ticks run out.
 `StaticsTest` and `FibonacciElement` have a `Sys.init`, and their scripts plant
 nothing. By then your translator must emit, before anything else:
 
-* `SP = 255`;
+* `SP = 256`;
 * a call to `Sys.init`, built the same way as any other call;
 * an infinite loop, which is where `Sys.init` returns to.
 

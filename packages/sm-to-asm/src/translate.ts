@@ -2,11 +2,13 @@
  * SM to Hack assembly: the reference translator.
  *
  * A port of the supplied `SM_trnsleitor3.py`, instruction for instruction.
- * Its sequences are reproduced exactly, not reinvented, because this is the
- * thing a student's own translator is measured against and because the .cmp
- * files are generated from its output. The one deliberate difference is C2:
- * the bootstrap sets SP to 255 rather than 256, so the first value pushed
- * lands at 256 and no cell is skipped.
+ * Its sequences follow the prototype's, because this is the thing a
+ * student's own translator is measured against and because the .cmp files are
+ * generated from its output. They part company over C2: `SP` names the first
+ * free cell here, as it does in the course's VM, where the prototype had it
+ * name the top element. A push therefore writes and then increments, a pop
+ * decrements and then reads, the frame pointer is `SP - (a+2)`, and the
+ * return sets `SP = LCL`.
  *
  * This is a build tool. It is not shipped to students — the assignment is to
  * write it.
@@ -62,11 +64,14 @@ class Writer {
 }
 
 /** `@SP / A=M`: point A at the top of the stack. */
-const AT_TOP = ['@SP', 'A=M']
-/** Push whatever is in D. */
-const PUSH_D = ['@SP', 'AM=M+1', 'M=D']
-/** Pop the top into D. */
-const POP_D = [...AT_TOP, 'D=M', '@SP', 'AM=M-1']
+/** A points at the top element, which is one below SP. */
+const AT_TOP = ['@SP', 'A=M-1']
+/** Push whatever is in D: write where SP points, then move it on. */
+const PUSH_D = ['@SP', 'M=M+1', 'A=M-1', 'M=D']
+/** Pop the top into D. A is left on the cell just vacated. */
+const POP_D = ['@SP', 'AM=M-1', 'D=M']
+/** After POP_D, step A down to the element now on top. */
+const DOWN = ['A=A-1']
 
 function pushConst(value: number | string): string[] {
   return [`@${value}`, 'D=A', ...PUSH_D]
@@ -116,8 +121,8 @@ export function translate(files: readonly SmFile[], options: TranslateOptions = 
     // scripts run a fixed number of ticks.
   } else if (wantBootstrap) {
     w.note('bootstrap')
-    // C2: 255, so that the first value pushed lands at 256.
-    w.emit('@255', 'D=A', '@SP', 'M=D')
+    // C2: SP names the first free cell, so an empty stack is 256.
+    w.emit('@256', 'D=A', '@SP', 'M=D')
     w.note('call Sys.init')
     w.emit(...call('Sys.init'))
     w.note('and then loop for ever')
@@ -142,9 +147,10 @@ export function translate(files: readonly SmFile[], options: TranslateOptions = 
 function declaration(decl: FunctionDecl): string[] {
   const out = [
     `(${RUNTIME.functionPrefix}${decl.name})`,
-    // LCL = SP - (a+1): the frame pointer lands on the first argument.
+    // LCL = SP - (a+2): below SP sit the return address, the saved LCL and
+    // the arguments, so the frame pointer lands on the first argument.
     '@SP', 'D=M', '@LCL', 'M=D',
-    `@${decl.args.length + 1}`, 'D=A', '@LCL', 'M=M-D',
+    `@${decl.args.length + 2}`, 'D=A', '@LCL', 'M=M-D',
   ]
   for (let i = 0; i < decl.locals.length; i++) out.push(...pushConst(0))
   return out
@@ -193,32 +199,34 @@ function offset(offsets: ReadonlyMap<string, number>, name: string): number {
  */
 function operator(op: string): string[] {
   switch (op) {
-    case '+': return [...POP_D, 'M=D+M']
-    case '-': return [...POP_D, 'M=M-D']
-    case '&': return [...POP_D, 'M=D&M']
-    case '|': return [...POP_D, 'M=D|M']
+    case '+': return [...POP_D, ...DOWN, 'M=D+M']
+    case '-': return [...POP_D, ...DOWN, 'M=M-D']
+    case '&': return [...POP_D, ...DOWN, 'M=D&M']
+    case '|': return [...POP_D, ...DOWN, 'M=D|M']
     case '(-)': return [...AT_TOP, 'M=-M']
     case '~': return [...AT_TOP, 'M=!M']
     // x < y is the sign of x-y; x > y the sign of y-x.
-    case '<': return [...POP_D, 'M=M-D']
-    case '>': return [...POP_D, 'M=D-M']
+    case '<': return [...POP_D, ...DOWN, 'M=M-D']
+    case '>': return [...POP_D, ...DOWN, 'M=D-M']
     // v | -v has the top bit set for every v but zero, so negating it leaves
     // a true exactly when the two were equal.
-    case '==': return [...POP_D, 'M=M-D', 'D=-M', 'M=M|D', 'M=!M']
+    case '==': return [...POP_D, ...DOWN, 'M=M-D', 'D=-M', 'M=M|D', 'M=!M']
     case '[]': return [...AT_TOP, 'A=M', 'D=M', ...AT_TOP, 'M=D']
-    // The value is on top and the address below it (C1), which is why the
-    // address can be read straight from the cell SP points at.
-    case '->[]': return [...POP_D, 'A=M', 'M=D', '@SP', 'M=M-1']
+    // The value is on top and the address below it (C1), so the address is
+    // in the cell the pop leaves A one above.
+    case '->[]': return [...POP_D, ...DOWN, 'A=M', 'M=D', '@SP', 'M=M-1']
     default: throw new Error(`unknown operator ${op}`)
   }
 }
 
 function returnSequence(args: number): string[] {
-  const toFrame = [`@${args + 1}`, 'D=A', '@SP', 'A=D+M']
+  // Read against SP, which is LCL before the push and LCL+1 after it, so the
+  // same offset names the saved LCL and then the return address.
+  const toFrame = [`@${args}`, 'D=A', '@SP', 'A=D+M']
   return [
     ...popSymbol(RUNTIME.scratch),
-    // SP = LCL - 1, so the next push lands on the first argument.
-    '@LCL', 'D=M', '@SP', 'M=D-1',
+    // SP = LCL, so the next push lands on the first argument.
+    '@LCL', 'D=M', '@SP', 'M=D',
     ...toFrame, 'D=M', '@LCL', 'M=D',
     ...pushSymbol(RUNTIME.scratch),
     ...toFrame, 'A=M', '0;JMP',

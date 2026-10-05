@@ -43,38 +43,53 @@ and the address in `RAM[addr] := value`.
 
 ---
 
-## C2 — the stack starts at 256
+## C2 — `SP` names the first free cell, and the stack starts at 256
 
 *A behaviour change.*
 
 **The reference.** The bootstrap is `@256 / D=A / @SP / M=D`, and `SP` holds the
-address of the top element rather than of the first free cell, so the first
-value pushed lands at `RAM[257]` and cell 256 is never used.
+address of the top element rather than of the first free cell, so a push
+increments before it writes, the first value pushed lands at `RAM[257]`, and
+cell 256 is never used.
 
-**We do.** The bootstrap sets `SP = 255`. An empty stack is `SP = 255`, and the
-first value pushed lands at `RAM[256]`.
+**We do.** `SP` holds the address of the **first free cell**, which is what it
+means in the course's VM. A push writes where `SP` points and then increments
+it; a pop decrements and then reads. The bootstrap sets `SP = 256`, so an empty
+stack is 256 and the first value pushed lands there.
 
-This is a one-constant change. The convention that `SP` addresses the top
-element is unaffected, and so is everything built on it — the frame layout, the
-call sequence, the return sequence, every command. The stack simply begins where
-the Hack memory map says it begins.
+This is the larger of the two ways to put the first element at 256, and it is
+taken deliberately. A student of this track has read the course's chapter 7
+and will read its chapter 8; one machine with two meanings for its most-used
+register is a tax on every reading of every program, every test script and
+every comparison between the two tracks. Making the two agree removes it
+outright: a `.tst` script written for either machine sets `RAM[0]` to the same
+number, and a `.cmp` file that names `RAM[0]` holds the same number on both.
+That last point is measured, not asserted — every one of the course's eleven
+project 7 and 8 programs now satisfies its own compare file, `RAM[0]` included,
+after translation to SM with no adjustment of any kind.
 
-`RAM[255]` is never read or written: a push increments before it writes, so the
-first write is to 256, and a pop from an empty stack is a program error. So
-`SP = 255` is a sentinel value and not a cell the machine uses, and it cannot
-collide with a global that the Hack assembler happens to place there.
+What it costs, stated plainly. It contradicts the supplied prototype
+throughout, not in one constant: every push, every pop, the frame pointer and
+the whole return sequence. So our translator's instruction stream is no longer
+the prototype's, and the acceptance test that compared them line by line is
+replaced by one that compares what the two *compute* — the depth of the stack
+they leave, the value on top, and the heap — measured by assembling both with
+the course's assembler and running both in its CPU emulator. A push also costs
+one instruction more than the prototype's and a pop one less.
 
-*Considered and not taken:* making `SP` address the first free cell, as the
-course's VM does, which would also put the first element at 256. It is the
-larger change — every push, every pop, and the frame arithmetic — and it would
-contradict every supplied artefact, for a gain that is cosmetic given that we
-generate the `.cmp` files ourselves.
+**The arithmetic that follows.** The frame pointer is `LCL = SP - (a+2)`, where
+the reference's was `SP - (a+1)`: below `SP` sit the return address, the saved
+`LCL` and the `a` arguments. The return sets `SP = LCL` where the reference set
+`SP = LCL - 1`. The frame layout itself — argument *i* at `LCL+i`, the saved
+`LCL` at `LCL+a`, the return address at `LCL+a+1`, internal variable *j* at
+`LCL+a+2+j` — is unchanged.
 
-**Touches.** The bootstrap sequence; the emulator's initial state; every `.cmp`
-file, whose `RAM[0]` is one lower than the reference would give; the statement
-of the memory map in the reference page.
-
----
+**Touches.** The bootstrap sequence; every push, pop and comparison in the
+assembly; the frame pointer and the return sequence; the emulator's initial
+state, `push`, `pop`, `enter` and `return`; every `.tst` script that plants a
+stack pointer or a frame; every `.cmp` file, whose `RAM[0]` is one higher than
+before; the statement of the memory map in the reference page; and the SM → VM
+bridge, which no longer has a stack pointer to adjust.
 
 ## C3 — `==` is the equality mnemonic, and `=` is an error
 

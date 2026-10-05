@@ -279,7 +279,7 @@ records each with its reasoning; seven answers changed something and are
 | | |
 |---|---|
 | **C1** | `->[]` follows the implementations — address below, value on top — and the prose is corrected to match |
-| **C2** | the bootstrap sets `SP = 255`, so the stack starts at `RAM[256]` |
+| **C2** | `SP` names the first free cell, as the course's VM has it, and the bootstrap sets `SP = 256` |
 | **C3** | the equality mnemonic is `==` and `=` is an error, which requires that every called name resolve to a declared function — without that, the parser's catch-all rule turns any typo into a jump to a garbage address |
 | **C4** | the mnemonics are the language; the word forms are a rendering, with the arithmetic and logical operators symbolic in every view |
 | **C5** | constants are non-negative as in the course, negation is `(-)`, and an empty operand is an error rather than something the catch-all rule swallows |

@@ -79,9 +79,10 @@ export class Emulator {
     this.finished = false
     this.fragmentMode = false
 
-    // The bootstrap: SP = 255, so an empty stack is 255 and the first value
-    // pushed lands at 256 (CORRECTIONS C2).
-    this.memory.set(ADDR.SP, ADDR.STACK_BASE - 1)
+    // The bootstrap: SP names the first free cell, as the course's VM does,
+    // so an empty stack is 256 and the first value pushed lands there
+    // (CORRECTIONS C2).
+    this.memory.set(ADDR.SP, ADDR.STACK_BASE)
 
     if (this.program.fragmentEnd > 0) {
       if (options.allowFragment !== true) {
@@ -121,11 +122,11 @@ export class Emulator {
     return this.finished
   }
 
-  /** The stack, deepest first. */
+  /** The stack, deepest first. `SP` is one past the top. */
   stack(): number[] {
     const sp = this.memory.get(ADDR.SP)
     const out: number[] = []
-    for (let a = ADDR.STACK_BASE; a <= sp; a++) out.push(this.memory.get(a))
+    for (let a = ADDR.STACK_BASE; a < sp; a++) out.push(this.memory.get(a))
     return out
   }
 
@@ -181,22 +182,21 @@ export class Emulator {
   }
 
   private push(value: number): void {
-    const sp = this.memory.get(ADDR.SP) + 1
+    const sp = this.memory.get(ADDR.SP)
     if (sp > ADDR.STACK_TOP) {
       throw new SmFault('Stack overflow', this.where())
     }
-    this.memory.set(ADDR.SP, sp)
     this.memory.set(sp, value)
+    this.memory.set(ADDR.SP, sp + 1)
   }
 
   private pop(): number {
-    const sp = this.memory.get(ADDR.SP)
+    const sp = this.memory.get(ADDR.SP) - 1
     if (sp < ADDR.STACK_BASE) {
       throw new SmFault('Stack underflow', this.where())
     }
-    const value = this.memory.get(sp)
-    this.memory.set(ADDR.SP, sp - 1)
-    return value
+    this.memory.set(ADDR.SP, sp)
+    return this.memory.get(sp)
   }
 
   /** Execute one step. Returns false once the program has stopped. */
@@ -221,9 +221,10 @@ export class Emulator {
   }
 
   private enter(step: Extract<Step, { kind: 'enter' }>): void {
-    // LCL = SP - (a+1), then one zero per internal variable.
+    // LCL = SP - (a+2): the arguments, the saved LCL and the return address
+    // are below SP, and the frame pointer lands on the first argument.
     const a = step.decl.args.length
-    this.memory.set(ADDR.LCL, this.memory.get(ADDR.SP) - (a + 1))
+    this.memory.set(ADDR.LCL, this.memory.get(ADDR.SP) - (a + 2))
     for (let i = 0; i < step.decl.locals.length; i++) this.push(0)
     this.advance()
   }
@@ -336,7 +337,7 @@ export class Emulator {
     const ret = this.memory.get(lcl + a + 1)
 
     // Everything from LCL upward goes, whatever was left above the locals.
-    this.memory.set(ADDR.SP, lcl - 1)
+    this.memory.set(ADDR.SP, lcl)
     this.memory.set(ADDR.LCL, callerLcl)
     this.push(value)
 

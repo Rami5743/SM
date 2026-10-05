@@ -84,22 +84,22 @@ SM programs reach the heap, the screen and the keyboard through `[]` and
 
 The stack pointer is kept in register 0 and is called `SP`.
 
-`SP` holds the address of the **top element** — not of the first free cell.
-This differs from the course's VM.
+`SP` holds the address of the **first free cell** — not of the top element.
+This is what it means in the course's VM as well (C2).
 
-A push onto the stack increments `SP` and then writes; a pop off the stack
-reads and then decrements.
+A push onto the stack writes where `SP` points and then increments it; a pop
+off the stack decrements and then reads.
 
 The bootstrap sets
 
 ```
-SP = 255
+SP = 256
 ```
 
-so an **empty stack is 255**, and the first value pushed lands at
-`RAM[256]` (C2).
+so an **empty stack is 256**, and the first value pushed lands there.
 
-`SP` passing 2047 is an overflow into the heap.
+The stack ends at 2047. A push with no free cell left is an overflow into the
+heap.
 
 ### 2.3 Variables
 
@@ -172,8 +172,8 @@ declaration sets the frame pointer and pushes `l` zeros; the return restores
 it:
 
 ```
-LCL = SP - (a+1)
-SP  = LCL - 1
+LCL = SP - (a+2)
+SP  = LCL
 LCL = RAM[LCL + a]
 ```
 
@@ -312,7 +312,7 @@ named, so it is simply a name that does not exist.
 
 | | |
 |---|---|
-| `SP` passing 2047 | the stack has overflowed into the heap |
+| a push with no free cell left | the stack has overflowed into the heap |
 | control reaching the end of a function without `<--` | C6 |
 
 Both stop the program and name the function. Both are what the course's VM
@@ -339,7 +339,7 @@ whole programs.
 Execution begins with the bootstrap:
 
 ```
-SP = 255
+SP = 256
 Sys.init
 ```
 
@@ -371,7 +371,7 @@ translation has something to do. Nothing here is part of SM.
 
 | | SM | the course's VM |
 |---|---|---|
-| the stack pointer | `SP` names the top element; an empty stack based at 256 is `SP = 255` | `SP` names the first free cell; the same stack is `SP = 256` |
+| the stack pointer | the same in both: `SP` names the first free cell, and an empty stack based at 256 is `SP = 256` | |
 | the frame | one pointer: arguments, the saved `LCL`, the return address, internal variables | five: the return address and the saved `LCL`, `ARG`, `THIS`, `THAT` |
 | where the arity is written | at the declaration, `!f(a,b)` | at the call, `call f 2` |
 | a local | named, `<- @count` | numbered, `push local 3` |

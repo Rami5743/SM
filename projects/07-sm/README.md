@@ -31,8 +31,9 @@ Each directory holds the SM source, two scripts, and one comparison file.
 ## Two things the scripts do for you
 
 **They set the stack pointer.** Your translator does not emit a bootstrap yet,
-so each script sets `RAM[0]` itself. An empty stack is 255, so the first value
-pushed lands at `RAM[256]`.
+so each script sets `RAM[0]` itself. `SP` names the first free cell, as it
+does in the course, so an empty stack is 256 and the first value pushed lands
+there.
 
 **They name only the stack.** A comparison file cannot name a global's cell:
 where your translator puts a global is your own business, and two correct

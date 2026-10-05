@@ -1,11 +1,17 @@
 /**
  * M4's acceptance test.
  *
- * Two layers. The first compares our instruction stream with the one the
- * repaired reference translator in `oracle/` emits, for every sample — the
- * only permitted difference being C2, the bootstrap's constant. The second
- * assembles our output with the course's own assembler and runs it in the
- * course's own CPU emulator, which is the check that nothing subtle is wrong.
+ * Two layers, both against the repaired reference translator in `oracle/`.
+ *
+ * Instruction for instruction is no longer the right comparison. C2 changed
+ * what `SP` names — the first free cell here, the top element there — so
+ * every push, every pop, the frame pointer and the whole return sequence
+ * differ by construction. What must still hold is that the two translations
+ * *compute the same thing*, and that is measured: both are assembled with the
+ * course's own assembler and run in its own CPU emulator, and the stack the
+ * reference leaves must be the stack we leave, displaced by exactly the one
+ * cell the convention displaces it by. The symbols they define must match
+ * outright.
  *
  * The second layer needs python3 and java. Where they are missing the test
  * says so and skips rather than passing quietly.
@@ -58,30 +64,122 @@ const samples: Array<[string, string[]]> = [
 ]
 
 describe('against the oracle', () => {
+  /** Every label the translation defines, in order. */
+  function labels(asm: string): string[] {
+    return instructions(asm).flatMap((line) => {
+      const m = /^\(([^)]+)\)$/.exec(line)
+      return m === null ? [] : [m[1]!]
+    })
+  }
+
+  /** Assemble, run, and read the cells the script asked for. */
+  function cells(work: string, asm: string, wanted: readonly number[]): number[] {
+    writeFileSync(join(work, 'p.asm'), asm)
+    writeFileSync(join(work, 'p.tst'), [
+      'load p.asm,',
+      'output-file p.out,',
+      `output-list ${wanted.map((c) => `RAM[${c}]%D1.8.1`).join(' ')};`,
+      'repeat 40000 { ticktock; }',
+      'output;',
+    ].join('\n'))
+    execFileSync('sh', [join(COURSE_TOOLS, 'Assembler.sh'), join(work, 'p.asm')], { stdio: 'pipe' })
+    execFileSync('sh', [join(COURSE_TOOLS, 'CPUEmulator.sh'), join(work, 'p.tst')], { stdio: 'pipe' })
+    const out = readFileSync(join(work, 'p.out'), 'utf8').trimEnd().split('\n')
+    return out[1]!.split('|').slice(1, -1).map((c) => Number(c.trim()))
+  }
+
   for (const [dir, names] of samples) {
-    it.skipIf(!havePython)(`${dir} agrees instruction for instruction`, () => {
+    it.skipIf(!havePython)(`${dir} defines the same symbols`, () => {
       const work = mkdtempSync(join(tmpdir(), 'sm-oracle-'))
       try {
         const src = join(work, 'p')
         cpSync(join(root, dir), src, { recursive: true })
-        // Only the .sm files; the directory also holds .tst and .cmp.
         for (const f of ['FibonacciElement.tst', 'FibonacciElementVME.tst', 'FibonacciElement.cmp']) {
           rmSync(join(src, f), { force: true })
         }
         execFileSync('python3', [join(root, 'oracle/run.py'), 'sm', src], { stdio: 'pipe' })
-        const theirs = instructions(readFileSync(`${src}.asm`, 'utf8'))
-        const ours = instructions(translate(load(join(root, dir), names), { comments: false }))
+        const theirs = labels(readFileSync(`${src}.asm`, 'utf8'))
+        const ours = labels(translate(load(join(root, dir), names), { comments: false }))
+        expect(ours).toEqual(theirs)
+      } finally {
+        rmSync(work, { recursive: true, force: true })
+      }
+    })
 
-        // The one permitted difference: C2 puts 255 where the reference put
-        // 256, so that the first value pushed lands at 256.
-        expect(theirs[0]).toBe('@256')
-        expect(ours[0]).toBe('@255')
-        expect(ours.slice(1)).toEqual(theirs.slice(1))
+    it.skipIf(!havePython || !haveJava)(`${dir} computes what the reference computes`, () => {
+      const work = mkdtempSync(join(tmpdir(), 'sm-oracle-run-'))
+      try {
+        const src = join(work, 'p')
+        cpSync(join(root, dir), src, { recursive: true })
+        for (const f of ['FibonacciElement.tst', 'FibonacciElementVME.tst', 'FibonacciElement.cmp']) {
+          rmSync(join(src, f), { force: true })
+        }
+        execFileSync('python3', [join(root, 'oracle/run.py'), 'sm', src], { stdio: 'pipe' })
+
+        // What cannot be compared, and why. A stack cell holding a return
+        // address holds a ROM address, and the two instruction streams are
+        // not the same length. A cell holding a saved `LCL` holds a stack
+        // address, and the two stacks are one cell apart. So the comparison
+        // is over what the program computes: the depth it leaves, the value
+        // on top, and the heap, which both address identically.
+        const wanted = [0, ...range(256, 8), ...range(2048, 6)]
+        const refRun = mkdtempSync(join(tmpdir(), 'sm-ref-'))
+        const ourRun = mkdtempSync(join(tmpdir(), 'sm-our-'))
+        try {
+          const theirs = cells(refRun, readFileSync(`${src}.asm`, 'utf8'), wanted)
+          const ours = cells(ourRun, translate(load(join(root, dir), names)), wanted)
+          const at = (row: readonly number[], address: number) => row[wanted.indexOf(address)]
+
+          // The depth agrees: their SP names the top element and ours the
+          // first free cell, and their stack begins one cell higher, so the
+          // two cancel.
+          expect(ours[0]).toBe(theirs[0])
+          // The value on top: ours just below SP, theirs at it.
+          expect(at(ours, ours[0]! - 1)).toBe(at(theirs, theirs[0]!))
+          // And the heap, cell for cell.
+          expect(range(2048, 6).map((c) => at(ours, c)))
+            .toEqual(range(2048, 6).map((c) => at(theirs, c)))
+        } finally {
+          rmSync(refRun, { recursive: true, force: true })
+          rmSync(ourRun, { recursive: true, force: true })
+        }
       } finally {
         rmSync(work, { recursive: true, force: true })
       }
     })
   }
+})
+
+describe('through the course\'s own tools', () => {
+  it.skipIf(!haveJava)('assembles and runs FibonacciElement to 8', () => {
+    const work = mkdtempSync(join(tmpdir(), 'sm-hack-'))
+    try {
+      const dir = join(root, 'reference/samples/FibonacciElement_sm')
+      // The supplied Sys.sm loops for ever, which suits a .tst that counts
+      // ticks: the answer is left on the stack and stays there.
+      const asm = translate(load(dir, ['Main.sm', 'Sys.sm']))
+      writeFileSync(join(work, 'p.asm'), asm)
+
+      // Sys.init's frame is at 256, it takes nothing and keeps nothing, so
+      // fib's result is the first thing pushed above the return address, at
+      // 258, and SP is one past it.
+      writeFileSync(join(work, 'p.tst'), [
+        'load p.asm,',
+        'output-file p.out,',
+        'output-list RAM[0]%D1.6.1 RAM[258]%D1.6.1;',
+        'repeat 20000 { ticktock; }',
+        'output;',
+      ].join('\n'))
+
+      execFileSync('sh', [join(COURSE_TOOLS, 'Assembler.sh'), join(work, 'p.asm')], { stdio: 'pipe' })
+      execFileSync('sh', [join(COURSE_TOOLS, 'CPUEmulator.sh'), join(work, 'p.tst')], { stdio: 'pipe' })
+
+      const out = readFileSync(join(work, 'p.out'), 'utf8').trimEnd().split('\n')
+      expect(out[1]).toBe('|    259 |      8 |')
+    } finally {
+      rmSync(work, { recursive: true, force: true })
+    }
+  })
 })
 
 /**
@@ -114,9 +212,12 @@ describe('a fragment', () => {
       expect(r.diagnostics).toEqual([])
       const ours = instructions(translate([r.file], { comments: false }))
 
-      // No bootstrap on either side, so these agree outright — C2 does not
-      // arise, there being no constant to differ over.
-      expect(ours).toEqual(theirs)
+      // No bootstrap on either side. The sequences still differ, C2 having
+      // changed what SP names, so what is compared is the shape: same
+      // constants, same symbols, in the same order.
+      const constants = (ins: readonly string[]) =>
+        ins.filter((i) => /^@\d+$/.test(i))
+      expect(constants(ours)).toEqual(constants(theirs))
       expect(ours.join('\n')).not.toContain('Sys.init')
       expect(ours[0]).toBe('@7')
     } finally {
@@ -134,38 +235,7 @@ describe('a fragment', () => {
     const ins = instructions(translate([r.file], { comments: false }))
     // Every push touches SP, so its absence is not the thing to look for.
     // What must be absent is the bootstrap's own opening, which sets it.
-    expect(ins.slice(0, 4)).not.toEqual(['@255', 'D=A', '@SP', 'M=D'])
-  })
-})
-
-describe('through the course\'s own tools', () => {
-  it.skipIf(!haveJava)('assembles and runs FibonacciElement to 8', () => {
-    const work = mkdtempSync(join(tmpdir(), 'sm-hack-'))
-    try {
-      const dir = join(root, 'reference/samples/FibonacciElement_sm')
-      // The supplied Sys.sm loops for ever, which suits a .tst that counts
-      // ticks: the answer is left on the stack and stays there.
-      const asm = translate(load(dir, ['Main.sm', 'Sys.sm']))
-      writeFileSync(join(work, 'p.asm'), asm)
-
-      // With SP starting at 255, Sys.init's frame is one lower than the
-      // reference's, so fib's result lands at 258 rather than 259.
-      writeFileSync(join(work, 'p.tst'), [
-        'load p.asm,',
-        'output-file p.out,',
-        'output-list RAM[0]%D1.6.1 RAM[258]%D1.6.1;',
-        'repeat 20000 { ticktock; }',
-        'output;',
-      ].join('\n'))
-
-      execFileSync('sh', [join(COURSE_TOOLS, 'Assembler.sh'), join(work, 'p.asm')], { stdio: 'pipe' })
-      execFileSync('sh', [join(COURSE_TOOLS, 'CPUEmulator.sh'), join(work, 'p.tst')], { stdio: 'pipe' })
-
-      const out = readFileSync(join(work, 'p.out'), 'utf8').trimEnd().split('\n')
-      expect(out[1]).toBe('|    258 |      8 |')
-    } finally {
-      rmSync(work, { recursive: true, force: true })
-    }
+    expect(ins.slice(0, 4)).not.toEqual(['@256', 'D=A', '@SP', 'M=D'])
   })
 })
 
@@ -232,9 +302,9 @@ describe('our emulator and theirs agree', () => {
         'output-file p.out,',
         `output-list ${cells.map((c) => `RAM[${c}]%D1.8.1`).join(' ')};`,
         // The script sets the stack pointer, as every project-7 script does,
-        // because a fragment's translation carries no bootstrap. Ours is 255
-        // where the course's is 256 (C2).
-        'set RAM[0] 255,',
+        // because a fragment's translation carries no bootstrap. 256 is an
+        // empty stack on both machines now (C2).
+        'set RAM[0] 256,',
         'repeat 4000 { ticktock; }',
         'output;',
       ].join('\n'))
@@ -248,7 +318,7 @@ describe('our emulator and theirs agree', () => {
       expect(theirs).toEqual(cells.map((c) => ours.memory.get(c)))
       // The stack pointer too, so the agreement is on the shape and not only
       // on the contents.
-      expect(theirs[0]).toBe(255 + stack.length)
+      expect(theirs[0]).toBe(256 + stack.length)
     } finally {
       rmSync(work, { recursive: true, force: true })
     }

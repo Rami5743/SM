@@ -61,7 +61,7 @@ describe('runScript', () => {
       'load,\noutput-file T.out,\noutput-list RAM[0]%D1.6.1 RAM[256]%D1.6.1;\nrepeat 20 { smstep; }\noutput;',
       h,
     )
-    expect(r.output).toBe('| RAM[0] |RAM[256]|\n|    256 |     15 |\n')
+    expect(r.output).toBe('| RAM[0] |RAM[256]|\n|    257 |     15 |\n')
     expect(h.written['T.out']).toBe(r.output)
   })
 
@@ -85,7 +85,7 @@ describe('runScript', () => {
   })
 
   it('reports a passing comparison', () => {
-    const h = host({ 'T.sm': '<-7', 'T.cmp': '| RAM[0] |\n|    256 |\n' })
+    const h = host({ 'T.sm': '<-7', 'T.cmp': '| RAM[0] |\n|    257 |\n' })
     const r = runScript('load,\ncompare-to T.cmp,\noutput-list RAM[0]%D1.6.1;\nrepeat 5 { smstep; }\noutput;', h)
     expect(r.comparison).toEqual({ ok: true })
   })
@@ -127,10 +127,10 @@ describe('a script that plants a frame', () => {
       'set RAM[310] 21,',   // the argument
       'set RAM[311] 0,',    // the caller's frame pointer
       'set RAM[312] 9999,', // a return address outside the program
-      'set RAM[0] 312,',    // SP, from which the declaration derives LCL
+      'set RAM[0] 313,',    // SP, from which the declaration derives LCL
       'repeat 100 { smstep; }',
       'output;',
     ].join('\n'), h)
-    expect(r.output.trimEnd().split('\n')[1]).toBe('|    310 |     42 |')
+    expect(r.output.trimEnd().split('\n')[1]).toBe('|    311 |     42 |')
   })
 })

@@ -70,7 +70,7 @@ describe('spec/sm.md', () => {
   }
 
   it('states where SP points', () => {
-    expect(spec).toMatch(/`SP` holds the address of the \*\*top element\*\*/)
+    expect(spec).toMatch(/`SP` holds the address of the \*\*first free cell\*\*/)
   })
 
   // Every decision recorded in CORRECTIONS.md must be visible in the reference,

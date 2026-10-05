@@ -12,7 +12,7 @@ output-list RAM[0]%D1.6.1 RAM[310]%D1.6.1;
 set RAM[310] 6,       // the argument n
 set RAM[311] 0,       // the caller's frame pointer
 set RAM[312] 9999,    // a return address outside the program
-set RAM[0] 312,       // SP, from which the declaration derives LCL
+set RAM[0] 313,       // SP, from which the declaration derives LCL
 
 repeat 10000 {
   ticktock;

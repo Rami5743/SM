@@ -54,12 +54,11 @@ function hostFor(files: Readonly<Record<string, string>>, scriptName: string): H
 /**
  * The course's VM-emulator script, as an SM one.
  *
- * Three changes, and no more. `vmstep` becomes `smstep`. `set sp 256`
- * becomes `set sp 255`, because SM's stack pointer names the top element
- * rather than the first free cell (C2). And `set argument[0] 3` names a
- * cell through a segment base, which SM has no notion of, so it is resolved
- * against the base the script set a line earlier and written as the cell it
- * means.
+ * Two changes, and no more. `vmstep` becomes `smstep`. And `set argument[0]
+ * 3` names a cell through a segment base, which SM has no notion of, so it
+ * is resolved against the base the script set a line earlier and written as
+ * the cell it means. The stack pointer needs no adjustment: C2 gives it the
+ * course's own meaning, the first free cell.
  */
 function asSmScript(script: string, name: string): string {
   const bases = new Map<string, number>()
@@ -82,9 +81,6 @@ function asSmScript(script: string, name: string): string {
       )
     })
     .join('\n')
-    // The scripts spell the stack pointer both ways.
-    .replace(/set\s+(RAM\[0\]|sp)\s+(\d+)/gi,
-      (_, reg: string, n: string) => `set ${reg} ${Number(n) - 1}`)
 }
 
 /** A compare file's rows, as trimmed cells. */
@@ -106,24 +102,9 @@ describe.skipIf(!have)("VM to SM, against the course's own compare files", () =>
       const result = runScript(script, host, { skipCompare: true })
 
       const expected = cells(readFileSync(join(dir, `${name}.cmp`), 'utf8'))
-      const actual = cells(result.output)
-      expect(actual.length).toBe(expected.length)
-
-      // Every cell matches exactly but RAM[0]: SM's stack pointer names the
-      // top element and the VM's the first free cell, so it is one less,
-      // always and only there (C2). A long output-list wraps, so the file
-      // holds several header rows and the SP column has to be found again
-      // under each.
-      let spColumn = -1
-      for (const [row, want] of expected.entries()) {
-        if (want.some((c) => c.startsWith('RAM['))) {
-          spColumn = want.indexOf('RAM[0]')
-          expect([name, row, actual[row]]).toEqual([name, row, want])
-          continue
-        }
-        const adjusted = want.map((c, i) => (i === spColumn ? String(Number(c) - 1) : c))
-        expect([name, row, actual[row]]).toEqual([name, row, adjusted])
-      }
+      // Every cell, the stack pointer included: the two machines now agree
+      // about what it names.
+      expect(cells(result.output)).toEqual(expected)
     })
   }
 })
@@ -159,7 +140,7 @@ describe.skipIf(!have)("VM to SM, where the frame itself is what the course chec
     emulator.memory.set(257, 37)
     emulator.memory.set(258, 0)
     emulator.memory.set(259, -1)
-    emulator.memory.set(0, 259)
+    emulator.memory.set(0, 260)  // one past the frame
     emulator.run(100)
     expect(emulator.stack().at(-1)).toBe(1196)
   })

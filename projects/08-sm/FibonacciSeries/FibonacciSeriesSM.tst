@@ -13,7 +13,7 @@ set RAM[310] 3000,    // the argument at
 set RAM[311] 6,       // the argument n
 set RAM[312] 0,       // the caller's frame pointer
 set RAM[313] 9999,    // a return address outside the program
-set RAM[0] 313,       // SP, from which the declaration derives LCL
+set RAM[0] 314,       // SP, from which the declaration derives LCL
 
 repeat 10000 {
   smstep;

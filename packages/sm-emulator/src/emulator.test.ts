@@ -34,18 +34,18 @@ function program(...sources: Array<[string, string]>): Emulator {
 }
 
 describe('the stack', () => {
-  // CORRECTIONS C2: an empty stack is SP = 255, and the first value pushed
-  // lands at 256.
-  it('starts empty at 255', () => {
+  // CORRECTIONS C2: `SP` names the first free cell, as the course's VM does.
+  // An empty stack is 256, and the first value pushed lands there.
+  it('starts empty at 256', () => {
     const e = new Emulator()
     e.load(files(['T.sm', '<-7']), { allowFragment: true })
-    expect(e.memory.get(ADDR.SP)).toBe(255)
+    expect(e.memory.get(ADDR.SP)).toBe(256)
   })
 
-  it('puts the first value at 256', () => {
+  it('puts the first value at 256 and moves SP past it', () => {
     const e = fragment('<-7')
-    expect(e.memory.get(ADDR.SP)).toBe(256)
     expect(e.memory.get(256)).toBe(7)
+    expect(e.memory.get(ADDR.SP)).toBe(257)
   })
 
   it('zeroes all of RAM at reset', () => {
@@ -193,6 +193,20 @@ describe('faults', () => {
     expect(() => e.run(10000)).toThrow(/Stack overflow in Sys.init/)
   })
 
+  // Where exactly the boundary is, since the convention decides it: 2047 is
+  // the last usable cell, so a stack of 1792 values fills it and the next
+  // push is the overflow.
+  it('fills the stack to 2047 and faults on the push after it', () => {
+    const e = fragment('<-7\n'.repeat(1792))
+    expect(e.memory.get(ADDR.SP)).toBe(2048)
+    expect(e.memory.get(2047)).toBe(7)
+    expect(e.stack().length).toBe(1792)
+
+    const over = new Emulator()
+    over.load(files(['T.sm', '<-7\n'.repeat(1793)]), { allowFragment: true })
+    expect(() => over.run(10000)).toThrow(/Stack overflow/)
+  })
+
   it('refuses a fragment unless one was asked for', () => {
     const e = new Emulator()
     expect(() => e.load(files(['T.sm', '<-7']))).toThrow(SmFault)
@@ -276,10 +290,10 @@ describe('a frame planted by a test script', () => {
     e.memory.set(310, 21)       // the argument
     e.memory.set(311, 0)        // the caller's LCL
     e.memory.set(312, 9999)     // a return address outside the program
-    e.memory.set(ADDR.SP, 312)  // SP points at the top of the frame
+    e.memory.set(ADDR.SP, 313)  // one past the frame, which is where SP sits
     e.run(1000)
 
     expect(e.memory.get(310)).toBe(42)
-    expect(e.memory.get(ADDR.SP)).toBe(310)
+    expect(e.memory.get(ADDR.SP)).toBe(311)
   })
 })
