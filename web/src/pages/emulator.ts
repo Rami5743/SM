@@ -83,7 +83,7 @@ export function emulatorPage(s: Strings): HTMLElement {
     draw()
   })
 
-  const examples = el('select')
+  const examples = el('select', { dir: 'ltr' })
   for (const [i, ex] of EXAMPLES.entries()) examples.append(el('option', { value: String(i) }, ex.label))
   examples.value = '0'
   examples.addEventListener('change', () => {

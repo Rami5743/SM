@@ -39,9 +39,20 @@ body {
   line-height: 1.6;
 }
 
-/* Code is always left to right, whatever the page around it. */
+/* Code is always left to right, whatever the page around it.
+
+   `unicode-bidi: isolate` is what makes `direction` mean anything on an
+   inline box. Without it, an inline `<code>` inherits the paragraph's
+   embedding, and a token made only of brackets and arrows — every one of
+   them a neutral character — resolves to the paragraph's direction. In a
+   Hebrew paragraph that renders `[]` as `][`, `->[]` as `][>-`, `<--` as
+   `--<` and `(-)` as `)-(`: the language backwards, silently. An element
+   carrying a `dir` attribute gets the isolation from the HTML stylesheet;
+   the `<code>` that Markdown produces carries none, so it is asked for
+   here. */
 .code, pre, code, .cells {
   direction: ltr;
+  unicode-bidi: isolate;
   text-align: left;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -111,7 +122,7 @@ h2 { font-size: 1.2rem; margin-top: 2rem; }
 .emulator {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 @media (max-width: 80rem) { .emulator { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
 @media (max-width: 52rem) { .emulator { grid-template-columns: 1fr; } }

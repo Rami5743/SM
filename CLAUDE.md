@@ -51,3 +51,11 @@ its globals" is something the reader needs.
 * In Hebrew text, do not invent Hebrew for a technical term; if in doubt,
   leave it. Keep code, mnemonics, file names and diagnostics in backticks so
   they run left to right inside a Hebrew line.
+* **Never take `unicode-bidi: isolate` off the code selectors in
+  `web/src/style.css`.** `direction` alone does nothing to an inline box.
+  Without the isolation, a token made only of neutral characters inherits
+  the paragraph's embedding, and in a Hebrew paragraph `[]` paints as `][`,
+  `->[]` as `][>-`, `<--` as `--<`, `(-)` as `)-(` and `0..32767` as
+  `32767..0`. `site.test.ts` measures every character's box on every page
+  and fails if a left-to-right run is painted out of order; one of its cases
+  removes the property and asserts that the page then fails.

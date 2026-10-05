@@ -92,7 +92,7 @@ export function compilerPage(s: Strings): HTMLElement {
     download(`${nameOf(source.value)}.sm`, output.textContent ?? '')
   })
 
-  const examples = el('select')
+  const examples = el('select', { dir: 'ltr' })
   for (const [i, ex] of EXAMPLES.entries()) examples.append(el('option', { value: String(i) }, ex.name))
   examples.addEventListener('change', () => {
     source.value = EXAMPLES[Number(examples.value)]!.source

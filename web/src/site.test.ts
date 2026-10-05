@@ -447,3 +447,119 @@ describe('the test runner on the emulator page', () => {
     await page.close()
   })
 })
+
+/**
+ * Direction, measured rather than eyeballed.
+ *
+ * On a Hebrew page the bidirectional algorithm decides where every neutral
+ * character goes, and a token made only of neutrals — `[]`, `->[]`, `<--`,
+ * `(-)`, `0..32767` — takes the direction of the paragraph around it. The
+ * test asks the browser for the box of every single character and compares
+ * the order the characters are painted in with the order they were written
+ * in. Anything that must read left to right has to match exactly.
+ */
+const DIRECTION_AUDIT = () => {
+  const charBoxes = (node: Text) => {
+    const text = node.textContent ?? ''
+    const out: Array<{ x: number; y: number; c: string; i: number }> = []
+    for (let i = 0; i < text.length; i++) {
+      const range = document.createRange()
+      range.setStart(node, i)
+      range.setEnd(node, i + 1)
+      const box = range.getBoundingClientRect()
+      out.push({ x: box.left, y: Math.round(box.top), c: text[i]!, i })
+    }
+    return out
+  }
+  const problems: Array<{ kind: string; logical: string; visual: string }> = []
+
+  // Anything that must read left to right, whole and in order.
+  const seen = new Set<string>()
+  const mustBeLtr = 'code, pre, .code, .listing .line, table.cells td, [dir="ltr"]'
+  for (const el of Array.from(document.querySelectorAll(mustBeLtr))) {
+    if (el.children.length > 0) continue
+    const node = el.firstChild
+    if (node === null || node.nodeType !== Node.TEXT_NODE) continue
+    const text = node.textContent ?? ''
+    if (text.trim() === '' || text.length > 120 || seen.has(text)) continue
+    seen.add(text)
+    const lines = new Map<number, ReturnType<typeof charBoxes>>()
+    for (const ch of charBoxes(node as Text)) {
+      if (!lines.has(ch.y)) lines.set(ch.y, [])
+      lines.get(ch.y)!.push(ch)
+    }
+    for (const chars of lines.values()) {
+      const visual = [...chars].sort((a, b) => a.x - b.x).map((c) => c.c).join('')
+      const logical = [...chars].sort((a, b) => a.i - b.i).map((c) => c.c).join('')
+      if (visual !== logical) problems.push({ kind: 'reversed', logical, visual })
+    }
+  }
+
+  // A Latin or numeric run inside Hebrew prose must stay in one piece and in
+  // order: `07-sm` must not come out `sm-07`.
+  const hebrew = /[֐-׿]/
+  const run = /[A-Za-z0-9][A-Za-z0-9._‑-]*[A-Za-z0-9]/g
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  const done = new Set<string>()
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    const text = node.textContent ?? ''
+    if (!hebrew.test(text) || text.length > 200) continue
+    if (node.parentElement?.closest('code, pre, .code') != null) continue
+    for (const match of text.matchAll(run)) {
+      const token = match[0]
+      if (token.length < 2 || done.has(token)) continue
+      done.add(token)
+      const chars = charBoxes(node as Text).slice(match.index, match.index + token.length)
+      if (new Set(chars.map((c) => c.y)).size > 1) continue
+      const visual = [...chars].sort((a, b) => a.x - b.x).map((c) => c.c).join('')
+      if (visual !== token) problems.push({ kind: 'split', logical: token, visual })
+    }
+  }
+  return problems
+}
+
+describe('direction, character by character', () => {
+  for (const path of ['/', '/emulator', '/compiler', '/bridge', '/reference', '/rationale', '/projects']) {
+    it(`${path} paints every left-to-right run in the order it was written`, async () => {
+      const page = await open(path)
+      expect([path, await page.evaluate(DIRECTION_AUDIT)]).toEqual([path, []])
+      await page.close()
+    })
+  }
+
+  // The same audit cannot reach an <option>: the browser paints the chosen
+  // one itself, outside the layout. So the structural rule is checked
+  // instead — a list of Latin labels is marked left to right, or `07-sm ·
+  // SimpleAdd` comes out `sm · SimpleAdd-07`.
+  it('marks a select whose options are Latin', async () => {
+    for (const path of ['/emulator', '/compiler', '/bridge']) {
+      const page = await open(path)
+      const selects = await page.$$eval('.controls select', (nodes) => nodes.map((node) => {
+        const select = node as HTMLSelectElement
+        const labels = Array.from(select.options).map((o) => o.textContent ?? '')
+        return {
+          dir: select.getAttribute('dir'),
+          latin: labels.every((label) => /^[\x20-\x7E]+$/.test(label)),
+          labels,
+        }
+      }))
+      expect(selects.length).toBeGreaterThan(0)
+      for (const select of selects) {
+        if (select.latin) expect([path, select.labels, select.dir]).toEqual([path, select.labels, 'ltr'])
+      }
+      await page.close()
+    }
+  })
+
+  // And the proof that the audit bites: take the isolation away and the
+  // reference page fails on the operators and the address ranges.
+  it('fails when the isolation is removed', async () => {
+    const page = await open('/reference')
+    await page.addStyleTag({ content: 'code, .code, pre, .cells { unicode-bidi: normal !important; }' })
+    const problems = await page.evaluate(DIRECTION_AUDIT)
+    expect(problems.length).toBeGreaterThan(10)
+    expect(problems.map((p) => `${p.logical} -> ${p.visual}`)).toContain('<-@x -> x@-<')
+    expect(problems.map((p) => `${p.logical} -> ${p.visual}`)).toContain('0..32767 -> 32767..0')
+    await page.close()
+  })
+})
