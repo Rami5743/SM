@@ -59,7 +59,9 @@ export interface Strings {
   readonly result: string
   readonly smToVm: string
   readonly vmToSm: string
-  readonly bridgeBlurb: string
+  readonly bridgeIntro: string
+  readonly bridgeRun: string
+  readonly courseToolsLink: string
   readonly openFiles: string
   readonly openFolder: string
   readonly downloadProjects: string
@@ -132,7 +134,9 @@ const he: Strings = {
   result: 'התוצאה',
   smToVm: 'מ‑SM ל‑VM',
   vmToSm: 'מ‑VM ל‑SM',
-  bridgeBlurb: 'את הפלט אפשר להריץ באמולטור של הקורס:',
+  bridgeIntro: 'כאן תוכלו להמיר בין קוד בשפת SM לקוד בשפת VM ובחזרה.',
+  bridgeRun: 'את קוד ה‑VM אפשר להריץ באמצעות',
+  courseToolsLink: 'הכלים של הקורס',
   openFiles: 'טען קובץ',
   openFolder: 'טען תיקייה',
   downloadProjects: 'הורד את שתי התיקיות',
@@ -199,7 +203,9 @@ const en: Strings = {
   result: 'The result',
   smToVm: 'SM to VM',
   vmToSm: 'VM to SM',
-  bridgeBlurb: 'What comes out runs in the course’s own emulator:',
+  bridgeIntro: 'Here you can translate SM into the course’s VM and back.',
+  bridgeRun: 'What comes out of the VM side runs with',
+  courseToolsLink: 'the course’s own tools',
   openFiles: 'Load a file',
   openFolder: 'Load a folder',
   downloadProjects: 'Download both folders',

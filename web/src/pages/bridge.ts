@@ -166,9 +166,10 @@ export function bridgePage(s: Strings): HTMLElement {
 
   const root = el('div', {},
     el('h1', {}, s.nav.bridge),
-    el('p', {}, s.bridgeBlurb, ' ',
+    el('p', {}, s.bridgeIntro),
+    el('p', {}, `${s.bridgeRun} `,
       el('a', { href: 'https://nand2tetris.github.io/web-ide/vm', target: '_blank', rel: 'noreferrer' },
-        s.courseTools)),
+        s.courseToolsLink)),
     el('div', { class: 'controls' }, which, downloadBtn, sendBtn, openFiles, openFolder),
     faultLine,
     el('div', { class: 'emulator' },

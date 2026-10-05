@@ -72,22 +72,22 @@ syntax error** (C5).
 SM programs reach the heap, the screen and the keyboard through `[]` and
 `->[]`.
 
-**All of RAM is zero at reset.** This matches the course's CPU emulator, and
-it is what makes a `.cmp` file reproducible.
+**All of RAM is zero at reset.** This matches the course's CPU emulator.
 
 ### 2.2 The stack pointer
 
-`SP` holds the address of the **top element** — not of the first free cell.
-This differs from the course's VM, and it is the first thing a translator has
-to know.
+The stack pointer is kept in register 0 and is called `SP`.
 
-A push increments `SP` and then writes; a pop reads and then decrements.
+`SP` holds the address of the **top element** — not of the first free cell.
+This differs from the course's VM.
+
+A push onto the stack increments `SP` and then writes; a pop off the stack
+reads and then decrements.
 
 The bootstrap sets `SP = 255`, so an **empty stack is `SP = 255`** and the
 first value pushed lands at `RAM[256]` (C2).
 
-`SP` passing 2047 is an overflow into the heap. It is an error, reported where
-it happens; see §7.
+`SP` passing 2047 is an overflow into the heap.
 
 ### 2.3 Variables
 
@@ -100,15 +100,9 @@ cannot be reached from outside it. They are reached through `@`: `<- @x`.
 **Global variables** belong to the program. Any function may read or write any
 of them. They are reached without `@`: `<- x`.
 
-There is **one flat space of globals** and no convention about naming them. A
-Jack compiler will produce names like `Class.name` for a class's statics, but
-that is a property of its output and not a rule of this language.
-
-**A global's address is not fixed by this language.** A translator puts it
-wherever it likes among the registers set aside for the purpose, and two
-correct translators will not agree. So nothing that has to hold across
-translators — a `.cmp` file above all — may name a global's cell. Write the
-value to the stack and read it there.
+**Globals are translated into ordinary assembly variables**, and the
+assembler places them in memory by its own algorithm. Past 240 of them they
+spill into the stack.
 
 ---
 
@@ -120,8 +114,8 @@ Every function takes some number of arguments from the top of the stack,
 removes them, and pushes exactly one result. It may also have side effects
 elsewhere in RAM.
 
-This holds for the built-in commands too: `+` takes two and pushes one, `[]`
-takes one and pushes one, `->[]` takes two and pushes none.
+This holds for most of the built-in commands too. For instance `+` takes two
+and pushes one.
 
 ### 3.2 Declaring one
 
@@ -133,12 +127,7 @@ head:
 ```
 
 declares `f` with arguments `a` and `b` and internal variables `t` and `u`.
-Either list may be empty: `! Sys.init()` takes neither.
-
-**The argument count is the callee's business alone.** A call names the
-function and nothing else, which is what lets a translator work in one pass
-with no function table. Only the declaration and the return need the count,
-and both are inside the function.
+Either list may be empty.
 
 ### 3.3 Calling and returning
 
@@ -150,12 +139,11 @@ belonging to the frame — the arguments, the internal variables, and anything
 left above them — is removed, and the returned value takes the place of the
 first argument.
 
-Note the consequence: a function need not leave the stack exactly as it found
-it. Values left above the locals are swept by `<--`. A loop that leaves one
-behind on every iteration will still overflow the stack, which is a fault in
-that program; the language permits it and §7 says how it is reported.
-
 ### 3.4 The frame
+
+The frame is the place in memory that holds a function's arguments and
+internal variables. It begins at the address called `LCL`, which is kept in
+register 1.
 
 Within a function of `a` arguments and `l` internal variables, with `LCL` the
 frame pointer:
@@ -172,13 +160,13 @@ sets `LCL = SP - (a+1)` and pushes `l` zeros. The return saves the top of the
 stack, sets `SP = LCL - 1`, restores `LCL` from `RAM[LCL + a]`, pushes the
 saved value, and jumps to the return address.
 
-There is a single frame pointer. Arguments and internal variables are at known
-offsets from it, so no second pointer is needed.
+There is a single frame pointer, `LCL`. Arguments and internal variables are
+at known offsets from it.
 
 ### 3.5 Labels
 
-A label is recognised only inside the function that declares it. Two functions
-may use the same label name.
+Labels are there to be jumped to. A label is recognised only inside the
+function that declares it, and two functions may use the same label name.
 
 ---
 
@@ -193,49 +181,37 @@ SM has four kinds of name, and they do not collide with one another (C7):
 | label | one function | `L:`, `--> L`, `?--> L` |
 | function | the program | `f` |
 
-A global and a function may share a name; so may a label and either.
+Names of different kinds may share a name, and so may the names of variables
+and of labels in different functions.
 
-Within a kind, names must be distinct:
-
-* the local names of a function, arguments and internal variables together;
-* the labels of a function;
-* **the function names of the whole program** (C7) — a call is the bare name,
-  so two functions sharing one would make every call to it ambiguous.
-
-Globals need no such rule: two mentions of one name are one variable, which is
-what a global is for.
+Within one kind, and within the scope that kind has, names must be distinct.
 
 ---
 
 ## 5. Booleans
 
-**Only the most significant bit carries meaning.** A register is true if that
-bit is set and false if it is clear; the remaining fifteen bits are ignored.
-
-This is what lets `==`, `>` and `<` be computed directly, with no label and no
-jump. `~` is a bitwise negation, which inverts the significant bit along with
-the rest, so it serves as logical negation too.
-
-`?-->` tests the same bit.
+Every register has a truth value, and **only the most significant bit carries
+that meaning.** A register is true if that bit is set and false if it is
+clear; the remaining fifteen bits do not bear on its truth value.
 
 ---
 
 ## 6. The commands
 
-Three dots mean "and so on". The names `x`, `f`, `loop` stand for any symbol,
+In the tables below, three dots mean "and so on". The names `x`, `f`, `loop` stand for any symbol,
 and `5` for any integer constant.
 
 ### 6.1 Stack
 
 | command | effect |
 |---|---|
-| `<- 5` | push the constant `5` |
-| `<- x` | push the global `x` |
-| `<- @x` | push the local `x` |
-| `-> x` | pop into the global `x` |
-| `-> @x` | pop into the local `x` |
+| `<- 5` | push the constant `5` onto the stack |
+| `<- x` | push the global variable `x` onto the stack |
+| `<- @x` | push the local variable `x` onto the stack |
+| `-> x` | pop off the stack into the global variable `x` |
+| `-> @x` | pop off the stack into the local variable `x` |
 
-A bare `<-` and a bare `->` are syntax errors (C5).
+A bare `<-` and a bare `->` are syntax errors.
 
 ### 6.2 Arithmetic and logic
 
@@ -248,15 +224,12 @@ one** — `x` in `x - y`, in `x < y`, in `x > y`.
 | `+` | `… x y` → `… x+y` | sum |
 | `-` | `… x y` → `… x-y` | difference |
 | `(-)` | `… x` → `… -x` | arithmetic negation |
-| `~` | `… x` → `… !x` | bitwise negation, and so logical not |
-| `&` | `… x y` → `… x&y` | bitwise and |
-| `\|` | `… x y` → `… x\|y` | bitwise or |
+| `~` | `… x` → `… !x` | bitwise negation (and so logical not) |
+| `&` | `… x y` → `… x&y` | bitwise and (and so logical and) |
+| `\|` | `… x y` → `… x\|y` | bitwise or (and so logical or) |
 | `==` | `… x y` → `… b` | `b` is true exactly when `x = y` |
 | `>` | `… x y` → `… b` | `b` is true exactly when `x > y` |
 | `<` | `… x y` → `… b` | `b` is true exactly when `x < y` |
-
-`(-)` and `~` are different commands. `(-)` negates a number; `~` inverts
-bits, which is how a boolean is negated.
 
 The equality command is `==`. A single `=` is a syntax error (C3).
 
@@ -338,7 +311,7 @@ whole programs.
 ### 8.2 Starting and stopping
 
 Execution begins with the bootstrap, which sets `SP = 255` and then **calls**
-`Sys.init` — an ordinary call, with no exception to it.
+`Sys.init`.
 
 `Sys.init` takes no arguments. When it returns, the program enters an infinite
 loop; the bootstrap is where that return lands.
@@ -350,9 +323,8 @@ Only functions reachable from `Sys.init` ever run.
 ## 9. Writing it in words
 
 The mnemonics above are the language and the only accepted input (C4). The
-emulator will also *render* any program with the structural commands spelled as
-words — push, pop, goto, if-goto, function, return, label — so that the two
-notations can be compared by looking at them.
+emulator will also *render* any program with the structural commands spelled
+as words — push, pop, goto, if-goto, function, return, label.
 
 The arithmetic and logical operators are symbolic in every rendering and are
 never spelled as words.
@@ -376,49 +348,3 @@ translation has something to do. Nothing here is part of SM.
 | `<` | `x - y`, so the whole value is the difference | `lt`, so the whole value is all-ones or zero |
 | the conditional jump | `?-->` branches when the most significant bit is set | `if-goto` branches when the value is not zero |
 | shared storage | globals, named, reachable from anywhere | `static i`, per file, reachable only within it |
-
-### What each direction costs
-
-**SM to the VM.** The arity has to move from the declaration to the call
-site, so the translator needs a function table and a second pass — the one
-thing an SM-to-assembly translator is free of.
-
-The comparisons are translated as what SM says they are: `<` becomes `sub`,
-`>` becomes `sub, neg`, and `==` becomes `sub` and then `~(v | -v)` through
-a `temp`, because the VM cannot duplicate a value. Emitting `lt`, `gt` and
-`eq` instead would be right for a program that only branches on the result
-and wrong for one that does arithmetic with it, and both are legal SM. The
-conditional jump then carries the whole difference: `?--> L` becomes
-`push constant 0; lt; if-goto L`.
-
-Globals cannot become statics, `static i` being a different cell in each
-file, so each global gets a fixed address reached through `pointer 1` and
-`that 0`. The course's VM emulator refuses a `that` outside the heap and
-the screen, so those addresses are at the top of the heap. A program that
-manages the heap itself must then be given a heap that ends below them.
-
-A fragment cannot cross at all: the VM has no place for a command outside a
-function.
-
-**The VM to SM.** The argument count has to be recovered, from the call
-sites and from the largest `argument i` a body touches; a function called
-with two different counts cannot be translated, because SM declares the
-count once.
-
-`this i` becomes an address, an addition and `[]`. `pop this i` costs one
-instruction more, and the reason is worth stating: `->[]` wants the address
-below the value, the value is already on top, and SM cannot swap the top
-two cells. So the value steps aside into a global for one instruction. SM
-can poke any address it can compute, but it cannot pop into one without a
-named cell to hold the value.
-
-The comparisons go the other way: `eq`, `gt` and `lt` must leave all ones
-or zero, and an SM comparison leaves its answer in the most significant bit
-alone, so a branch turns the one into the other. `if-goto` becomes `<-0`,
-`==`, `~`, `?-->`.
-
-The VM's `call` saves `THIS` and `THAT` and its `return` puts them back;
-SM's frame has no segments to save. Where a program writes `pointer` at
-all, every call is wrapped in a save and a restore through two internal
-variables of the caller — four instructions a call, and none for a program
-that never re-points.
