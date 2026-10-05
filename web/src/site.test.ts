@@ -123,6 +123,17 @@ describe('the shell', () => {
       await page.close()
     }
   })
+
+  // A Latin run of several words with punctuation around it is reordered
+  // inside a Hebrew paragraph, so the citation stands on its own and says
+  // which way it runs.
+  it('marks the one Latin passage of the Hebrew reference left to right', async () => {
+    const page = await open('/reference')
+    const dirs = await page.$$eval('article p[dir]', (ps) => ps.map((p) => p.getAttribute('dir')))
+    expect(dirs).toEqual(['ltr'])
+    expect(await page.textContent('article p[dir=ltr]')).toContain('Nisan and S. Schocken')
+    await page.close()
+  })
 })
 
 describe('direction', () => {

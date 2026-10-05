@@ -11,8 +11,7 @@ marks appear below where they apply.
 
 SM is a stack machine. It is an alternative to the virtual machine of
 N. Nisan and S. Schocken, *The Elements of Computing Systems* (MIT Press, 2005),
-and it targets the same Hack computer. [`RATIONALE.md`](RATIONALE.md) argues for
-the differences; this document only states them.
+and it targets the same Hack computer.
 
 ---
 
@@ -23,9 +22,7 @@ the differences; this document only states them.
 A **symbol** begins with a letter or `_` and continues with letters, digits,
 `_` and `.` (C8). Nothing else is a symbol.
 
-A symbol may not begin with a digit, and that exclusion is load-bearing: `<-5`
-pushes a constant and `<-x` pushes a global, and the two are told apart by the
-first character of the operand.
+A symbol may not begin with a digit.
 
 The `.` carries no meaning to the machine. It is a character like any other,
 and a name that contains one is an ordinary name.
