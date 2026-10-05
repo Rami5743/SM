@@ -70,7 +70,7 @@ syntax error** (C5).
 | keyboard | `24576` |
 
 SM programs reach the heap, the screen and the keyboard through `[]` and
-`->[]`; nothing else is special about them.
+`->[]`.
 
 **All of RAM is zero at reset.** This matches the course's CPU emulator, and
 it is what makes a `.cmp` file reproducible.
