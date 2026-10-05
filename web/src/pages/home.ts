@@ -7,14 +7,14 @@
  * the route so the language the reader is in is the language they stay in.
  */
 import { el } from '../lib/dom.js'
-import type { PageId } from '../lib/i18n.js'
+import type { PageId, Strings } from '../lib/i18n.js'
 import { href, type Route } from '../lib/router.js'
 
 const COURSE = 'https://www.nand2tetris.org/'
 const AVRAHAM = 'aizenr@gmail.com'
 const MEIR = 'meir.aizenud@gmail.com'
 
-export function homePage(route: Route, base: string): HTMLElement {
+export function homePage(route: Route, base: string, s: Strings): HTMLElement {
   /** A link to another page of this site, in the reader's language. */
   const to = (page: PageId, text: string) =>
     el('a', { href: href({ ...route, page }, base) }, text)
@@ -25,7 +25,8 @@ export function homePage(route: Route, base: string): HTMLElement {
   const body = route.lang === 'he'
     ? hebrew(to, out, mail)
     : english(to, out, mail)
-  return el('article', { dir: route.lang === 'he' ? 'rtl' : 'ltr' }, ...body)
+  return el('article', { dir: route.lang === 'he' ? 'rtl' : 'ltr' },
+    el('h1', {}, s.tagline), ...body)
 }
 
 function hebrew(
@@ -86,11 +87,11 @@ function hebrew(
       el('li', {},
         to('rationale', 'הסבר'), ' על למה רצינו לעשות את השינוי הזה לקורס.')),
 
-    el('p', {},
-      'הבהרה: האתר נעשה באופן עצמאי ואינו קשור לקורס המקורי. ',
+    el('p', {}, el('strong', {}, 'הבהרה'),
+      ': האתר נעשה באופן עצמאי ואינו קשור לקורס המקורי. ',
       'יוצרי הקורס המקורי אינם אחראים לשום רכיב באתר.'),
-    el('p', {},
-      'אזהרה: האתר והתוכנות שבו עדיין לא נבדקו באופן רציני. הם צפויים ',
+    el('p', {}, el('strong', {}, 'אזהרה'),
+      ': האתר והתוכנות שבו עדיין לא נבדקו באופן רציני. הם צפויים ',
       'להכיל שגיאות רבות. נשמח לשמוע עליהן ב‑', mail(AVRAHAM), '.'),
 
     el('hr'),
@@ -168,12 +169,12 @@ function english(
       el('li', {},
         'An ', to('rationale', 'account'), ' of why we wanted this change to the course.')),
 
-    el('p', {},
-      'This site was made independently and is not connected to the ',
+    el('p', {}, el('strong', {}, 'A note'),
+      ': this site was made independently and is not connected to the ',
       'original course. The authors of the course are not responsible for ',
       'anything on it.'),
-    el('p', {},
-      'A warning: the site and the programs on it have not yet been tested ',
+    el('p', {}, el('strong', {}, 'A warning'),
+      ': the site and the programs on it have not yet been tested ',
       'seriously. They are likely to contain many errors. We would be glad ',
       'to hear about them at ', mail(AVRAHAM), '.'),
 

@@ -20,7 +20,7 @@ const BASE = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')
 
 function pageFor(route: Route, s: Strings): HTMLElement {
   switch (route.page) {
-    case 'home': return homePage(route, BASE)
+    case 'home': return homePage(route, BASE, s)
     case 'emulator': return emulatorPage(s)
     case 'compiler': return compilerPage(s)
     case 'bridge': return bridgePage(s)
