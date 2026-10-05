@@ -13,6 +13,9 @@ import { href, type Route } from '../lib/router.js'
 const COURSE = 'https://www.nand2tetris.org/'
 const NISAN = 'https://he.wikipedia.org/wiki/נועם_ניסן'
 const SCHOCKEN = 'https://he.wikipedia.org/wiki/שמעון_שוקן'
+// In English the two are linked to the pages they keep themselves.
+const NISAN_EN = 'https://www.cs.huji.ac.il/~noam/'
+const SCHOCKEN_EN = 'https://www.shimonschocken.com/'
 const AVRAHAM = 'aizenr@gmail.com'
 const MEIR = 'meir.aizenud@gmail.com'
 
@@ -119,7 +122,8 @@ function english(
   return [
     el('p', {},
       'This site offers an alternative to the virtual machine of ',
-      out(COURSE, 'From Nand to Tetris'), ', by Noam Nisan and Shimon Schocken.'),
+      out(COURSE, 'From Nand to Tetris'), ', by ',
+      out(NISAN_EN, 'Noam Nisan'), ' and ', out(SCHOCKEN_EN, 'Shimon Schocken'), '.'),
     el('p', {},
       'The language here is called SM, short for stack machine, to tell it ',
       'apart from the course’s own virtual language, VM. Both are virtual ',
