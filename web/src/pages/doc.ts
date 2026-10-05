@@ -30,7 +30,7 @@ export function projectsPage(s: Strings): HTMLElement {
 
   return el('div', {},
     el('h1', {}, s.nav.projects),
-    el('p', {}, s.blurb.projects),
+    el('p', {}, s.projectsBlurb),
     el('div', { class: 'cards' },
       card('https://github.com/Rami5743/SM/tree/main/projects/07-sm',
         'projects/07-sm',

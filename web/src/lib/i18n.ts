@@ -24,7 +24,7 @@ export interface Strings {
   readonly siteName: string
   readonly tagline: string
   readonly nav: Readonly<Record<PageId, string>>
-  readonly blurb: Readonly<Record<PageId, string>>
+  readonly projectsBlurb: string
   readonly run: string
   readonly step: string
   readonly reset: string
@@ -91,15 +91,7 @@ const he: Strings = {
     rationale: 'רציונל',
     projects: 'משימות',
   },
-  blurb: {
-    home: 'כל העמודים במקום אחד.',
-    emulator: 'הרצת קוד, צעד אחר צעד, עם המחסנית והמסגרות והזיכרון.',
-    compiler: 'מ‑Jack ל‑SM, עם הבדיקות של הקורס.',
-    bridge: 'אותה תוכנית בשתי המכונות, לשני הכיוונים.',
-    reference: 'התיעוד המחייב של השפה: הפקודות, מודל הזיכרון, המסגרת, השגיאות.',
-    rationale: 'למה המכונה הזאת שונה מזו של הקורס, ומה זה עולה.',
-    projects: 'שתי חבילות התרגילים.',
-  },
+  projectsBlurb: 'שתי חבילות התרגילים.',
   run: 'הרץ',
   step: 'צעד',
   reset: 'אתחל',
@@ -160,15 +152,7 @@ const en: Strings = {
     rationale: 'Rationale',
     projects: 'Projects',
   },
-  blurb: {
-    home: 'Every page in one place.',
-    emulator: 'Run a program, a step at a time, with the stack, the frames and the memory.',
-    compiler: 'Jack to SM, with the course’s own checks.',
-    bridge: 'The same program on both machines, in either direction.',
-    reference: 'The normative reference: the commands, the memory model, the frame, the errors.',
-    rationale: 'Why this machine differs from the course’s, and what that costs.',
-    projects: 'The two packages of exercises.',
-  },
+  projectsBlurb: 'The two packages of exercises.',
   run: 'Run',
   step: 'Step',
   reset: 'Reset',

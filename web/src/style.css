@@ -178,6 +178,7 @@ textarea {
 }
 
 article :is(h2, h3) { scroll-margin-top: 1rem; }
+article hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 article pre { background: var(--warm); padding: 0.7rem 0.9rem; border-radius: 8px; overflow-x: auto; }
 article table { border-collapse: collapse; margin: 1rem 0; font-size: 0.92rem; }
 article :is(th, td) { border: 1px solid var(--rule); padding: 0.3rem 0.6rem; text-align: start; }

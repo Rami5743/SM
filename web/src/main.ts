@@ -14,22 +14,13 @@ import { emulatorPage } from './pages/emulator.js'
 import { compilerPage } from './pages/compiler.js'
 import { bridgePage } from './pages/bridge.js'
 import { docPage, projectsPage } from './pages/doc.js'
+import { homePage } from './pages/home.js'
 
 const BASE = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')
 
-function homePage(s: Strings, route: Route): HTMLElement {
-  const cards = PAGES.filter((p) => p !== 'home').map((p) =>
-    el('a', { class: 'card', href: href({ ...route, page: p }, BASE) },
-      el('h3', {}, s.nav[p]),
-      el('p', {}, s.blurb[p])))
-  return el('div', {},
-    el('h1', {}, s.tagline),
-    el('div', { class: 'cards' }, ...cards))
-}
-
 function pageFor(route: Route, s: Strings): HTMLElement {
   switch (route.page) {
-    case 'home': return homePage(s, route)
+    case 'home': return homePage(route, BASE)
     case 'emulator': return emulatorPage(s)
     case 'compiler': return compilerPage(s)
     case 'bridge': return bridgePage(s)

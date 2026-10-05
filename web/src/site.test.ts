@@ -81,11 +81,21 @@ describe('the shell', () => {
     await page.close()
   })
 
-  it('gathers every page on the home page', async () => {
-    const page = await open('/')
-    const cards = await page.$$eval('.cards .card h3', (hs) => hs.map((h) => h.textContent))
-    expect(cards).toEqual(['אמולטור', 'קומפיילר', 'גשר', 'תיעוד', 'רציונל', 'משימות'])
-    await page.close()
+  it('leads from the home page to every other page, in the reader\'s language', async () => {
+    for (const [path, prefix] of [['/', ''], ['/en/', '/en']] as const) {
+      const page = await open(path)
+      const links = await page.$$eval('main article a[href]',
+        (as) => as.map((a) => (a as HTMLAnchorElement).href))
+      for (const p of ['emulator', 'compiler', 'bridge', 'reference', 'rationale', 'projects']) {
+        expect([path, links.some((l) => new URL(l).pathname === `${prefix}/${p}`)])
+          .toEqual([path, true])
+      }
+      // And out of it: the course itself, and an address to write to.
+      expect([path, links.some((l) => l.startsWith('https://www.nand2tetris.org/'))])
+        .toEqual([path, true])
+      expect([path, links.some((l) => l === 'mailto:aizenr@gmail.com')]).toEqual([path, true])
+      await page.close()
+    }
   })
 
   it('reaches every tab from every page', async () => {
@@ -108,6 +118,8 @@ describe('the shell', () => {
 
   it('serves each document in one language only, in its own direction', async () => {
     for (const [path, dir, has, hasNot] of [
+      ['/', 'rtl', 'מטרת האתר', 'The language here is called'],
+      ['/en/', 'ltr', 'The language here is called', 'מטרת האתר'],
       ['/reference', 'rtl', 'שפת SM', 'The SM language'],
       ['/en/reference', 'ltr', 'The SM language', 'שפת SM'],
       // The page is the language; the correction marks stay in the file.
