@@ -52,9 +52,7 @@ command, and is skipped.
 ### 1.3 Integers
 
 An integer constant is a decimal number in `0..32767`. **A leading sign is a
-syntax error** (C5): the Hack A-instruction has fifteen bits and no sign, so
-`@-5` cannot be assembled, and a negative value is written as a constant
-followed by `(-)`.
+syntax error** (C5).
 
 ---
 
