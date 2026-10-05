@@ -108,7 +108,12 @@ h2 { font-size: 1.2rem; margin-top: 2rem; }
 }
 
 /* The emulator */
-.emulator { display: grid; gap: 1rem; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.emulator {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 2fr);
+}
+@media (max-width: 80rem) { .emulator { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
 @media (max-width: 52rem) { .emulator { grid-template-columns: 1fr; } }
 
 .panel { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }

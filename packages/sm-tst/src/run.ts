@@ -34,11 +34,17 @@ export interface RunOptions {
    * has produced it.
    */
   readonly skipCompare?: boolean
+  /**
+   * Run on this emulator rather than on a fresh one. A caller that also
+   * shows the machine — the site does — then shows the machine the script
+   * drove, rather than a second one beside it.
+   */
+  readonly emulator?: Emulator
 }
 
 export function runScript(source: string, host: Host, options: RunOptions = {}): RunResult {
   const commands = parseScript(source)
-  const emulator = new Emulator()
+  const emulator = options.emulator ?? new Emulator()
   let columns: ColumnSpec[] = []
   let outputFile: string | undefined
   let compareFile: string | undefined

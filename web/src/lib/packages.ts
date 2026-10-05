@@ -33,6 +33,11 @@ export interface Example {
   /** What the dropdown shows, `07-sm · SimpleAdd`. */
   readonly label: string
   readonly source: string
+  /** The script that runs it here — `<Name>SM.tst`, not the one that runs
+   *  the assembly a student produces. Absent if the test has none. */
+  readonly script?: string
+  /** The files the script needs beside the program, the `.cmp` above all. */
+  readonly files: Readonly<Record<string, string>>
 }
 
 /** A test's `.sm` files, several of them headed by their names. */
@@ -44,5 +49,21 @@ function sourceOf(prefix: string): string {
     `// ${path.slice(prefix.length + 1)}\n${text.replace(/\n*$/, '\n')}`).join('\n')
 }
 
+function filesOf(prefix: string): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(PACKAGES)
+      .filter(([path]) => path.startsWith(`${prefix}/`))
+      .map(([path, text]) => [path.slice(prefix.length + 1), text]),
+  )
+}
+
 export const EXAMPLES: readonly Example[] = ORDER.flatMap(([pack, tests]) =>
-  tests.map((test) => ({ label: `${pack} · ${test}`, source: sourceOf(`${pack}/${test}`) })))
+  tests.map((test) => {
+    const files = filesOf(`${pack}/${test}`)
+    return {
+      label: `${pack} · ${test}`,
+      source: sourceOf(`${pack}/${test}`),
+      script: files[`${test}SM.tst`],
+      files,
+    }
+  }))

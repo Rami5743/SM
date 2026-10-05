@@ -326,7 +326,7 @@ describe('opening a program from disk', () => {
     return dir
   }
 
-  it('the emulator takes a folder of .sm files, and ignores what is not one', async () => {
+  it('the emulator takes a whole test folder, and puts only the .sm in the box', async () => {
     const page = await open('/emulator')
     await page.setInputFiles('.opener:has-text("טען תיקייה") input', folder({
       'Sys.sm': '!Sys.init()\n<-9\nMain.twice\n<--\n',
@@ -392,5 +392,47 @@ describe('taking the exercises away', () => {
     } finally {
       rmSync(work, { recursive: true, force: true })
     }
+  })
+})
+
+describe('the test runner on the emulator page', () => {
+  // The eleven tests of both packages, run here the way a student runs
+  // them, each against its own compare file. This is also what the first
+  // four of part II need: they expect a frame a caller would have left, and
+  // the script is what plants it.
+  it('runs every example against its own compare file', async () => {
+    const page = await open('/emulator')
+    const labels = await page.$$eval('.controls select >> nth=0 >> option',
+      (os) => os.map((o) => o.textContent ?? ''))
+    expect(labels.length).toBe(11)
+
+    for (const label of labels) {
+      await page.selectOption('.controls select >> nth=0', { label })
+      await page.click('button:text-is("הרץ את הבדיקה")')
+      await page.waitForSelector('.panel:has(h3:text-is("הפלט")) .notice:text-is("ההשוואה עברה.")',
+        { timeout: 20_000 })
+      expect([label, await page.textContent('.fault')]).toEqual([label, ''])
+    }
+    await page.close()
+  })
+
+  it('leaves the machine holding what the test left behind', async () => {
+    const page = await open('/emulator')
+    await page.selectOption('.controls select >> nth=0', { label: '08-sm · BasicLoop' })
+    await page.click('button:text-is("הרץ את הבדיקה")')
+    await page.waitForSelector('.notice:text-is("ההשוואה עברה.")')
+    // BasicLoop sums 1..6 into RAM[310], which is where the script put its
+    // argument. The stack panel shows the machine the script drove.
+    const output = await page.textContent('.panel:has(h3:text-is("הפלט")) pre')
+    expect(output).toContain('21')
+    await page.close()
+  })
+
+  it('says so when a program and its compare file disagree', async () => {
+    const page = await open('/emulator')
+    await page.fill('textarea >> nth=0', '<-7\n<-8\n-\n')
+    await page.click('button:text-is("הרץ את הבדיקה")')
+    await page.waitForSelector('.notice:text-matches("ההשוואה נכשלה בשורה")')
+    await page.close()
   })
 })

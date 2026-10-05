@@ -15,7 +15,8 @@ export interface Opened {
 }
 
 export interface OpenerOptions {
-  /** The extension to keep, `.sm` or `.vm`. A folder picker needs it. */
+  /** The extension to keep, `.sm` or `.vm`; empty keeps everything, which
+   *  is what a folder holding a test and its compare file needs. */
   readonly extension: string
   /** True for a folder picker, false for a file picker. */
   readonly folder: boolean
@@ -24,7 +25,8 @@ export interface OpenerOptions {
 }
 
 export function fileOpener(options: OpenerOptions): HTMLElement {
-  const input = el('input', { type: 'file', accept: options.extension })
+  const input = el('input', { type: 'file' })
+  if (options.extension !== '') input.setAttribute('accept', options.extension)
   if (options.folder) {
     input.setAttribute('webkitdirectory', '')
     input.setAttribute('directory', '')

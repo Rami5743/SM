@@ -63,6 +63,12 @@ export interface Strings {
   readonly openFiles: string
   readonly openFolder: string
   readonly downloadProjects: string
+  readonly script: string
+  readonly runTest: string
+  readonly output: string
+  readonly comparePassed: string
+  readonly compareFailed: string
+  readonly noScript: string
 }
 
 export type PageId =
@@ -130,6 +136,12 @@ const he: Strings = {
   openFiles: 'טען קובץ',
   openFolder: 'טען תיקייה',
   downloadProjects: 'הורד את שתי התיקיות',
+  script: 'סקריפט הבדיקה',
+  runTest: 'הרץ את הבדיקה',
+  output: 'הפלט',
+  comparePassed: 'ההשוואה עברה.',
+  compareFailed: 'ההשוואה נכשלה בשורה',
+  noScript: 'לדוגמה הזאת אין סקריפט בדיקה.',
 }
 
 const en: Strings = {
@@ -191,6 +203,12 @@ const en: Strings = {
   openFiles: 'Load a file',
   openFolder: 'Load a folder',
   downloadProjects: 'Download both folders',
+  script: 'Test script',
+  runTest: 'Run the test',
+  output: 'Output',
+  comparePassed: 'The comparison passed.',
+  compareFailed: 'The comparison failed at line',
+  noScript: 'This example has no test script.',
 }
 
 export const STRINGS: Readonly<Record<Lang, Strings>> = { he, en }

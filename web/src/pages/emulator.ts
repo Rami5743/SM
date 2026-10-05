@@ -13,6 +13,7 @@ import { HANDOFF } from './compiler.js'
 import { screenView } from '../lib/screen.js'
 import { fileOpener, type Opened } from '../lib/open-files.js'
 import { EXAMPLES } from '../lib/packages.js'
+import { runScript, type Host } from '@sm/tst'
 import { shareLink, sharedProgram } from '../lib/share.js'
 import { download } from '../lib/zip.js'
 
@@ -20,6 +21,16 @@ export function emulatorPage(s: Strings): HTMLElement {
   const root = el('div')
   const source = el('textarea', { spellcheck: 'false', dir: 'ltr' })
   source.value = EXAMPLES[0]!.source
+
+  // A .tst script, and the files beside it that it names — a `.cmp` above
+  // all. The program the script loads is always what is in the box, however
+  // many files it arrived as, so that running the test runs what is on
+  // screen and not a stale copy.
+  const script = el('textarea', { spellcheck: 'false', dir: 'ltr' })
+  script.value = EXAMPLES[0]!.script ?? ''
+  let beside: Readonly<Record<string, string>> = EXAMPLES[0]!.files
+  const outputBody = el('pre', { class: 'code', dir: 'ltr' })
+  const verdictLine = el('div', { class: 'notice' })
 
   const emulator = new Emulator()
   let files: SmFile[] = []
@@ -40,13 +51,21 @@ export function emulatorPage(s: Strings): HTMLElement {
   // container, and function names are global to the program, so one box can
   // hold a whole program however it arrived.
   const opened = (files: readonly Opened[]): void => {
-    source.value = files.length === 1
-      ? files[0]!.text
-      : files.map((f) => `// ${f.name}\n${f.text.replace(/\n*$/, '\n')}`).join('\n')
+    const sm = files.filter((f) => f.name.endsWith('.sm'))
+    source.value = sm.length === 1
+      ? sm[0]!.text
+      : sm.map((f) => `// ${f.name}\n${f.text.replace(/\n*$/, '\n')}`).join('\n')
+    // A folder of a test brings its script and its compare file with it.
+    beside = Object.fromEntries(files.map((f) => [f.name, f.text]))
+    const tst = files.find((f) => f.name.endsWith('SM.tst'))
+    if (tst !== undefined) script.value = tst.text
+    outputBody.textContent = ''
+    verdictLine.textContent = ''
     load()
   }
   const openFiles = fileOpener({ extension: '.sm', folder: false, label: s.openFiles, onOpen: opened })
-  const openFolder = fileOpener({ extension: '.sm', folder: true, label: s.openFolder, onOpen: opened })
+  // A folder keeps everything, so that a test arrives whole.
+  const openFolder = fileOpener({ extension: '', folder: true, label: s.openFolder, onOpen: opened })
 
   const shareBtn = el('button', {}, s.copyLink)
   const downloadBtn = el('button', {}, s.download)
@@ -68,7 +87,12 @@ export function emulatorPage(s: Strings): HTMLElement {
   for (const [i, ex] of EXAMPLES.entries()) examples.append(el('option', { value: String(i) }, ex.label))
   examples.value = '0'
   examples.addEventListener('change', () => {
-    source.value = EXAMPLES[Number(examples.value)]!.source
+    const example = EXAMPLES[Number(examples.value)]!
+    source.value = example.source
+    script.value = example.script ?? ''
+    beside = example.files
+    outputBody.textContent = ''
+    verdictLine.textContent = ''
     load()
   })
 
@@ -114,6 +138,43 @@ export function emulatorPage(s: Strings): HTMLElement {
     draw()
   }
 
+  // The script drives the emulator the page is showing, so the panels end
+  // up holding what the test left behind.
+  const testBtn = el('button', {}, s.runTest)
+  testBtn.addEventListener('click', () => {
+    if (script.value.trim() === '') {
+      verdictLine.textContent = s.noScript
+      return
+    }
+    const written: Record<string, string> = {}
+    const host: Host = {
+      scriptName: 'test.tst',
+      read: (name) => {
+        if (name.endsWith('.sm')) return source.value
+        const text = written[name] ?? beside[name]
+        if (text === undefined) throw new Error(`no file named ${name}`)
+        return text
+      },
+      write: (name, text) => { written[name] = text },
+      listSources: () => ['program.sm'],
+    }
+    fault = ''
+    try {
+      const result = runScript(script.value, host, { emulator })
+      outputBody.textContent = result.output
+      verdictLine.textContent = result.comparison === undefined
+        ? ''
+        : result.comparison.ok
+          ? s.comparePassed
+          : `${s.compareFailed} ${result.comparison.line}`
+    } catch (error) {
+      outputBody.textContent = ''
+      verdictLine.textContent = ''
+      fault = error instanceof Error ? error.message : String(error)
+    }
+    draw()
+  })
+
   stepBtn.addEventListener('click', () => guard(() => emulator.step()))
   runBtn.addEventListener('click', () => guard(() => emulator.run(500_000)))
   resetBtn.addEventListener('click', () => { fault = ''; load() })
@@ -132,6 +193,7 @@ export function emulatorPage(s: Strings): HTMLElement {
   function draw(): void {
     faultLine.textContent = fault
     noticeLine.textContent = ''
+    testBtn.disabled = files.length === 0
     status.textContent = `${emulator.steps} ${s.steps}`
       + (emulator.running ? '' : ` · ${s.halted}`)
       + (libraryLinked ? ` · ${s.library} ${s.libraryOn}` : '')
@@ -197,7 +259,7 @@ export function emulatorPage(s: Strings): HTMLElement {
   root.append(
     el('h1', {}, s.nav.emulator),
     el('div', { class: 'controls' },
-      stepBtn, runBtn, resetBtn, shareBtn, downloadBtn, openFiles, openFolder,
+      stepBtn, runBtn, resetBtn, testBtn, shareBtn, downloadBtn, openFiles, openFolder,
       el('label', {}, `${s.examples} `, examples),
       el('label', {}, `${s.notation} `, notationSelect),
       status),
@@ -208,6 +270,10 @@ export function emulatorPage(s: Strings): HTMLElement {
         panel(s.source, el('div', { class: 'body' }, source)),
         el('div', { style: 'height:0.75rem' }),
         panel(s.program, el('div', { class: 'body' }, listing))),
+      el('div', {},
+        panel(s.script, el('div', { class: 'body' }, script)),
+        el('div', { style: 'height:0.75rem' }),
+        panel(s.output, el('div', { class: 'body' }, outputBody, verdictLine))),
       el('div', {},
         panel(s.screen, el('div', { class: 'body' }, screen.element, el('p', { class: 'hint' }, s.keyboardHint))),
         el('div', { style: 'height:0.75rem' }),
