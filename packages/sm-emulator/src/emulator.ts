@@ -155,6 +155,11 @@ export class Emulator {
     return out
   }
 
+  /** Which step is about to run. A step index is also a return address. */
+  get programCounter(): number {
+    return this.pc
+  }
+
   /** The function the program counter is in, if it is in one. */
   at(): string | undefined {
     return this.currentFunction()?.name

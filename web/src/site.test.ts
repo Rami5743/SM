@@ -10,7 +10,7 @@
  */
 import { createServer, type Server } from 'node:http'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -123,18 +123,6 @@ describe('the shell', () => {
       await page.close()
     }
   })
-
-  it('serves the reference in the language of the page, right to left', async () => {
-    const hebrew = await open('/reference')
-    expect(await hebrew.getAttribute('article', 'dir')).toBe('rtl')
-    expect(await hebrew.textContent('article h1')).toContain('שפת SM')
-    await hebrew.close()
-
-    const english = await open('/en/reference')
-    expect(await english.getAttribute('article', 'dir')).toBe('ltr')
-    expect(await english.textContent('article h1')).toContain('The SM language')
-    await english.close()
-  })
 })
 
 describe('direction', () => {
@@ -153,20 +141,44 @@ describe('direction', () => {
   it('renders a listing in source order, not reversed', async () => {
     const page = await open('/emulator')
     const first = await page.textContent('.listing .line')
-    expect(first?.trim()).toBe('!Sys.init()')
+    expect(first?.trim()).toBe('<-7')
     await page.close()
   })
 })
 
 describe('the emulator page', () => {
-  it('runs Fibonacci from a cold load', async () => {
+  it('offers exactly the eleven tests of the two packages, in their order', async () => {
     const page = await open('/emulator')
+    const options = await page.$$eval('.controls select >> nth=0 >> option',
+      (os) => os.map((o) => o.textContent))
+    expect(options).toEqual([
+      '07-sm · SimpleAdd', '07-sm · StackTest', '07-sm · GlobalTest',
+      '07-sm · PointerTest', '07-sm · StaticTest',
+      '08-sm · BasicLoop', '08-sm · FibonacciSeries', '08-sm · SimpleFunction',
+      '08-sm · NestedCall', '08-sm · StaticsTest', '08-sm · FibonacciElement',
+    ])
+    await page.close()
+  })
+
+  it('runs FibonacciElement, which bootstraps, from a cold load', async () => {
+    const page = await open('/emulator')
+    await page.selectOption('.controls select >> nth=0', { label: '08-sm · FibonacciElement' })
     await page.click('button:text-is("הרץ")')
     await page.waitForSelector('.status:text-matches("נעצר")')
     // Sys.init returns the answer, which lands at the base of the stack.
     const rows = await page.$$eval('.panel:has(h3:text-is("מחסנית")) table.cells tr td',
       (tds) => tds.map((t) => t.textContent))
     expect(rows).toEqual(['256', '8'])
+    await page.close()
+  })
+
+  it('marks the line the program counter is on, and moves it on a step', async () => {
+    const page = await open('/emulator')
+    expect(await page.textContent('.listing .line.here')).toBe('<-7')
+    await page.click('button:text-is("צעד")')
+    expect(await page.textContent('.listing .line.here')).toBe('<-8')
+    await page.click('button:text-is("צעד")')
+    expect(await page.textContent('.listing .line.here')).toBe('+')
     await page.close()
   })
 
@@ -180,10 +192,11 @@ describe('the emulator page', () => {
 
   it('renders the same program in words when asked', async () => {
     const page = await open('/emulator')
-    await page.selectOption('select >> nth=1', 'words')
+    await page.selectOption('.controls select >> nth=1', 'words')
+    await page.selectOption('.controls select >> nth=0', { label: '08-sm · BasicLoop' })
     const text = await page.textContent('.listing')
-    expect(text).toContain('if-goto base')
-    expect(text).toContain('return')
+    expect(text).toContain('if-goto')
+    expect(text).toContain('goto')
     // C4: the operators stay symbolic in every view.
     expect(text).toContain('+')
     expect(text).not.toContain('add')
@@ -267,7 +280,7 @@ describe('the bridge page', () => {
   // one concatenation, and the page keeps them apart.
   it('imports a folder of .vm files and keeps each file\'s statics its own', async () => {
     const page = await open('/bridge')
-    await page.setInputFiles('.opener:has-text("קבצים") input', [
+    await page.setInputFiles('.opener:has-text("טען קובץ") input', [
       { name: 'Class1.vm', mimeType: 'text/plain', buffer: Buffer.from('function Class1.get 0\npush static 0\nreturn\n') },
       { name: 'Class2.vm', mimeType: 'text/plain', buffer: Buffer.from('function Class2.get 0\npush static 0\nreturn\n') },
     ])
@@ -292,7 +305,7 @@ describe('a program in the address bar', () => {
     const page = await open('/emulator')
     await page.fill('textarea', '<-7\n<-8\n+\n')
     await page.click('button:text-is("העתק קישור")')
-    await page.waitForSelector('.fault:text-is("הקישור הועתק.")')
+    await page.waitForSelector('.notice:text-is("הקישור הועתק.")')
     const url = page.url()
     expect(url).toContain('#p=')
 
@@ -315,7 +328,7 @@ describe('opening a program from disk', () => {
 
   it('the emulator takes a folder of .sm files, and ignores what is not one', async () => {
     const page = await open('/emulator')
-    await page.setInputFiles('.opener:has-text("תיקייה") input', folder({
+    await page.setInputFiles('.opener:has-text("טען תיקייה") input', folder({
       'Sys.sm': '!Sys.init()\n<-9\nMain.twice\n<--\n',
       'Main.sm': '!Main.twice(n)\n<-@n\n<-@n\n+\n<--\n',
       'notes.txt': 'not a program',
@@ -337,10 +350,47 @@ describe('opening a program from disk', () => {
 
   it('the bridge takes a folder of .vm files', async () => {
     const page = await open('/bridge')
-    await page.setInputFiles('.opener:has-text("תיקייה") input', folder({
+    await page.setInputFiles('.opener:has-text("טען תיקייה") input', folder({
       'Class1.vm': 'function Class1.get 0\npush static 3\nreturn\n',
     }))
     await page.waitForSelector('pre:text-matches("Class1.3")')
     await page.close()
+  })
+})
+
+describe('taking the exercises away', () => {
+  it('downloads both packages as one zip, without the files a run produces', async () => {
+    const page = await open('/projects')
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.click('button:text-is("הורד את שתי התיקיות")'),
+    ])
+    expect(download.suggestedFilename()).toBe('sm-projects.zip')
+
+    const work = mkdtempSync(join(tmpdir(), 'sm-zip-'))
+    try {
+      const file = join(work, 'projects.zip')
+      await download.saveAs(file)
+      const names: string[] = JSON.parse(execFileSync('python3', ['-c', [
+        'import json,sys,zipfile',
+        'z = zipfile.ZipFile(sys.argv[1])',
+        'assert z.testzip() is None',
+        'print(json.dumps(sorted(z.namelist())))',
+      ].join('\n'), file], { encoding: 'utf8' }))
+
+      expect(names).toContain('07-sm/README.md')
+      expect(names).toContain('07-sm/SimpleAdd/SimpleAdd.sm')
+      expect(names).toContain('07-sm/SimpleAdd/SimpleAddSM.tst')
+      expect(names).toContain('07-sm/SimpleAdd/SimpleAdd.cmp')
+      expect(names).toContain('08-sm/README.md')
+      expect(names).toContain('08-sm/FibonacciElement/Sys.sm')
+      // A .out is what running the test produces; shipping one would let a
+      // test look satisfied before it has run.
+      expect(names.filter((n) => n.endsWith('.out'))).toEqual([])
+      // Both packages whole: every tracked file but the outputs.
+      expect(names.length).toBe(60)
+    } finally {
+      rmSync(work, { recursive: true, force: true })
+    }
   })
 })

@@ -142,6 +142,7 @@ button:hover:not(:disabled) { border-color: var(--accent); }
 button:disabled { opacity: 0.45; cursor: default; }
 .status { color: var(--dim); font-size: 0.85rem; }
 .fault { color: #b3261e; font-size: 0.85rem; }
+.notice { color: var(--dim); font-size: 0.85rem; }
 
 table.cells { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 table.cells td { padding: 0.1rem 0.4rem; }

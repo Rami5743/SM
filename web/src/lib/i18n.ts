@@ -62,6 +62,7 @@ export interface Strings {
   readonly bridgeBlurb: string
   readonly openFiles: string
   readonly openFolder: string
+  readonly downloadProjects: string
 }
 
 export type PageId =
@@ -126,8 +127,9 @@ const he: Strings = {
   smToVm: 'מ‑SM ל‑VM',
   vmToSm: 'מ‑VM ל‑SM',
   bridgeBlurb: 'את הפלט אפשר להריץ באמולטור של הקורס:',
-  openFiles: 'קבצים',
-  openFolder: 'תיקייה',
+  openFiles: 'טען קובץ',
+  openFolder: 'טען תיקייה',
+  downloadProjects: 'הורד את שתי התיקיות',
 }
 
 const en: Strings = {
@@ -186,8 +188,9 @@ const en: Strings = {
   smToVm: 'SM to VM',
   vmToSm: 'VM to SM',
   bridgeBlurb: 'What comes out runs in the course’s own emulator:',
-  openFiles: 'Files',
-  openFolder: 'Folder',
+  openFiles: 'Load a file',
+  openFolder: 'Load a folder',
+  downloadProjects: 'Download both folders',
 }
 
 export const STRINGS: Readonly<Record<Lang, Strings>> = { he, en }

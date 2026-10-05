@@ -12,53 +12,14 @@ import type { Strings } from '../lib/i18n.js'
 import { HANDOFF } from './compiler.js'
 import { screenView } from '../lib/screen.js'
 import { fileOpener, type Opened } from '../lib/open-files.js'
+import { EXAMPLES } from '../lib/packages.js'
 import { shareLink, sharedProgram } from '../lib/share.js'
 import { download } from '../lib/zip.js'
-
-const EXAMPLES: ReadonlyArray<{ name: string; source: string }> = [
-  {
-    name: 'SimpleAdd',
-    source: '<-7\n<-8\n+\n',
-  },
-  {
-    name: 'Peek and poke',
-    source: '// the address is the deeper operand, the value on top\n<-3000\n<-42\n->[]\n<-3000\n[]\n',
-  },
-  {
-    name: 'Fibonacci',
-    source: [
-      '!Sys.init()',
-      '\t<-6',
-      '\tfib',
-      '\t<--',
-      '',
-      '!fib(n)',
-      '\t<-@n',
-      '\t<-2',
-      '\t<',
-      '\t?-->base',
-      '\t<-@n',
-      '\t<-1',
-      '\t-',
-      '\tfib',
-      '\t<-@n',
-      '\t<-2',
-      '\t-',
-      '\tfib',
-      '\t+',
-      '\t<--',
-      '\tbase:',
-      '\t<-@n',
-      '\t<--',
-      '',
-    ].join('\n'),
-  },
-]
 
 export function emulatorPage(s: Strings): HTMLElement {
   const root = el('div')
   const source = el('textarea', { spellcheck: 'false', dir: 'ltr' })
-  source.value = EXAMPLES[2]!.source
+  source.value = EXAMPLES[0]!.source
 
   const emulator = new Emulator()
   let files: SmFile[] = []
@@ -73,6 +34,7 @@ export function emulatorPage(s: Strings): HTMLElement {
   const status = el('span', { class: 'status' })
   const screen = screenView(emulator)
   const faultLine = el('div', { class: 'fault' })
+  const noticeLine = el('div', { class: 'notice' })
 
   // Several .sm files concatenate without ceremony: a file is only a
   // container, and function names are global to the program, so one box can
@@ -103,8 +65,8 @@ export function emulatorPage(s: Strings): HTMLElement {
   })
 
   const examples = el('select')
-  for (const [i, ex] of EXAMPLES.entries()) examples.append(el('option', { value: String(i) }, ex.name))
-  examples.value = '2'
+  for (const [i, ex] of EXAMPLES.entries()) examples.append(el('option', { value: String(i) }, ex.label))
+  examples.value = '0'
   examples.addEventListener('change', () => {
     source.value = EXAMPLES[Number(examples.value)]!.source
     load()
@@ -163,30 +125,33 @@ export function emulatorPage(s: Strings): HTMLElement {
     const link = shareLink(source.value)
     history.replaceState(null, '', link)
     void navigator.clipboard?.writeText(link)
-    fault = s.copied
-    draw()
+    noticeLine.textContent = s.copied
   })
   downloadBtn.addEventListener('click', () => download('program.sm', source.value))
 
   function draw(): void {
     faultLine.textContent = fault
+    noticeLine.textContent = ''
     status.textContent = `${emulator.steps} ${s.steps}`
       + (emulator.running ? '' : ` · ${s.halted}`)
       + (libraryLinked ? ` · ${s.library} ${s.libraryOn}` : '')
     stepBtn.disabled = !emulator.running
     runBtn.disabled = !emulator.running
 
+    // One line per step, in the order the steps were laid out, so that the
+    // program counter names a line. The library is linked after these, so a
+    // step inside it falls past the end and nothing is marked.
     listing.replaceChildren()
-    for (const file of files) {
-      for (const fn of file.functions) {
-        listing.append(el('div', { class: 'line' },
-          notation === 'words'
-            ? `function ${fn.decl.name}(${fn.decl.args.join(',')})${fn.decl.locals.length ? ' locals ' + fn.decl.locals.join(',') : ''}`
-            : `!${fn.decl.name}(${fn.decl.args.join(',')})${fn.decl.locals.join(',')}`))
-        for (const c of fn.body) listing.append(el('div', { class: 'line' }, '  ' + printCommand(c, notation)))
+    let here: HTMLElement | undefined
+    for (const [index, text] of listingLines(files, notation).entries()) {
+      const line = el('div', { class: 'line' }, text)
+      if (index === emulator.programCounter) {
+        line.classList.add('here')
+        here = line
       }
-      for (const c of file.fragment) listing.append(el('div', { class: 'line' }, printCommand(c, notation)))
+      listing.append(line)
     }
+    here?.scrollIntoView({ block: 'nearest' })
 
     screen.draw()
     const stack = emulator.stack()
@@ -195,6 +160,27 @@ export function emulatorPage(s: Strings): HTMLElement {
     globalsBody.replaceChildren(
       table([...emulator.globals()].map(([name, a]) => [name, `${emulator.memory.get(a)}`])),
     )
+  }
+
+  /**
+   * The program as the linker lays it out: every fragment command first,
+   * then each function's declaration followed by its body. The index of a
+   * line is the step index, which is what the program counter holds.
+   */
+  function listingLines(files: readonly SmFile[], notation: Notation): string[] {
+    const lines: string[] = []
+    for (const file of files) {
+      for (const c of file.fragment) lines.push(printCommand(c, notation))
+    }
+    for (const file of files) {
+      for (const fn of file.functions) {
+        lines.push(notation === 'words'
+          ? `function ${fn.decl.name}(${fn.decl.args.join(',')})${fn.decl.locals.length ? ' locals ' + fn.decl.locals.join(',') : ''}`
+          : `!${fn.decl.name}(${fn.decl.args.join(',')})${fn.decl.locals.join(',')}`)
+        for (const c of fn.body) lines.push('  ' + printCommand(c, notation))
+      }
+    }
+    return lines
   }
 
   function table(rows: ReadonlyArray<readonly [string, string]>): HTMLElement {
@@ -216,6 +202,7 @@ export function emulatorPage(s: Strings): HTMLElement {
       el('label', {}, `${s.notation} `, notationSelect),
       status),
     faultLine,
+    noticeLine,
     el('div', { class: 'emulator' },
       el('div', {},
         panel(s.source, el('div', { class: 'body' }, source)),
