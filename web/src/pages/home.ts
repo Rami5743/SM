@@ -11,6 +11,8 @@ import type { PageId, Strings } from '../lib/i18n.js'
 import { href, type Route } from '../lib/router.js'
 
 const COURSE = 'https://www.nand2tetris.org/'
+const NISAN = 'https://he.wikipedia.org/wiki/נועם_ניסן'
+const SCHOCKEN = 'https://he.wikipedia.org/wiki/שמעון_שוקן'
 const AVRAHAM = 'aizenr@gmail.com'
 const MEIR = 'meir.aizenud@gmail.com'
 
@@ -38,7 +40,7 @@ function hebrew(
     el('p', {},
       'מטרת האתר היא לספק חלופה למכונה הווירטואלית שבקורס ',
       out(COURSE, 'From Nand to Tetris'),
-      ' של נועם ניסן ושמעון שוקן.'),
+      ' של ', out(NISAN, 'נועם ניסן'), ' ו', out(SCHOCKEN, 'שמעון שוקן'), '.'),
     el('p', {},
       'אנו קוראים לשפה הזאת SM (קיצור של מכונת מחסנית) כדי להבדיל אותה ',
       'מהשפה הווירטואלית של הקורס, VM (קיצור של מכונה וירטואלית). ',

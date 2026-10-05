@@ -4,9 +4,9 @@
  * Every `.vm` program the course ships for those two projects is translated
  * to SM and run against the course's own `.cmp`, through our .tst runner —
  * the script is the course's `VME.tst`, with `smstep` for `vmstep` and one
- * other change that CORRECTIONS C2 forces: SP points at the top element in
- * SM, so a script that sets it to 256 to make the first push land there has
- * to set 255.
+ * other change: `set argument[0] 3` names a cell through a segment base,
+ * which SM has no notion of. The stack pointer needs no adjustment, because
+ * C2 gives it the course's own meaning.
  *
  * The other direction has no compare files of its own, so it is checked by
  * round trip: SM to VM and back, run in our emulator, cell for cell against
@@ -258,9 +258,9 @@ describe('SM to VM and back', () => {
  * text we produce, runs it where it is meant to run, and compares what it
  * leaves with what our emulator leaves for the SM it came from.
  *
- * The two machines start `Sys.init` differently — SM with the stack empty
- * at 255, the course's emulator with SP at 256 and no frame at all — so
- * the answer is compared where both were told to put it, RAM[3000].
+ * The two machines start `Sys.init` differently — SM through a call with a
+ * frame, the course's emulator with no frame at all — so the answer is
+ * compared where both were told to put it, RAM[3000].
  */
 describe.skipIf(!existsSync(join(COURSE, '..', 'tools', 'VMEmulator.sh')))(
   'SM to VM, measured on the course\'s VM emulator',

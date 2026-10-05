@@ -63,7 +63,6 @@ class Writer {
   }
 }
 
-/** `@SP / A=M`: point A at the top of the stack. */
 /** A points at the top element, which is one below SP. */
 const AT_TOP = ['@SP', 'A=M-1']
 /** Push whatever is in D: write where SP points, then move it on. */
