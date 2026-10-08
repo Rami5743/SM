@@ -22,40 +22,40 @@ function body(subroutine: string): string[] {
 describe('the shape of a frame', () => {
   it('a function takes what it is given and declares what it keeps', () => {
     expect(sm('class G { function int f(int a, int b) { var int t; return a; } }')[0])
-      .toBe('!G.f(a,b)t')
+      .toBe('function G.f(a, b) locals t')
   })
 
   it('a method takes the receiver as its first argument', () => {
-    expect(sm('class G { method int f(int a) { return a; } }')[0]).toBe('!G.f(this,a)')
+    expect(sm('class G { method int f(int a) { return a; } }')[0]).toBe('function G.f(this, a)')
   })
 
   it('a constructor keeps the object in an internal variable', () => {
     expect(sm('class G { field int x; constructor G new() { return this; } }').slice(0, 5))
-      .toEqual(['!G.new()this', '<-1', 'Memory.alloc', '->@this', '<-@this'])
+      .toEqual(['function G.new() locals this', 'push 1', 'call Memory.alloc', 'pop @this', 'push @this'])
   })
 })
 
 describe('the four kinds of name', () => {
   it('an argument and an internal variable are the same instruction', () => {
     expect(body('function void f(int a) { var int t; let t = a; return; }')
-      .slice(0, 2)).toEqual(['<-@a', '->@t'])
+      .slice(0, 2)).toEqual(['push @a', 'pop @t'])
   })
 
   it('a static is a global named for its class', () => {
     expect(sm('class G { static int n; function void f() { let n = 1; return; } }').slice(1, 3))
-      .toEqual(['<-1', '->G.n'])
+      .toEqual(['push 1', 'pop G.n'])
   })
 
   // The whole of the `pointer`/`this`/`that` machinery, in three
   // instructions over an ordinary address.
   it('a field is a peek through this', () => {
     expect(sm('class G { field int x, y; method int f() { return y; } }').slice(1, 5))
-      .toEqual(['<-@this', '<-1', '+', '[]'])
+      .toEqual(['push @this', 'push 1', 'add', 'push-indirect'])
   })
 
   it('a field is written with a poke, and needs no temporary', () => {
     expect(sm('class G { field int x; method void f() { let x = 7; return; } }').slice(1, 6))
-      .toEqual(['<-@this', '<-0', '+', '<-7', '->[]'])
+      .toEqual(['push @this', 'push 0', 'add', 'push 7', 'pop-indirect'])
   })
 })
 
@@ -65,7 +65,7 @@ describe('arrays', () => {
   // stack and nothing has to be held anywhere else.
   it('a[i] = b[j] needs no temporary', () => {
     expect(body('function void f(Array a, Array b) { let a[1] = b[2]; return; }'))
-      .toEqual(['<-@a', '<-1', '+', '<-@b', '<-2', '+', '[]', '->[]', '<-0', '<--'])
+      .toEqual(['push @a', 'push 1', 'add', 'push @b', 'push 2', 'add', 'push-indirect', 'pop-indirect', 'push 0', 'return'])
   })
 })
 
@@ -73,18 +73,18 @@ describe('operators', () => {
   it('stay symbolic, and multiplication is a call', () => {
     expect(body('function void f() { var int t; let t = ((1 + 2) - 3) * 4; return; }'))
       .toEqual([
-        '<-1', '<-2', '+', '<-3', '-', '<-4', 'Math.multiply', '->@t', '<-0', '<--',
+        'push 1', 'push 2', 'add', 'push 3', 'sub', 'push 4', 'call Math.multiply', 'pop @t', 'push 0', 'return',
       ])
   })
 
   it('true is every bit set, which is what the branch tests', () => {
     expect(body('function void f() { var boolean t; let t = true; return; }').slice(0, 3))
-      .toEqual(['<-1', '(-)', '->@t'])
+      .toEqual(['push 1', 'neg', 'pop @t'])
   })
 
   it('= is ==, because = is assignment', () => {
     expect(body('function void f() { var boolean t; let t = (1 = 2); return; }').slice(0, 4))
-      .toEqual(['<-1', '<-2', '==', '->@t'])
+      .toEqual(['push 1', 'push 2', 'eq', 'pop @t'])
   })
 })
 
@@ -92,46 +92,46 @@ describe('control', () => {
   it('an if jumps over the then-part when the condition is false', () => {
     expect(body('function void f(int a) { if (a > 0) { let a = 1; } else { let a = 2; } return; }'))
       .toEqual([
-        '<-@a', '<-0', '>', '~', '?-->else.0',
-        '<-1', '->@a',
-        '-->endif.0', 'else.0:',
-        '<-2', '->@a',
-        'endif.0:',
-        '<-0', '<--',
+        'push @a', 'push 0', 'gt', 'not', 'if-goto else.0',
+        'push 1', 'pop @a',
+        'goto endif.0', 'label else.0',
+        'push 2', 'pop @a',
+        'label endif.0',
+        'push 0', 'return',
       ])
   })
 
   it('a while tests at the top', () => {
     expect(body('function void f(boolean a) { while (a) { let a = false; } return; }'))
       .toEqual([
-        'while.0:', '<-@a', '~', '?-->endwhile.0',
-        '<-0', '->@a',
-        '-->while.0', 'endwhile.0:',
-        '<-0', '<--',
+        'label while.0', 'push @a', 'not', 'if-goto endwhile.0',
+        'push 0', 'pop @a',
+        'goto while.0', 'label endwhile.0',
+        'push 0', 'return',
       ])
   })
 })
 
 describe('calls', () => {
   it('a do statement discards the value every SM function returns', () => {
-    expect(body('function void f() { do G.g(); return; }')).toEqual(['G.g', '->Sys.discard', '<-0', '<--'])
+    expect(body('function void f() { do G.g(); return; }')).toEqual(['call G.g', 'pop Sys.discard', 'push 0', 'return'])
   })
 
   it('a method call passes the object first', () => {
     expect(body('function void f(Array a) { do a.dispose(); return; }'))
-      .toEqual(['<-@a', 'Array.dispose', '->Sys.discard', '<-0', '<--'])
+      .toEqual(['push @a', 'call Array.dispose', 'pop Sys.discard', 'push 0', 'return'])
   })
 
   it('a return with no value returns zero, because every function returns one', () => {
-    expect(body('function void f() { return; }')).toEqual(['<-0', '<--'])
+    expect(body('function void f() { return; }')).toEqual(['push 0', 'return'])
   })
 
   it('a string constant is built a character at a time', () => {
     expect(body('function void f() { do G.g("hi"); return; }')).toEqual([
-      '<-2', 'String.new',
-      '<-104', 'String.appendChar',
-      '<-105', 'String.appendChar',
-      'G.g', '->Sys.discard', '<-0', '<--',
+      'push 2', 'call String.new',
+      'push 104', 'call String.appendChar',
+      'push 105', 'call String.appendChar',
+      'call G.g', 'pop Sys.discard', 'push 0', 'return',
     ])
   })
 })

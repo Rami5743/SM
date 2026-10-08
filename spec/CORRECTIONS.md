@@ -12,7 +12,7 @@ as they are taken.
 
 ---
 
-## C1 — `->[]`: the prose is corrected, the code is kept
+## C1 — the poke: the prose is corrected, the code is kept
 
 *Settles Q1. A documentation change; no behaviour changes.*
 
@@ -24,12 +24,12 @@ annotated `fib.sm` and the Jack compiler all do the opposite.
 **We do.** What the code does. The top of the stack is the **value**, the
 element below it the **address**.
 
-> **`[]` — peek.** The top of the stack is an address. The command replaces it
+> **The read.** The top of the stack is an address. The command replaces it
 > by the content of that register.
 >
 > `… addr` → `… RAM[addr]`
 >
-> **`->[]` — poke.** The top of the stack is a value and the element below it is
+> **The write.** The top of the stack is a value and the element below it is
 > an address. The command removes both and stores the value in that register.
 >
 > `… addr value` → `…`, with `RAM[addr] := value`
@@ -91,15 +91,15 @@ stack pointer or a frame; every `.cmp` file, whose `RAM[0]` is one higher than
 before; the statement of the memory map in the reference page; and the SM → VM
 bridge, which no longer has a stack pointer to adjust.
 
-## C3 — `==` is the equality mnemonic, and `=` is an error
+## C3 — a line nobody recognises is an error, not a call
 
 *Settles Q2. A documentation change, plus a diagnostic the reference lacks.*
 
 **The reference.** `SM_doc_details.txt` writes the equality command `=`. The
 LaTeX document, `all_cmds.sm` and `SM_trnsleitor3.py` all write `==`.
 
-**We do.** `==`. The single `=` is not a synonym and not an alias; it is a
-syntax error.
+**We do.** The command is `eq` (C9), and a lone `=` is a syntax error: not a
+synonym, not an alias.
 
 Rejecting it explicitly matters more than it looks, because of how the
 reference parser is built. Its last template is a catch-all: any line it does
@@ -132,33 +132,24 @@ check that resolves call targets, in our tools only.
 
 ## C4 — the mnemonics are the language; the words are a view
 
-*Settles Q6. No change to the language; an addition to the emulator.*
+*Settles Q6. Superseded by C9, which makes the words the language and drops
+the mnemonics altogether. Kept because the argument it records is the one C9
+answers.*
 
 **The reference.** `<-`, `->`, `-->`, `?-->`, `!`, `<--`, and the trailing colon
 of a label. The design letter is unsure whether these are an improvement or a
 gimmick, and floats keeping symbols for the arithmetic and logical operations
 only.
 
-**We do.** The mnemonics stay, and they are the language — the only accepted
-input syntax. Alongside them the emulator offers a word-for-word **rendering**
-of any program, so the two can be compared by looking at them rather than by
-arguing about them.
+**We did.** Keep the mnemonics as the only accepted input, and add a
+word-for-word rendering beside them in the emulator, so that the two could be
+compared by looking at them rather than by arguing about them. The arithmetic
+and logical operators were symbolic in both, on the reasoning that nobody
+wants to read `add` where `+` will do.
 
-**One invariant the rendering must respect:** the arithmetic and logical
-operators are symbolic in every view and are never spelled as words. `+`, `-`,
-`(-)`, `&`, `|`, `~`, `==`, `>`, `<`, `[]` and `->[]` stay exactly as they are.
-Only the structural commands have a word form — push, pop, goto, if-goto,
-function, return, label. This is the split the letter itself suggests, and it is
-the one that survives the argument: nobody wants to read `add` where `+` will
-do, and the case for `<-` over `push` is the one genuinely in doubt.
-
-**A view, not a second syntax.** The words are produced by a pretty-printer over
-the AST and are not accepted as input. Two ways to write every command would be
-a real cost in a teaching language, and nothing is gained: a rendering is
-enough to decide the question by eye.
-
-**Touches.** One pretty-printer over the AST; one toggle in the emulator. The
-exact word for each mnemonic is settled in M0 with the rest of the reference.
+**What the comparison decided.** See C9. Two notations were never going to
+survive in a teaching language, and the one that went was the one that had to
+be learned.
 
 ---
 
@@ -175,22 +166,23 @@ accepts an empty name in the same way.
 
 **We do.** Follow the course.
 
-> `<- n` takes a decimal constant in `0..32767`. A negative value is written
-> `<- n` followed by `(-)`. A leading sign is a syntax error.
+> `push n` takes a decimal constant in `0..32767`. A negative value is written
+> `push n` followed by `neg`. A leading sign is a syntax error.
 >
-> A bare `<-` and a bare `->` are syntax errors.
+> `push` and `pop` each take exactly one operand.
 
 **Why non-negative.** The course forbids negative literals at all three of its
 levels and SM is in the same position for the same reason. `push constant x`
 takes "some non-negative integer x", and negative numbers come from `neg`. A
 Jack `integerConstant` is a decimal in `0..32767`, and `-5` is the unary
 operator applied to the literal `5` — which the prototype's Jack compiler
-already handles by emitting `(-)`. Underneath both: the Hack A-instruction has
+already handles by emitting a negation. Underneath both: the Hack A-instruction has
 fifteen bits and no sign, so `@-5` cannot be assembled, and a constant push is
 a one-to-one translation only while the constant is non-negative.
 
-Allowing `<- -5` would save two instructions per negative constant, by emitting
-`@5 / D=A / D=-D` instead of `@5 / D=A / (-)`. It would cost every student a
+Allowing a signed constant would save two instructions per negative constant,
+by emitting `@5 / D=A / D=-D` instead of a push and a negation. It would cost
+every student a
 sign test inside the first command they implement, in every translator, forever.
 Negative constants are rare.
 
@@ -311,9 +303,9 @@ they do not collide with one another:
 
 | kind | scope | how it is written at the point of use |
 |---|---|---|
-| local (argument or internal) | one function | `<- @x`, `-> @x` |
-| global | the program | `<- x`, `-> x` |
-| label | one function | `L:`, `--> L`, `?--> L` |
+| local (argument or internal) | one function | `push @x`, `pop @x` |
+| global | the program | `push x`, `pop x` |
+| label | one function | `label L`, `goto L`, `if-goto L` |
 | function | the program | `f` |
 
 A global and a function may share a name; so may a label and either. Only
@@ -338,7 +330,7 @@ time:
 | mistake | message | note |
 |---|---|---|
 | the same label twice in one function | `A.sm: in line 4: label L already exists in function f` | the course does not check it |
-| `<- @x` or `-> @x` where `x` is not a local of the enclosing function | `A.sm: in line 7: f has no local named x` | the course catches the analogue at run time: `Out of segment space in Foo.f.1` |
+| `push @x` or `pop @x` where `x` is not a local of the enclosing function | `A.sm: in line 7: f has no local named x` | the course catches the analogue at run time: `Out of segment space in Foo.f.1` |
 
 The second is worth a sentence, because it is a place where SM is *better
 placed* than the course rather than stricter than it. The course's locals are
@@ -390,8 +382,74 @@ letters, digits, `_` and `.`.
 So the restriction has no implementation behind it at any of the three levels,
 and removing it costs nothing.
 
-**What stays excluded: a leading digit.** That one is load-bearing. `<-5`
-pushes a constant and `<-x` pushes a global, and the two are told apart by the
-first character of the operand.
+**What stays excluded: a leading digit.** That one is load-bearing. `push 5`
+pushes a constant and `push x` pushes a global, and the two are told apart by
+the first character of the operand.
 
 **Touches.** The reference page's definition of a symbol; the parser's pattern.
+
+---
+
+## C9 — the commands are words, and the words are the course's
+
+*Supersedes C4. A change to the surface syntax of the language. No program's
+behaviour changes; every program's text does.*
+
+**Where this comes from.** C4 kept two notations so they could be compared.
+Comparing them settled it: a student arriving from the course reads `push 7`
+without being told anything, and reads `<-7` only after being told. The
+mnemonics are gone, and the words are the language and its only input.
+
+**The spellings.** Where a command of SM corresponds to one of the course's,
+it is spelled as the course spells it:
+
+| was | is |
+|---|---|
+| `<- 5`, `<- x`, `<- @x` | `push 5`, `push x`, `push @x` |
+| `-> x`, `-> @x` | `pop x`, `pop @x` |
+| `+`, `-`, `(-)`, `~`, `&`, `\|` | `add`, `sub`, `neg`, `not`, `and`, `or` |
+| `==`, `>`, `<` | `eq`, `gt`, `lt` |
+| `[]`, `->[]` | `push-indirect`, `pop-indirect` |
+| `L:`, `--> L`, `?--> L` | `label L`, `goto L`, `if-goto L` |
+| `f` | `call f` |
+| `<--` | `return` |
+| `! f(a, b) t, u` | `function f(a, b) locals t, u` |
+
+**The two that have no counterpart.** SM reaches memory through an address on
+the stack, where the course re-points a segment, so there is no course name to
+take. `push-indirect` and `pop-indirect` name them by their addressing mode:
+they are the push and the pop with the address taken from the stack rather
+than named in the command. The alternative considered was `peek`/`poke`, which
+is what the course calls the same operation one layer up, in `Memory.peek` and
+`Memory.poke` — and that is the argument against it. Those are library calls,
+and the distance between a command and a library call is part of what the
+course teaches.
+
+**What the names cost.** `push` and `pop` elsewhere in the language change the
+depth of the stack by exactly one, and these two do not: `push-indirect`
+consumes the address it pushes over, so the depth is unchanged, and
+`pop-indirect` removes two cells. The reference states the depth of both where
+it gives them, because the names alone would mislead.
+
+**And `eq`, `gt`, `lt` are the sharper case.** They carry the course's names
+and not the course's values: the course's leave all-ones or zero, and SM's
+leave the difference, whose truth is read at the most significant bit (C2's
+companion convention, section 5 of the reference). Sharing a name with a
+different behaviour is a real hazard, and the remedy is that the reference
+says so twice — once where it defines them, once in the table that sets the
+two machines side by side.
+
+**What follows for the lexical rules.** The old rule that every space and tab
+was removed before a line was read cannot survive a language of words:
+`push x` would become `pushx`. A line is now a command word and at most one
+operand, separated by spaces. The declaration keeps punctuation of its own, so
+space inside it is still ignored.
+
+**Touches.** The parser and the printer; the emulator's one remaining listing
+and the notation toggle, which is gone; the assembly translator, the bridge in
+both directions and the Jack compiler, all of which emit or read SM text; both
+exercise packages; the standard library; the reference in both languages.
+
+**What is not touched.** `reference/` stays frozen, in the notation it was
+written in. The oracle comparison reads those samples through a converter
+(`asCurrent`), so both translators still see the same program.

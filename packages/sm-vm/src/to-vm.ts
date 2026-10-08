@@ -200,18 +200,18 @@ export function smToVm(files: readonly SmFile[]): ToVmResult {
 
 function operation(command: Extract<Command, { kind: 'op' }>, _n: number): BareVm[] {
   switch (command.op) {
-    case '+': return [{ kind: 'arithmetic', op: 'add' }]
-    case '-': return [{ kind: 'arithmetic', op: 'sub' }]
-    case '&': return [{ kind: 'arithmetic', op: 'and' }]
-    case '|': return [{ kind: 'arithmetic', op: 'or' }]
-    case '(-)': return [{ kind: 'arithmetic', op: 'neg' }]
-    case '~': return [{ kind: 'arithmetic', op: 'not' }]
-    // x - y, which is what SM's `<` leaves, not the VM's all-ones.
-    case '<': return [{ kind: 'arithmetic', op: 'sub' }]
+    case 'add': return [{ kind: 'arithmetic', op: 'add' }]
+    case 'sub': return [{ kind: 'arithmetic', op: 'sub' }]
+    case 'and': return [{ kind: 'arithmetic', op: 'and' }]
+    case 'or': return [{ kind: 'arithmetic', op: 'or' }]
+    case 'neg': return [{ kind: 'arithmetic', op: 'neg' }]
+    case 'not': return [{ kind: 'arithmetic', op: 'not' }]
+    // x - y, which is what SM's `lt` leaves, not the VM's all-ones.
+    case 'lt': return [{ kind: 'arithmetic', op: 'sub' }]
     // y - x.
-    case '>': return [{ kind: 'arithmetic', op: 'sub' }, { kind: 'arithmetic', op: 'neg' }]
+    case 'gt': return [{ kind: 'arithmetic', op: 'sub' }, { kind: 'arithmetic', op: 'neg' }]
     // ~(v | -v), with v = x - y kept in temp because the VM cannot duplicate.
-    case '==': return [
+    case 'eq': return [
       { kind: 'arithmetic', op: 'sub' },
       { kind: 'pop', segment: 'temp', index: SCRATCH },
       { kind: 'push', segment: 'temp', index: SCRATCH },
@@ -220,12 +220,12 @@ function operation(command: Extract<Command, { kind: 'op' }>, _n: number): BareV
       { kind: 'arithmetic', op: 'or' },
       { kind: 'arithmetic', op: 'not' },
     ]
-    case '[]': return [
+    case 'push-indirect': return [
       { kind: 'pop', segment: 'pointer', index: 1 },
       { kind: 'push', segment: 'that', index: 0 },
     ]
     // The address is the deeper operand and the value is on top (C1).
-    case '->[]': return [
+    case 'pop-indirect': return [
       { kind: 'pop', segment: 'temp', index: SCRATCH },
       { kind: 'pop', segment: 'pointer', index: 1 },
       { kind: 'push', segment: 'temp', index: SCRATCH },

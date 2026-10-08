@@ -1,49 +1,49 @@
 // The same control flow, over an array in the heap. Writes the first n
 // Fibonacci numbers from the given address and returns that address.
-!FibonacciSeries.fill(at, n) i
+function FibonacciSeries.fill(at, n) locals i
 	// first[0] = 0
-	<-@at
-	<-0
-	->[]
+	push @at
+	push 0
+	pop-indirect
 	// first[1] = 1
-	<-@at
-	<-1
-	+
-	<-1
-	->[]
-	<-1
-	->@i
-	loop:
+	push @at
+	push 1
+	add
+	push 1
+	pop-indirect
+	push 1
+	pop @i
+	label loop
 		// stop once i+1 > n-1, that is once i > n-2
-		<-@n
-		<-2
-		-
-		<-@i
-		<
-		?-->done
+		push @n
+		push 2
+		sub
+		push @i
+		lt
+		if-goto done
 		// at[i+1] = at[i-1] + at[i]
-		<-@at
-		<-@i
-		+
-		<-1
-		+
-		<-@at
-		<-@i
-		+
-		<-1
-		-
-		[]
-		<-@at
-		<-@i
-		+
-		[]
-		+
-		->[]
-		<-@i
-		<-1
-		+
-		->@i
-		-->loop
-	done:
-	<-@at
-	<--
+		push @at
+		push @i
+		add
+		push 1
+		add
+		push @at
+		push @i
+		add
+		push 1
+		sub
+		push-indirect
+		push @at
+		push @i
+		add
+		push-indirect
+		add
+		pop-indirect
+		push @i
+		push 1
+		add
+		pop @i
+		goto loop
+	label done
+	push @at
+	return

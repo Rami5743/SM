@@ -1,13 +1,13 @@
 // One function: arguments, internal variables, and a return.
 // The script plants the frame, because the bootstrap is the last thing you
 // will write and this test comes before it.
-!SimpleFunction.test(a, b) x, y
-	<-@x
-	<-@y
-	+
-	~
-	<-@a
-	+
-	<-@b
-	-
-	<--
+function SimpleFunction.test(a, b) locals x, y
+	push @x
+	push @y
+	add
+	not
+	push @a
+	add
+	push @b
+	sub
+	return

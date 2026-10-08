@@ -54,8 +54,9 @@ its globals" is something the reader needs.
 * **Never take `unicode-bidi: isolate` off the code selectors in
   `web/src/style.css`.** `direction` alone does nothing to an inline box.
   Without the isolation, a token made only of neutral characters inherits
-  the paragraph's embedding, and in a Hebrew paragraph `[]` paints as `][`,
-  `->[]` as `][>-`, `<--` as `--<`, `(-)` as `)-(` and `0..32767` as
-  `32767..0`. `site.test.ts` measures every character's box on every page
-  and fails if a left-to-right run is painted out of order; one of its cases
-  removes the property and asserts that the page then fails.
+  the paragraph's embedding, and in a Hebrew paragraph `0..32767` paints as
+  `32767..0`, `2048..16383` as `16383..2048`, and `…` runs and operand
+  shapes such as `… x+y` come apart. `site.test.ts` measures every
+  character's box on every page and fails if a left-to-right run is painted
+  out of order; one of its cases removes the property and asserts that the
+  page then fails.

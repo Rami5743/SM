@@ -6,7 +6,7 @@ document wins — including [`INVENTORY.md`](INVENTORY.md), which describes the
 which is a historical record and is not maintained.
 
 Every point at which this reference departs from that material is recorded, with
-its reasoning, in [`CORRECTIONS.md`](CORRECTIONS.md) as **C1**–**C7**. Those
+its reasoning, in [`CORRECTIONS.md`](CORRECTIONS.md) as **C1**–**C9**. Those
 marks appear below where they apply.
 
 SM is a stack machine. It is an alternative to the virtual machine of
@@ -27,33 +27,40 @@ A symbol may not begin with a digit.
 The `.` carries no meaning to the machine. It is a character like any other,
 and a name that contains one is an ordinary name.
 
+A command word is read as a command only as the first word of a line, so a
+variable, a label or a function may be named `add` or `goto`; such a name is
+only ever used in an operand.
+
 ### 1.2 Lines
 
 A program is a sequence of lines. Each line holds at most one command.
 
-**Spaces and tabs are removed from a line before it is read**, wherever they
-appear. So
+A command is a word, sometimes followed by one operand, separated by spaces or
+tabs. **Every command is written in lower case.** Space at either end of the
+line is ignored, so
 
 ```
-? --> loop
-?-->loop
-? - - > loop
+if-goto loop
+    if-goto loop
 ```
 
-are the same command, and so are
+are the same command.
+
+The declaration is the one command with punctuation of its own, and space
+inside it is ignored, so
 
 ```
-<- @ x
-<-@x
+function f(a, b) locals t, u
+function f (a,b) locals t,u
 ```
 
-No command has a whitespace rule of its own.
+are the same declaration.
 
 A `//` begins a comment, which runs to the end of the line. The comment is
 removed before the line is read.
 
-A line that is empty after comments and whitespace are removed is not a
-command, and is skipped.
+A line that is empty once the comment is removed is not a command, and is
+skipped.
 
 ### 1.3 Integers
 
@@ -75,8 +82,8 @@ syntax error** (C5).
 | screen | `16384..24575` |
 | keyboard | `24576` |
 
-SM programs reach the heap, the screen and the keyboard through `[]` and
-`->[]`.
+SM programs reach the heap, the screen and the keyboard through
+`push-indirect` and `pop-indirect`.
 
 **All of RAM is zero at reset.** This matches the course's CPU emulator.
 
@@ -107,10 +114,10 @@ A variable occupies one register. There are two kinds.
 
 **Local variables** belong to one function. They are its arguments and its
 internal variables, all declared with it, and they vanish when it returns. They
-cannot be reached from outside it. They are reached through `@`: `<- @x`.
+cannot be reached from outside it. They are reached through `@`: `push @x`.
 
 **Global variables** belong to the program. Any function may read or write any
-of them. They are reached without `@`: `<- x`.
+of them. They are reached without `@`: `push x`.
 
 **Globals are translated into ordinary assembly variables**, and the
 assembler places them in memory by its own algorithm. Past 240 of them they
@@ -126,7 +133,7 @@ Every function takes some number of arguments from the top of the stack,
 removes them, and pushes exactly one result. It may also have side effects
 elsewhere in RAM.
 
-This holds for most of the built-in commands too. For instance `+` takes two
+This holds for most of the built-in commands too. For instance `add` takes two
 and pushes one.
 
 ### 3.2 Declaring one
@@ -135,18 +142,18 @@ A function declares its arguments and its internal variables together, at its
 head:
 
 ```
-! f(a, b) t, u
+function f(a, b) locals t, u
 ```
 
 declares `f` with arguments `a` and `b` and internal variables `t` and `u`.
-Either list may be empty.
+Either list may be empty, and `locals` is written only when there are some.
 
 ### 3.3 Calling and returning
 
-A call is the function's bare name on a line. The arguments must already be on
-the stack, the first one deepest.
+A call is `call` and the function's name. The arguments must already be on the
+stack, the first one deepest.
 
-`<--` returns. The value to return must be on top of the stack. Everything
+`return` returns. The value to return must be on top of the stack. Everything
 belonging to the frame — the arguments, the internal variables, and anything
 left above them — is removed, and the returned value takes the place of the
 first argument.
@@ -196,10 +203,10 @@ SM has four kinds of name, and they do not collide with one another (C7):
 
 | kind | scope | how it is written where it is used |
 |---|---|---|
-| local — argument or internal | one function | `<- @x`, `-> @x` |
-| global | the program | `<- x`, `-> x` |
-| label | one function | `L:`, `--> L`, `?--> L` |
-| function | the program | `f` |
+| local — argument or internal | one function | `push @x`, `pop @x` |
+| global | the program | `push x`, `pop x` |
+| label | one function | `label L`, `goto L`, `if-goto L` |
+| function | the program | `call f` |
 
 Names of different kinds may share a name, and so may the names of variables
 and of labels in different functions.
@@ -218,6 +225,9 @@ clear; the remaining fifteen bits do not bear on its truth value.
 
 ## 6. The commands
 
+A command that has a counterpart among the course's VM commands is spelled the
+way the course spells it (C9).
+
 In the tables below, three dots mean "and so on". The names `x`, `f`, `loop` stand for any symbol,
 and `5` for any integer constant.
 
@@ -225,13 +235,14 @@ and `5` for any integer constant.
 
 | command | effect |
 |---|---|
-| `<- 5` | push the constant `5` onto the stack |
-| `<- x` | push the global variable `x` onto the stack |
-| `<- @x` | push the local variable `x` onto the stack |
-| `-> x` | pop off the stack into the global variable `x` |
-| `-> @x` | pop off the stack into the local variable `x` |
+| `push 5` | push the constant `5` onto the stack |
+| `push x` | push the global variable `x` onto the stack |
+| `push @x` | push the local variable `x` onto the stack |
+| `pop x` | pop off the stack into the global variable `x` |
+| `pop @x` | pop off the stack into the local variable `x` |
 
-A bare `<-` and a bare `->` are syntax errors.
+`push` and `pop` each take exactly one operand, and `pop` takes a variable
+rather than a constant.
 
 ### 6.2 Arithmetic and logic
 
@@ -247,28 +258,35 @@ x > y
 
 | command | stack before → after | meaning |
 |---|---|---|
-| `+` | `… x y` → `… x+y` | sum |
-| `-` | `… x y` → `… x-y` | difference |
-| `(-)` | `… x` → `… -x` | arithmetic negation |
-| `~` | `… x` → `… !x` | bitwise negation (and so logical not) |
-| `&` | `… x y` → `… x&y` | bitwise and (and so logical and) |
-| `\|` | `… x y` → `… x\|y` | bitwise or (and so logical or) |
-| `==` | `… x y` → `… b` | `b` is true exactly when `x = y` |
-| `>` | `… x y` → `… b` | `b` is true exactly when `x > y` |
-| `<` | `… x y` → `… b` | `b` is true exactly when `x < y` |
+| `add` | `… x y` → `… x+y` | sum |
+| `sub` | `… x y` → `… x-y` | difference |
+| `neg` | `… x` → `… -x` | arithmetic negation |
+| `not` | `… x` → `… !x` | bitwise negation (and so logical not) |
+| `and` | `… x y` → `… x&y` | bitwise and (and so logical and) |
+| `or` | `… x y` → `… x\|y` | bitwise or (and so logical or) |
+| `eq` | `… x y` → `… b` | `b` is true exactly when `x = y` |
+| `gt` | `… x y` → `… b` | `b` is true exactly when `x > y` |
+| `lt` | `… x y` → `… b` | `b` is true exactly when `x < y` |
 
-The equality command is `==`. A single `=` is a syntax error (C3).
+The three comparisons leave a value whose truth is read at the most
+significant bit alone, as section 5 has it, and nowhere else: `lt` leaves
+`x - y` and `gt` leaves `y - x`, so the remaining bits are whatever the
+subtraction left there.
 
 ### 6.3 Memory
 
 | command | stack before → after | effect |
 |---|---|---|
-| `[]` | `… addr` → `… RAM[addr]` | read the register |
-| `->[]` | `… addr value` → `…` | `RAM[addr] := value` |
+| `push-indirect` | `… addr` → `… RAM[addr]` | read the register |
+| `pop-indirect` | `… addr value` → `…` | `RAM[addr] := value` |
 
 **The address is the deeper operand and the value is on top** (C1) — the same
 rule as every other two-operand command, the address being the left-hand side
 of an assignment.
+
+Both take their address from the stack rather than from the command, so
+`push-indirect` leaves the stack exactly as deep as it found it and
+`pop-indirect` removes two cells.
 
 These two take the place of the course's `pointer`, `this` and `that`
 segments. A pointer is an ordinary value on the stack.
@@ -277,12 +295,12 @@ segments. A pointer is an ordinary value on the stack.
 
 | command | effect |
 |---|---|
-| `f` | call the function `f` |
-| `loop:` | declare the label `loop` |
-| `--> loop` | jump to `loop` |
-| `?--> loop` | pop; jump to `loop` if the value is true |
-| `! f(x1, x2, ...) y1, y2, ...` | declare `f` |
-| `<--` | return |
+| `call f` | call the function `f` |
+| `label loop` | declare the label `loop` |
+| `goto loop` | jump to `loop` |
+| `if-goto loop` | pop; jump to `loop` if the value is true |
+| `function f(x1, x2, ...) locals y1, y2, ...` | declare `f` |
+| `return` | return |
 
 ---
 
@@ -301,8 +319,9 @@ construction, and a translator may assume so.
 | a jump to a label the function does not declare | C7 |
 | two functions with the same name | C7 |
 | the same label twice in one function | C7 |
-| `<- @x` or `-> @x` where the function has no local `x` | C7 |
-| a leading sign on a constant, a bare `<-`, a bare `->`, a single `=` | C3, C5 |
+| `push @x` or `pop @x` where the function has no local `x` | C7 |
+| a line that is no command, or a command given the wrong number of operands | C3 |
+| a leading sign on a constant | C5 |
 
 The last of the name checks is one SM can make earlier than the course can.
 Its locals are numbered, so an out-of-range one is a runtime fault; ours are
@@ -313,7 +332,7 @@ named, so it is simply a name that does not exist.
 | | |
 |---|---|
 | a push with no free cell left | the stack has overflowed into the heap |
-| control reaching the end of a function without `<--` | C6 |
+| control reaching the end of a function without `return` | C6 |
 
 Both stop the program and name the function. Both are what the course's VM
 emulator does.
@@ -340,7 +359,7 @@ Execution begins with the bootstrap:
 
 ```
 SP = 256
-Sys.init
+call Sys.init
 ```
 
 The call to `Sys.init` is an ordinary **call**.
@@ -352,31 +371,23 @@ Only functions reachable from `Sys.init` ever run.
 
 ---
 
-## 9. Writing it in words
-
-The mnemonics above are the language and the only accepted input (C4). The
-emulator will also *render* any program with the structural commands spelled
-as words — push, pop, goto, if-goto, function, return, label.
-
-The arithmetic and logical operators are symbolic in every rendering and are
-never spelled as words.
-
----
-
-## 10. SM and the course's VM, side by side
+## 9. SM and the course's VM, side by side
 
 A program can cross between the two machines, and `@sm/vm` translates it in
 either direction. What follows is where the two differ, which is where a
 translation has something to do. Nothing here is part of SM.
 
+Many commands are spelled the same way in both. Where a row below gives the
+same word on both sides, the word is shared and the behaviour is not.
+
 | | SM | the course's VM |
 |---|---|---|
 | the stack pointer | the same in both: `SP` names the first free cell, and an empty stack based at 256 is `SP = 256` | |
 | the frame | one pointer: arguments, the saved `LCL`, the return address, internal variables | five: the return address and the saved `LCL`, `ARG`, `THIS`, `THAT` |
-| where the arity is written | at the declaration, `!f(a,b)` | at the call, `call f 2` |
-| a local | named, `<- @count` | numbered, `push local 3` |
-| indirection | `[]` and `->[]` over an address on the stack | `pointer`, `this`, `that`, re-pointed before each use |
+| where the arity is written | at the declaration, `function f(a, b)` | at the call, `call f 2` |
+| a local | named, `push @count` | numbered, `push local 3` |
+| indirection | `push-indirect` and `pop-indirect` over an address on the stack | `pointer`, `this`, `that`, re-pointed before each use |
 | a boolean | the most significant bit, and nothing else | all ones for true, zero for false |
-| `<` | `x - y`, so the whole value is the difference | `lt`, so the whole value is all-ones or zero |
-| the conditional jump | `?-->` branches when the most significant bit is set | `if-goto` branches when the value is not zero |
+| `lt` | the whole value is `x - y` | the whole value is all-ones or zero |
+| `if-goto` | branches when the most significant bit is set | branches when the value is not zero |
 | shared storage | globals, named, reachable from anywhere | `static i`, per file, reachable only within it |

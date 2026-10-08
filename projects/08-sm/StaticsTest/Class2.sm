@@ -1,13 +1,13 @@
-!Class2.set(a, b)
-	<-@a
-	->Class2.x
-	<-@b
-	->Class2.y
-	<-0
-	<--
+function Class2.set(a, b)
+	push @a
+	pop Class2.x
+	push @b
+	pop Class2.y
+	push 0
+	return
 
-!Class2.get()
-	<-Class2.x
-	<-Class2.y
-	-
-	<--
+function Class2.get()
+	push Class2.x
+	push Class2.y
+	sub
+	return

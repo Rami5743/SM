@@ -1,97 +1,97 @@
-!Keyboard.init()
-<-0
-<--
-!Keyboard.keyPressed()
-<-24576
-Memory.peek
-<--
-!Keyboard.readChar()c
-<-0
-Output.printChar
-->Sys.discard
-while.0:
-Keyboard.keyPressed
-<-0
-==
-~
-?-->endwhile.0
--->while.0
-endwhile.0:
-Keyboard.keyPressed
-->@c
-while.1:
-Keyboard.keyPressed
-<-0
-==
-~
-~
-?-->endwhile.1
--->while.1
-endwhile.1:
-Output.backSpace
-->Sys.discard
-<-@c
-Output.printChar
-->Sys.discard
-<-@c
-<--
-!Keyboard.readLine(message)line,c
-<-@message
-Output.printString
-->Sys.discard
-<-80
-String.new
-->@line
-Keyboard.readChar
-->@c
-while.2:
-<-@c
-<-128
-==
-~
-~
-?-->endwhile.2
-<-@c
-<-129
-==
-~
-?-->else.3
-<-@line
-String.length
-<-0
->
-~
-?-->else.4
-<-@line
-String.eraseLastChar
-->Sys.discard
--->endif.4
-else.4:
-endif.4:
--->endif.3
-else.3:
-<-@line
-<-@c
-String.appendChar
-->@line
-endif.3:
-Keyboard.readChar
-->@c
--->while.2
-endwhile.2:
-Output.println
-->Sys.discard
-<-@line
-<--
-!Keyboard.readInt(message)line,value
-<-@message
-Keyboard.readLine
-->@line
-<-@line
-String.intValue
-->@value
-<-@line
-String.dispose
-->Sys.discard
-<-@value
-<--
+function Keyboard.init()
+push 0
+return
+function Keyboard.keyPressed()
+push 24576
+call Memory.peek
+return
+function Keyboard.readChar() locals c
+push 0
+call Output.printChar
+pop Sys.discard
+label while.0
+call Keyboard.keyPressed
+push 0
+eq
+not
+if-goto endwhile.0
+goto while.0
+label endwhile.0
+call Keyboard.keyPressed
+pop @c
+label while.1
+call Keyboard.keyPressed
+push 0
+eq
+not
+not
+if-goto endwhile.1
+goto while.1
+label endwhile.1
+call Output.backSpace
+pop Sys.discard
+push @c
+call Output.printChar
+pop Sys.discard
+push @c
+return
+function Keyboard.readLine(message) locals line, c
+push @message
+call Output.printString
+pop Sys.discard
+push 80
+call String.new
+pop @line
+call Keyboard.readChar
+pop @c
+label while.2
+push @c
+push 128
+eq
+not
+not
+if-goto endwhile.2
+push @c
+push 129
+eq
+not
+if-goto else.3
+push @line
+call String.length
+push 0
+gt
+not
+if-goto else.4
+push @line
+call String.eraseLastChar
+pop Sys.discard
+goto endif.4
+label else.4
+label endif.4
+goto endif.3
+label else.3
+push @line
+push @c
+call String.appendChar
+pop @line
+label endif.3
+call Keyboard.readChar
+pop @c
+goto while.2
+label endwhile.2
+call Output.println
+pop Sys.discard
+push @line
+return
+function Keyboard.readInt(message) locals line, value
+push @message
+call Keyboard.readLine
+pop @line
+push @line
+call String.intValue
+pop @value
+push @line
+call String.dispose
+pop Sys.discard
+push @value
+return

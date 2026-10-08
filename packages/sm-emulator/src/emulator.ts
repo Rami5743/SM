@@ -285,10 +285,10 @@ export class Emulator {
 
   private operate(op: string): void {
     switch (op) {
-      case '(-)': this.push(toWord(-this.pop())); break
-      case '~': this.push(toWord(~this.pop())); break
-      case '[]': this.push(this.memory.get(this.address(this.pop()))); break
-      case '->[]': {
+      case 'neg': this.push(toWord(-this.pop())); break
+      case 'not': this.push(toWord(~this.pop())); break
+      case 'push-indirect': this.push(this.memory.get(this.address(this.pop()))); break
+      case 'pop-indirect': {
         // The value is on top and the address below it (CORRECTIONS C1).
         const value = this.pop()
         const address = this.pop()
@@ -432,19 +432,19 @@ const RETURN_TO_BOOTSTRAP = -1
 
 /**
  * The two-operand commands, reproducing the assembly's exact results rather
- * than only their truth bits. `<` is a subtraction, `>` the reverse one, and
- * `==` is `!(v | -v)` over the difference — which is how the supplied
+ * than only their truth bits. `lt` is a subtraction, `gt` the reverse one,
+ * and `eq` is `!(v | -v)` over the difference — which is how the supplied
  * translator computes them without a label or a jump.
  */
 export function binary(op: string, x: number, y: number): number {
   switch (op) {
-    case '+': return toWord(x + y)
-    case '-': return toWord(x - y)
-    case '&': return toWord(x & y)
-    case '|': return toWord(x | y)
-    case '<': return toWord(x - y)
-    case '>': return toWord(y - x)
-    case '==': {
+    case 'add': return toWord(x + y)
+    case 'sub': return toWord(x - y)
+    case 'and': return toWord(x & y)
+    case 'or': return toWord(x | y)
+    case 'lt': return toWord(x - y)
+    case 'gt': return toWord(y - x)
+    case 'eq': {
       const v = toWord(x - y)
       return toWord(~(v | toWord(-v)))
     }

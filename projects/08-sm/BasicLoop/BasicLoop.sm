@@ -1,25 +1,25 @@
 // A label, an unconditional jump and a conditional one.
 // Computes 1 + 2 + ... + n and returns it.
-!BasicLoop.sum(n) total, i
-	<-0
-	->@total
-	<-1
-	->@i
-	loop:
+function BasicLoop.sum(n) locals total, i
+	push 0
+	pop @total
+	push 1
+	pop @i
+	label loop
 		// stop once i > n
-		<-@n
-		<-@i
-		<
-		?-->done
-		<-@total
-		<-@i
-		+
-		->@total
-		<-@i
-		<-1
-		+
-		->@i
-		-->loop
-	done:
-	<-@total
-	<--
+		push @n
+		push @i
+		lt
+		if-goto done
+		push @total
+		push @i
+		add
+		pop @total
+		push @i
+		push 1
+		add
+		pop @i
+		goto loop
+	label done
+	push @total
+	return

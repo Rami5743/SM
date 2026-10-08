@@ -198,22 +198,22 @@ function offset(offsets: ReadonlyMap<string, number>, name: string): number {
  */
 function operator(op: string): string[] {
   switch (op) {
-    case '+': return [...POP_D, ...DOWN, 'M=D+M']
-    case '-': return [...POP_D, ...DOWN, 'M=M-D']
-    case '&': return [...POP_D, ...DOWN, 'M=D&M']
-    case '|': return [...POP_D, ...DOWN, 'M=D|M']
-    case '(-)': return [...AT_TOP, 'M=-M']
-    case '~': return [...AT_TOP, 'M=!M']
+    case 'add': return [...POP_D, ...DOWN, 'M=D+M']
+    case 'sub': return [...POP_D, ...DOWN, 'M=M-D']
+    case 'and': return [...POP_D, ...DOWN, 'M=D&M']
+    case 'or': return [...POP_D, ...DOWN, 'M=D|M']
+    case 'neg': return [...AT_TOP, 'M=-M']
+    case 'not': return [...AT_TOP, 'M=!M']
     // x < y is the sign of x-y; x > y the sign of y-x.
-    case '<': return [...POP_D, ...DOWN, 'M=M-D']
-    case '>': return [...POP_D, ...DOWN, 'M=D-M']
+    case 'lt': return [...POP_D, ...DOWN, 'M=M-D']
+    case 'gt': return [...POP_D, ...DOWN, 'M=D-M']
     // v | -v has the top bit set for every v but zero, so negating it leaves
     // a true exactly when the two were equal.
-    case '==': return [...POP_D, ...DOWN, 'M=M-D', 'D=-M', 'M=M|D', 'M=!M']
-    case '[]': return [...AT_TOP, 'A=M', 'D=M', ...AT_TOP, 'M=D']
+    case 'eq': return [...POP_D, ...DOWN, 'M=M-D', 'D=-M', 'M=M|D', 'M=!M']
+    case 'push-indirect': return [...AT_TOP, 'A=M', 'D=M', ...AT_TOP, 'M=D']
     // The value is on top and the address below it (C1), so the address is
     // in the cell the pop leaves A one above.
-    case '->[]': return [...POP_D, ...DOWN, 'A=M', 'M=D', '@SP', 'M=M-1']
+    case 'pop-indirect': return [...POP_D, ...DOWN, 'A=M', 'M=D', '@SP', 'M=M-1']
     default: throw new Error(`unknown operator ${op}`)
   }
 }

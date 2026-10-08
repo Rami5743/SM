@@ -13,11 +13,11 @@ function lint(...sources: string[]) {
 
 describe('the depth lint', () => {
   it('passes a balanced function', () => {
-    expect(lint('!f(a)\n<-@a\n<-1\n+\n<--')).toEqual([])
+    expect(lint('function f(a)\npush @a\npush 1\nadd\nreturn')).toEqual([])
   })
 
   it('passes a balanced loop', () => {
-    expect(lint('!f(a)t\n<-0\n->@t\nL:\n<-@t\n<-@a\n<\n~\n?-->done\n<-@t\n<-1\n+\n->@t\n-->L\ndone:\n<-@t\n<--'))
+    expect(lint('function f(a) locals t\npush 0\npop @t\nlabel L\npush @t\npush @a\nlt\nnot\nif-goto done\npush @t\npush 1\nadd\npop @t\ngoto L\nlabel done\npush @t\nreturn'))
       .toEqual([])
   })
 
@@ -25,20 +25,20 @@ describe('the depth lint', () => {
   // loop. Legal SM, and invisible until the stack walks into the heap.
   it('catches a loop that grows the stack', () => {
     const problems = lint(
-      '!side()\n<-0\n<--',
-      '!f()\nL:\nside\n-->L\n',
+      'function side()\npush 0\nreturn',
+      'function f()\nlabel L\ncall side\ngoto L\n',
     )
     expect(problems[0]).toMatch(/different stack depths, 0 and 1/)
   })
 
   // The defect the supplied Jack compiler really has.
   it('catches a call that pushes an argument the function does not take', () => {
-    const problems = lint('!g(n)\n<-@n\n<--', '!f(n)\n<-@n\n<-@n\ng\n<--')
+    const problems = lint('function g(n)\npush @n\nreturn', 'function f(n)\npush @n\npush @n\ncall g\nreturn')
     expect(problems[0]).toMatch(/wants exactly one value above the locals, and finds 2/)
   })
 
   it('catches taking more from the stack than is there', () => {
-    expect(lint('!f()\n+\n<--')[0]).toMatch(/takes more from the stack/)
+    expect(lint('function f()\nadd\nreturn')[0]).toMatch(/takes more from the stack/)
   })
 })
 

@@ -21,7 +21,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parse, resolve, type SmFile } from '@sm/core'
+import { asCurrent, parse, resolve, type SmFile } from '@sm/core'
 import { Emulator } from '@sm/emulator'
 import { translate } from './translate.js'
 
@@ -40,7 +40,11 @@ function have(command: string, args: string[]): boolean {
 const havePython = have('python3', ['--version'])
 const haveJava = have('java', ['-version']) && existsSync(join(COURSE_TOOLS, 'Assembler.sh'))
 
-/** Instructions only: no comments, no blank lines. */
+/**
+ * The frozen samples are written in the notation the prototype had, which is
+ * the only notation it can read, so the prototype is given them as they are
+ * and our parser is given a conversion. `asCurrent` does nothing else.
+ */
 function instructions(asm: string): string[] {
   return asm
     .split('\n')
@@ -50,7 +54,7 @@ function instructions(asm: string): string[] {
 
 function load(dir: string, names: readonly string[]): SmFile[] {
   const files = names.map((n) => {
-    const r = parse(n, readFileSync(join(dir, n), 'utf8'))
+    const r = parse(n, asCurrent(readFileSync(join(dir, n), 'utf8')))
     expect(r.diagnostics.map((d) => d.message)).toEqual([])
     return r.file
   })
@@ -197,14 +201,17 @@ describe('through the course\'s own tools', () => {
  * loop that never ends: measured, the 15 was nowhere.
  */
 describe('a fragment', () => {
-  const FRAGMENT = '<-7\n<-8\n+\n'
+  // The oracle reads the prototype's notation only, so the same program is
+  // kept in both: theirs goes to disk, ours goes through the parser.
+  const THEIRS = '<-7\n<-8\n+\n'
+  const FRAGMENT = asCurrent(THEIRS)
 
   it.skipIf(!havePython)('agrees with the oracle instruction for instruction', () => {
     const work = mkdtempSync(join(tmpdir(), 'sm-frag-'))
     try {
       const src = join(work, 'p')
       execFileSync('mkdir', ['-p', src])
-      writeFileSync(join(src, 'T.sm'), FRAGMENT)
+      writeFileSync(join(src, 'T.sm'), THEIRS)
       execFileSync('python3', [join(root, 'oracle/run.py'), 'sm', src], { stdio: 'pipe' })
       const theirs = instructions(readFileSync(`${src}.asm`, 'utf8'))
 
@@ -270,16 +277,16 @@ describe('our emulator and theirs agree', () => {
   // back — so that globals are exercised without any cell of theirs being
   // named.
   const FRAGMENT = [
-    '<-3000', '<-77', '->[]', '<-3000', '[]',   // 77
-    '<-5', '<-5', '==',                          // true
-    '<-3', '<-5', '<',                           // true
-    '<-3', '<-5', '>',                           // false
-    '<-7', '(-)',                                // -7
-    '<-20', '<-22', '+',                         // 42
-    '<-12', '<-10', '&',                         // 8
-    '<-12', '<-10', '|',                         // 14
-    '<-1', '~',                                  // -2
-    '<-99', '->g', '<-g',                        // 99, through a global
+    'push 3000', 'push 77', 'pop-indirect', 'push 3000', 'push-indirect',   // 77
+    'push 5', 'push 5', 'eq',                          // true
+    'push 3', 'push 5', 'lt',                           // true
+    'push 3', 'push 5', 'gt',                           // false
+    'push 7', 'neg',                                // -7
+    'push 20', 'push 22', 'add',                         // 42
+    'push 12', 'push 10', 'and',                         // 8
+    'push 12', 'push 10', 'or',                         // 14
+    'push 1', 'not',                                  // -2
+    'push 99', 'pop g', 'push g',                        // 99, through a global
   ].join('\n')
 
   it.skipIf(!haveJava)('on the stack, after arithmetic of every kind', () => {

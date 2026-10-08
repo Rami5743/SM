@@ -8,9 +8,10 @@
  * `return`. The supplied prototype performs neither, and its own sample trips
  * both.
  *
- * Where the design shows: a field is reached with `[]` and `->[]` over an
- * ordinary address on the stack, so there is no `this` segment to point and
- * no `that` to re-point. `a[i] = b[j]` needs no temporary.
+ * Where the design shows: a field is reached with `push-indirect` and
+ * `pop-indirect` over an ordinary address on the stack, so there is no `this`
+ * segment to point and no `that` to re-point. `a[i] = b[j]` needs no
+ * temporary.
  */
 import type { Call, ClassDec, Expression, Statement, Subroutine } from './ast.js'
 import { fields, statics } from './ast.js'
@@ -121,10 +122,11 @@ class Compiler {
       this.warnings.push(`In ${this.file} (line ${dead.line}): In subroutine ${sub.name}: Warning: Unreachable code`)
     }
 
-    this.emit(`!${this.cls.name}.${sub.name}(${args.join(',')})${vars.join(',')}`)
+    const locals = vars.length > 0 ? ` locals ${vars.join(', ')}` : ''
+    this.emit(`function ${this.cls.name}.${sub.name}(${args.join(', ')})${locals}`)
     if (sub.kind === 'constructor') {
       // Memory.alloc returns the base address; it is an ordinary value.
-      this.emit(`<-${this.fieldCount}`, 'Memory.alloc', '->@this')
+      this.emit(`push ${this.fieldCount}`, 'call Memory.alloc', 'pop @this')
     }
     this.statements(sub.body)
   }
@@ -142,12 +144,12 @@ class Compiler {
         this.call(s.call)
         // Every SM function returns a value; a statement call must remove it.
         // Where it goes is this compiler's own business (Q4).
-        this.emit(`->${DISCARD}`)
+        this.emit(`pop ${DISCARD}`)
         return
       case 'return':
-        if (s.value === undefined) this.emit('<-0')
+        if (s.value === undefined) this.emit('push 0')
         else this.expression(s.value)
-        this.emit('<--')
+        this.emit('return')
         return
     }
   }
@@ -163,17 +165,17 @@ class Compiler {
     if (s.index !== undefined) {
       this.read(s.name, symbol, s.line)
       this.expression(s.index)
-      this.emit('+')
+      this.emit('add')
       this.expression(s.value)
-      this.emit('->[]')
+      this.emit('pop-indirect')
       return
     }
 
     if (symbol.scope === 'field') {
       this.pushThis(s.line)
-      this.emit(`<-${symbol.index}`, '+')
+      this.emit(`push ${symbol.index}`, 'add')
       this.expression(s.value)
-      this.emit('->[]')
+      this.emit('pop-indirect')
       return
     }
     this.expression(s.value)
@@ -183,37 +185,39 @@ class Compiler {
   private if_(s: Extract<Statement, { kind: 'if' }>): void {
     const n = this.labels++
     this.expression(s.cond)
-    this.emit('~', `?-->else.${n}`)
+    this.emit('not', `if-goto else.${n}`)
     this.statements(s.then)
-    this.emit(`-->endif.${n}`, `else.${n}:`)
+    this.emit(`goto endif.${n}`, `label else.${n}`)
     if (s.else !== undefined) this.statements(s.else)
-    this.emit(`endif.${n}:`)
+    this.emit(`label endif.${n}`)
   }
 
   private while_(s: Extract<Statement, { kind: 'while' }>): void {
     const n = this.labels++
-    this.emit(`while.${n}:`)
+    this.emit(`label while.${n}`)
     this.expression(s.cond)
-    this.emit('~', `?-->endwhile.${n}`)
+    this.emit('not', `if-goto endwhile.${n}`)
     this.statements(s.body)
-    this.emit(`-->while.${n}`, `endwhile.${n}:`)
+    this.emit(`goto while.${n}`, `label endwhile.${n}`)
   }
 
   private expression(e: Expression): void {
     switch (e.kind) {
-      case 'int': this.emit(`<-${e.value}`); return
+      case 'int': this.emit(`push ${e.value}`); return
       case 'keyword':
         switch (e.value) {
           // True is every bit set, which has the significant bit set.
-          case 'true': this.emit('<-1', '(-)'); return
+          case 'true': this.emit('push 1', 'neg'); return
           case 'false':
-          case 'null': this.emit('<-0'); return
+          case 'null': this.emit('push 0'); return
           case 'this': this.pushThis(e.line); return
         }
         return
       case 'string': {
-        this.emit(`<-${e.value.length}`, 'String.new')
-        for (const ch of e.value) this.emit(`<-${ch.codePointAt(0)}`, 'String.appendChar')
+        this.emit(`push ${e.value.length}`, 'call String.new')
+        for (const ch of e.value) {
+          this.emit(`push ${ch.codePointAt(0)}`, 'call String.appendChar')
+        }
         return
       }
       case 'var': {
@@ -227,14 +231,14 @@ class Compiler {
         if (symbol === undefined) this.fail(e.line, `${e.name} is not declared`)
         this.read(e.name, symbol, e.line)
         this.expression(e.index)
-        this.emit('+', '[]')
+        this.emit('add', 'push-indirect')
         return
       }
       case 'call': this.call(e.call); return
       case 'paren': this.expression(e.inner); return
       case 'unary':
         this.expression(e.operand)
-        this.emit(e.op === '-' ? '(-)' : '~')
+        this.emit(e.op === '-' ? 'neg' : 'not')
         return
       case 'binary':
         this.expression(e.left)
@@ -247,22 +251,22 @@ class Compiler {
   /** Push the value of a variable. A field is a peek through `this`. */
   private read(name: string, symbol: Symbol_, line: number): void {
     switch (symbol.scope) {
-      case 'static': this.emit(`<-${this.cls.name}.${name}`); return
+      case 'static': this.emit(`push ${this.cls.name}.${name}`); return
       case 'arg':
-      case 'var': this.emit(`<-@${name}`); return
+      case 'var': this.emit(`push @${name}`); return
       case 'field':
         this.pushThis(line)
-        this.emit(`<-${symbol.index}`, '+', '[]')
+        this.emit(`push ${symbol.index}`, 'add', 'push-indirect')
         return
     }
   }
 
   private write(name: string, symbol: Symbol_): string {
     switch (symbol.scope) {
-      case 'static': return `->${this.cls.name}.${name}`
+      case 'static': return `pop ${this.cls.name}.${name}`
       case 'arg':
-      case 'var': return `->@${name}`
-      case 'field': throw new Error('a field is written with ->[], not a pop')
+      case 'var': return `pop @${name}`
+      case 'field': throw new Error('a field is written with pop-indirect, not a pop')
     }
   }
 
@@ -270,14 +274,14 @@ class Compiler {
     if (!this.locals.has('this')) {
       this.fail(line, `In subroutine ${this.current.name}: there is no 'this' in a function`)
     }
-    this.emit('<-@this')
+    this.emit('push @this')
   }
 
   private call(c: Call): void {
     if (c.target === undefined) {
       // C6, the other half: an unqualified call is a method call, so it has
       // to pass a receiver — which a `function` does not have. The supplied
-      // compiler emits `<-@this` regardless, and so compiles its own sample
+      // compiler pushes the receiver regardless, and so compiles its own sample
       // into a call that pushes an argument the function does not take.
       if (this.current.kind === 'function' || this.current.kind === 'constructor') {
         if (this.current.kind === 'function') {
@@ -286,7 +290,7 @@ class Compiler {
       }
       this.pushThis(c.line)
       for (const a of c.args) this.expression(a)
-      this.emit(`${this.cls.name}.${c.name}`)
+      this.emit(`call ${this.cls.name}.${c.name}`)
       return
     }
 
@@ -295,26 +299,26 @@ class Compiler {
       // A method on an object held in a variable.
       this.read(c.target, symbol, c.line)
       for (const a of c.args) this.expression(a)
-      this.emit(`${symbol.type}.${c.name}`)
+      this.emit(`call ${symbol.type}.${c.name}`)
       return
     }
     // A function or constructor of a named class.
     for (const a of c.args) this.expression(a)
-    this.emit(`${c.target}.${c.name}`)
+    this.emit(`call ${c.target}.${c.name}`)
   }
 }
 
 function binary(op: string, line: number, file: string): string[] {
   switch (op) {
-    case '+': return ['+']
-    case '-': return ['-']
-    case '&': return ['&']
-    case '|': return ['|']
-    case '<': return ['<']
-    case '>': return ['>']
-    case '=': return ['==']
-    case '*': return ['Math.multiply']
-    case '/': return ['Math.divide']
+    case '+': return ['add']
+    case '-': return ['sub']
+    case '&': return ['and']
+    case '|': return ['or']
+    case '<': return ['lt']
+    case '>': return ['gt']
+    case '=': return ['eq']
+    case '*': return ['call Math.multiply']
+    case '/': return ['call Math.divide']
     default: throw new JackError(file, line, `${op} is not an operator`)
   }
 }

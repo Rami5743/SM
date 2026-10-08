@@ -34,9 +34,6 @@ export interface Strings {
   readonly ram: string
   readonly source: string
   readonly program: string
-  readonly notation: string
-  readonly mnemonics: string
-  readonly words: string
   readonly halted: string
   readonly steps: string
   readonly examples: string
@@ -101,9 +98,6 @@ const he: Strings = {
   ram: 'זיכרון',
   source: 'קוד מקור',
   program: 'הקוד לאחר ניקוי',
-  notation: 'סימון',
-  mnemonics: 'מנמוניקות',
-  words: 'מילים',
   halted: 'נעצר',
   steps: 'צעדים',
   examples: 'דוגמאות',
@@ -162,9 +156,6 @@ const en: Strings = {
   ram: 'RAM',
   source: 'Source',
   program: 'The code after cleaning',
-  notation: 'Notation',
-  mnemonics: 'Mnemonics',
-  words: 'Words',
   halted: 'halted',
   steps: 'steps',
   examples: 'Examples',

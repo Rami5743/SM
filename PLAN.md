@@ -281,8 +281,8 @@ records each with its reasoning; seven answers changed something and are
 | **C1** | `->[]` follows the implementations — address below, value on top — and the prose is corrected to match |
 | **C2** | `SP` names the first free cell, as the course's VM has it, and the bootstrap sets `SP = 256` |
 | **C3** | the equality mnemonic is `==` and `=` is an error, which requires that every called name resolve to a declared function — without that, the parser's catch-all rule turns any typo into a jump to a garbage address |
-| **C4** | the mnemonics are the language; the word forms are a rendering, with the arithmetic and logical operators symbolic in every view |
-| **C5** | constants are non-negative as in the course, negation is `(-)`, and an empty operand is an error rather than something the catch-all rule swallows |
+| **C4** | the mnemonics are the language; the word forms are a rendering, with the arithmetic and logical operators symbolic in every view — superseded by **C9** |
+| **C5** | constants are non-negative as in the course, a negative value is a push and a negation, and an empty operand is an error rather than something the catch-all rule swallows |
 | **C6** | the course's two missing-return checks — static in our Jack compiler, dynamic in our emulator — with its flow analysis written out in full |
 | **C7** | function names are global and must be distinct, a rule the document lacked, with five name-resolution diagnostics: the three the course performs, a label declared twice in one function, which it does not, and a reference to an undeclared local, which SM catches statically where the course's numbered locals force a runtime fault |
 
@@ -732,6 +732,29 @@ is how a student sees that the two machines are the same machine, and it is the
 reason M8 earns a place on the site and not only in the test suite. A
 difference table between SM and the course VM. Continuous integration running
 every `.tst` on every push.
+
+### M10 — The commands become words *(medium)*
+
+The comparison C4 set up is settled: the mnemonics are gone and the language
+is words, spelled as the course spells them where a command corresponds.
+`C9` records the decision, the spellings, and what the two names that have no
+counterpart cost.
+
+What this touched: the parser and the printer, which lost their second
+notation; the emulator, which lost its toggle; the assembly translator, the
+bridge both ways and the Jack compiler, all of which emit or read SM text;
+both exercise packages; the standard library, regenerated; the reference in
+both languages; and every test that carried a program in its text.
+
+What it did not touch: behaviour. Every compare file is unchanged, the
+eleven course programs still satisfy their own, and the bridge still agrees
+with the course's VM emulator cell for cell.
+
+The one new piece of machinery is `asCurrent` in `sm-core`: `reference/` is
+frozen in the notation the prototype had and the prototype can read no other,
+so the oracle comparison feeds the samples to the prototype as they are and
+to our parser through the converter. Without it that comparison would have
+had to go.
 
 ## 6. Order of work
 

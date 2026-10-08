@@ -14,7 +14,7 @@ import { zip } from './zip.js'
 describe('zip', () => {
   it('writes an archive Python can open, names, contents and all', async () => {
     const files = {
-      'Main.sm': '!Sys.init()\n<-7\n<--\n',
+      'Main.sm': 'function Sys.init()\npush 7\nreturn\n',
       'nested/Other.sm': '!f(a)\n<-@a\n<--\n',
       // Hebrew, to be sure the sizes are the bytes and not the characters.
       'readme.txt': 'שלום\n',

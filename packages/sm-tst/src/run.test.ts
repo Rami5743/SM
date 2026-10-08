@@ -56,7 +56,7 @@ describe('parseScript', () => {
 
 describe('runScript', () => {
   it('runs a fragment and reports the cells asked for', () => {
-    const h = host({ 'T.sm': '<-7\n<-8\n+' })
+    const h = host({ 'T.sm': 'push 7\npush 8\nadd' })
     const r = runScript(
       'load,\noutput-file T.out,\noutput-list RAM[0]%D1.6.1 RAM[256]%D1.6.1;\nrepeat 20 { smstep; }\noutput;',
       h,
@@ -67,8 +67,8 @@ describe('runScript', () => {
 
   it('runs a whole program', () => {
     const h = host({
-      'Sys.sm': '!Sys.init()\n<-20\n<-22\nadd2\n->answer\n<-0\n<--',
-      'A.sm': '!add2(a,b)\n<-@a\n<-@b\n+\n<--',
+      'Sys.sm': 'function Sys.init()\npush 20\npush 22\ncall add2\npop answer\npush 0\nreturn',
+      'A.sm': 'function add2(a, b)\npush @a\npush @b\nadd\nreturn',
     })
     const r = runScript(
       'load,\noutput-list RAM[16]%D1.6.1;\nrepeat 500 { smstep; }\noutput;',
@@ -79,25 +79,25 @@ describe('runScript', () => {
   })
 
   it('obeys set', () => {
-    const h = host({ 'T.sm': '<-1' })
+    const h = host({ 'T.sm': 'push 1' })
     const r = runScript('load,\noutput-list RAM[300]%D1.6.1;\nset RAM[300] 77,\noutput;', h)
     expect(r.output.trimEnd().split('\n')[1]).toBe('|     77 |')
   })
 
   it('reports a passing comparison', () => {
-    const h = host({ 'T.sm': '<-7', 'T.cmp': '| RAM[0] |\n|    257 |\n' })
+    const h = host({ 'T.sm': 'push 7', 'T.cmp': '| RAM[0] |\n|    257 |\n' })
     const r = runScript('load,\ncompare-to T.cmp,\noutput-list RAM[0]%D1.6.1;\nrepeat 5 { smstep; }\noutput;', h)
     expect(r.comparison).toEqual({ ok: true })
   })
 
   it('reports a failing comparison with its line', () => {
-    const h = host({ 'T.sm': '<-7', 'T.cmp': '| RAM[0] |\n|    999 |\n' })
+    const h = host({ 'T.sm': 'push 7', 'T.cmp': '| RAM[0] |\n|    999 |\n' })
     const r = runScript('load,\ncompare-to T.cmp,\noutput-list RAM[0]%D1.6.1;\nrepeat 5 { smstep; }\noutput;', h)
     expect(r.comparison).toEqual({ ok: false, line: 2 })
   })
 
   it('passes a diagnostic from the source through', () => {
-    const h = host({ 'T.sm': '!f()\n-->Nowhere\n<--', 'Sys.sm': '!Sys.init()\n<-0\n<--' })
+    const h = host({ 'T.sm': 'function f()\ngoto Nowhere\nreturn', 'Sys.sm': 'function Sys.init()\npush 0\nreturn' })
     expect(() => runScript('load,\noutput-list RAM[0]%D1.6.1;\noutput;', h))
       .toThrow(/unknown label - f\$Nowhere/)
   })
@@ -119,7 +119,7 @@ describe('a script that plants a frame', () => {
   // at the first step and the script sets up what it needs. This is how the
   // course tests a function before the student has written a bootstrap.
   it('runs a function and leaves the result in the first argument slot', () => {
-    const h = host({ 'A.sm': '!twice(n)\n<-@n\n<-@n\n+\n<--' })
+    const h = host({ 'A.sm': 'function twice(n)\npush @n\npush @n\nadd\nreturn' })
     const r = runScript([
       'load,',
       'output-file A.out,',

@@ -1,688 +1,688 @@
-!Screen.init()i,v
-<-16384
-->Screen.screen
-<-1
-(-)
-->Screen.color
-<-16
-Array.new
-->Screen.twoToThe
-<-1
-->@v
-<-0
-->@i
-while.0:
-<-@i
-<-16
-<
-~
-?-->endwhile.0
-<-Screen.twoToThe
-<-@i
-+
-<-@v
-->[]
-<-@v
-<-@v
-+
-->@v
-<-@i
-<-1
-+
-->@i
--->while.0
-endwhile.0:
-<-0
-<--
-!Screen.clearScreen()i
-<-0
-->@i
-while.1:
-<-@i
-<-8192
-<
-~
-?-->endwhile.1
-<-Screen.screen
-<-@i
-+
-<-0
-->[]
-<-@i
-<-1
-+
-->@i
--->while.1
-endwhile.1:
-<-0
-<--
-!Screen.setColor(b)
-<-@b
-->Screen.color
-<-0
-<--
-!Screen.drawPixel(x,y)address,mask
-<-@x
-<-0
-<
-<-@x
-<-511
->
-|
-<-@y
-<-0
-<
-|
-<-@y
-<-255
->
-|
-~
-?-->else.2
-<-7
-Sys.error
-->Sys.discard
--->endif.2
-else.2:
-endif.2:
-<-@y
-<-32
-Math.multiply
-<-@x
-<-16
-Math.divide
-+
-->@address
-<-Screen.twoToThe
-<-@x
-<-15
-&
-+
-[]
-->@mask
-<-Screen.color
-~
-?-->else.3
-<-Screen.screen
-<-@address
-+
-<-Screen.screen
-<-@address
-+
-[]
-<-@mask
-|
-->[]
--->endif.3
-else.3:
-<-Screen.screen
-<-@address
-+
-<-Screen.screen
-<-@address
-+
-[]
-<-@mask
-~
-&
-->[]
-endif.3:
-<-0
-<--
-!Screen.drawRun(x1,x2,y)address,x,mask
-<-@y
-<-32
-Math.multiply
-<-@x1
-<-16
-Math.divide
-+
-->@address
-<-@x1
-->@x
-while.4:
-<-@x
-<-@x2
->
-~
-~
-?-->endwhile.4
-<-Screen.twoToThe
-<-@x
-<-15
-&
-+
-[]
-->@mask
-<-Screen.color
-~
-?-->else.5
-<-Screen.screen
-<-@address
-+
-<-Screen.screen
-<-@address
-+
-[]
-<-@mask
-|
-->[]
--->endif.5
-else.5:
-<-Screen.screen
-<-@address
-+
-<-Screen.screen
-<-@address
-+
-[]
-<-@mask
-~
-&
-->[]
-endif.5:
-<-@x
-<-15
-&
-<-15
-==
-~
-?-->else.6
-<-@address
-<-1
-+
-->@address
--->endif.6
-else.6:
-endif.6:
-<-@x
-<-1
-+
-->@x
--->while.4
-endwhile.4:
-<-0
-<--
-!Screen.drawHorizontal(x1,x2,y)left,right,base,w
-<-@x1
-<-@x2
->
-~
-?-->else.7
-<-0
-<--
--->endif.7
-else.7:
-endif.7:
-<-@y
-<-0
-<
-<-@y
-<-255
->
-|
-~
-?-->else.8
-<-8
-Sys.error
-->Sys.discard
--->endif.8
-else.8:
-endif.8:
-<-@x1
-<-0
-<
-~
-?-->else.9
-<-0
-->@x1
--->endif.9
-else.9:
-endif.9:
-<-@x2
-<-511
->
-~
-?-->else.10
-<-511
-->@x2
--->endif.10
-else.10:
-endif.10:
-<-@x1
-<-16
-Math.divide
-->@left
-<-@x2
-<-16
-Math.divide
-->@right
-<-@left
-<-@right
-==
-~
-?-->else.11
-<-@x1
-<-@x2
-<-@y
-Screen.drawRun
-->Sys.discard
-<-0
-<--
--->endif.11
-else.11:
-endif.11:
-<-@y
-<-32
-Math.multiply
-->@base
-<-@x1
-<-@left
-<-16
-Math.multiply
-<-15
-+
-<-@y
-Screen.drawRun
-->Sys.discard
-<-@left
-<-1
-+
-->@w
-while.12:
-<-@w
-<-@right
-<
-~
-?-->endwhile.12
-<-Screen.color
-~
-?-->else.13
-<-Screen.screen
-<-@base
-<-@w
-+
-+
-<-1
-(-)
-->[]
--->endif.13
-else.13:
-<-Screen.screen
-<-@base
-<-@w
-+
-+
-<-0
-->[]
-endif.13:
-<-@w
-<-1
-+
-->@w
--->while.12
-endwhile.12:
-<-@right
-<-16
-Math.multiply
-<-@x2
-<-@y
-Screen.drawRun
-->Sys.discard
-<-0
-<--
-!Screen.drawVertical(x,y1,y2)address,y,mask
-<-@x
-<-0
-<
-<-@x
-<-511
->
-|
-~
-?-->else.14
-<-8
-Sys.error
-->Sys.discard
--->endif.14
-else.14:
-endif.14:
-<-@y1
-<-32
-Math.multiply
-<-@x
-<-16
-Math.divide
-+
-->@address
-<-Screen.twoToThe
-<-@x
-<-15
-&
-+
-[]
-->@mask
-<-@y1
-->@y
-while.15:
-<-@y
-<-@y2
->
-~
-~
-?-->endwhile.15
-<-Screen.color
-~
-?-->else.16
-<-Screen.screen
-<-@address
-+
-<-Screen.screen
-<-@address
-+
-[]
-<-@mask
-|
-->[]
--->endif.16
-else.16:
-<-Screen.screen
-<-@address
-+
-<-Screen.screen
-<-@address
-+
-[]
-<-@mask
-~
-&
-->[]
-endif.16:
-<-@address
-<-32
-+
-->@address
-<-@y
-<-1
-+
-->@y
--->while.15
-endwhile.15:
-<-0
-<--
-!Screen.drawLine(x1,y1,x2,y2)dx,dy,a,b,difference,swap
-<-@y1
-<-@y2
-==
-~
-?-->else.17
-<-@x1
-<-@x2
-Math.min
-<-@x1
-<-@x2
-Math.max
-<-@y1
-Screen.drawHorizontal
-->Sys.discard
-<-0
-<--
--->endif.17
-else.17:
-endif.17:
-<-@x1
-<-@x2
-==
-~
-?-->else.18
-<-@x1
-<-@y1
-<-@y2
-Math.min
-<-@y1
-<-@y2
-Math.max
-Screen.drawVertical
-->Sys.discard
-<-0
-<--
--->endif.18
-else.18:
-endif.18:
-<-@x1
-<-@x2
->
-~
-?-->else.19
-<-@x1
-->@swap
-<-@x2
-->@x1
-<-@swap
-->@x2
-<-@y1
-->@swap
-<-@y2
-->@y1
-<-@swap
-->@y2
--->endif.19
-else.19:
-endif.19:
-<-@x2
-<-@x1
--
-->@dx
-<-@y2
-<-@y1
--
-->@dy
-<-0
-->@a
-<-0
-->@b
-<-0
-->@difference
-<-@dy
-<-0
->
-~
-?-->else.20
-while.21:
-<-@a
-<-@dx
->
-~
-<-@b
-<-@dy
->
-~
-&
-~
-?-->endwhile.21
-<-@x1
-<-@a
-+
-<-@y1
-<-@b
-+
-Screen.drawPixel
-->Sys.discard
-<-@difference
-<-0
-<
-~
-?-->else.22
-<-@a
-<-1
-+
-->@a
-<-@difference
-<-@dy
-+
-->@difference
--->endif.22
-else.22:
-<-@b
-<-1
-+
-->@b
-<-@difference
-<-@dx
--
-->@difference
-endif.22:
--->while.21
-endwhile.21:
-<-0
-<--
--->endif.20
-else.20:
-endif.20:
-while.23:
-<-@a
-<-@dx
->
-~
-<-@b
-<-@dy
-<
-~
-&
-~
-?-->endwhile.23
-<-@x1
-<-@a
-+
-<-@y1
-<-@b
-+
-Screen.drawPixel
-->Sys.discard
-<-@difference
-<-0
-<
-~
-?-->else.24
-<-@a
-<-1
-+
-->@a
-<-@difference
-<-@dy
--
-->@difference
--->endif.24
-else.24:
-<-@b
-<-1
--
-->@b
-<-@difference
-<-@dx
--
-->@difference
-endif.24:
--->while.23
-endwhile.23:
-<-0
-<--
-!Screen.drawRectangle(x1,y1,x2,y2)y
-<-@x1
-<-@x2
->
-<-@y1
-<-@y2
->
-|
-~
-?-->else.25
-<-9
-Sys.error
-->Sys.discard
--->endif.25
-else.25:
-endif.25:
-<-@y1
-->@y
-while.26:
-<-@y
-<-@y2
->
-~
-~
-?-->endwhile.26
-<-@x1
-<-@x2
-<-@y
-Screen.drawHorizontal
-->Sys.discard
-<-@y
-<-1
-+
-->@y
--->while.26
-endwhile.26:
-<-0
-<--
-!Screen.drawCircle(x,y,r)dy,half
-<-@r
-<-0
-<
-~
-?-->else.27
-<-13
-Sys.error
-->Sys.discard
--->endif.27
-else.27:
-endif.27:
-<-@r
-<-181
->
-~
-?-->else.28
-<-13
-Sys.error
-->Sys.discard
--->endif.28
-else.28:
-endif.28:
-<-@r
-(-)
-->@dy
-while.29:
-<-@dy
-<-@r
->
-~
-~
-?-->endwhile.29
-<-@r
-<-@r
-Math.multiply
-<-@dy
-<-@dy
-Math.multiply
--
-Math.sqrt
-->@half
-<-@x
-<-@half
--
-<-@x
-<-@half
-+
-<-@y
-<-@dy
-+
-Screen.drawHorizontal
-->Sys.discard
-<-@dy
-<-1
-+
-->@dy
--->while.29
-endwhile.29:
-<-0
-<--
+function Screen.init() locals i, v
+push 16384
+pop Screen.screen
+push 1
+neg
+pop Screen.color
+push 16
+call Array.new
+pop Screen.twoToThe
+push 1
+pop @v
+push 0
+pop @i
+label while.0
+push @i
+push 16
+lt
+not
+if-goto endwhile.0
+push Screen.twoToThe
+push @i
+add
+push @v
+pop-indirect
+push @v
+push @v
+add
+pop @v
+push @i
+push 1
+add
+pop @i
+goto while.0
+label endwhile.0
+push 0
+return
+function Screen.clearScreen() locals i
+push 0
+pop @i
+label while.1
+push @i
+push 8192
+lt
+not
+if-goto endwhile.1
+push Screen.screen
+push @i
+add
+push 0
+pop-indirect
+push @i
+push 1
+add
+pop @i
+goto while.1
+label endwhile.1
+push 0
+return
+function Screen.setColor(b)
+push @b
+pop Screen.color
+push 0
+return
+function Screen.drawPixel(x, y) locals address, mask
+push @x
+push 0
+lt
+push @x
+push 511
+gt
+or
+push @y
+push 0
+lt
+or
+push @y
+push 255
+gt
+or
+not
+if-goto else.2
+push 7
+call Sys.error
+pop Sys.discard
+goto endif.2
+label else.2
+label endif.2
+push @y
+push 32
+call Math.multiply
+push @x
+push 16
+call Math.divide
+add
+pop @address
+push Screen.twoToThe
+push @x
+push 15
+and
+add
+push-indirect
+pop @mask
+push Screen.color
+not
+if-goto else.3
+push Screen.screen
+push @address
+add
+push Screen.screen
+push @address
+add
+push-indirect
+push @mask
+or
+pop-indirect
+goto endif.3
+label else.3
+push Screen.screen
+push @address
+add
+push Screen.screen
+push @address
+add
+push-indirect
+push @mask
+not
+and
+pop-indirect
+label endif.3
+push 0
+return
+function Screen.drawRun(x1, x2, y) locals address, x, mask
+push @y
+push 32
+call Math.multiply
+push @x1
+push 16
+call Math.divide
+add
+pop @address
+push @x1
+pop @x
+label while.4
+push @x
+push @x2
+gt
+not
+not
+if-goto endwhile.4
+push Screen.twoToThe
+push @x
+push 15
+and
+add
+push-indirect
+pop @mask
+push Screen.color
+not
+if-goto else.5
+push Screen.screen
+push @address
+add
+push Screen.screen
+push @address
+add
+push-indirect
+push @mask
+or
+pop-indirect
+goto endif.5
+label else.5
+push Screen.screen
+push @address
+add
+push Screen.screen
+push @address
+add
+push-indirect
+push @mask
+not
+and
+pop-indirect
+label endif.5
+push @x
+push 15
+and
+push 15
+eq
+not
+if-goto else.6
+push @address
+push 1
+add
+pop @address
+goto endif.6
+label else.6
+label endif.6
+push @x
+push 1
+add
+pop @x
+goto while.4
+label endwhile.4
+push 0
+return
+function Screen.drawHorizontal(x1, x2, y) locals left, right, base, w
+push @x1
+push @x2
+gt
+not
+if-goto else.7
+push 0
+return
+goto endif.7
+label else.7
+label endif.7
+push @y
+push 0
+lt
+push @y
+push 255
+gt
+or
+not
+if-goto else.8
+push 8
+call Sys.error
+pop Sys.discard
+goto endif.8
+label else.8
+label endif.8
+push @x1
+push 0
+lt
+not
+if-goto else.9
+push 0
+pop @x1
+goto endif.9
+label else.9
+label endif.9
+push @x2
+push 511
+gt
+not
+if-goto else.10
+push 511
+pop @x2
+goto endif.10
+label else.10
+label endif.10
+push @x1
+push 16
+call Math.divide
+pop @left
+push @x2
+push 16
+call Math.divide
+pop @right
+push @left
+push @right
+eq
+not
+if-goto else.11
+push @x1
+push @x2
+push @y
+call Screen.drawRun
+pop Sys.discard
+push 0
+return
+goto endif.11
+label else.11
+label endif.11
+push @y
+push 32
+call Math.multiply
+pop @base
+push @x1
+push @left
+push 16
+call Math.multiply
+push 15
+add
+push @y
+call Screen.drawRun
+pop Sys.discard
+push @left
+push 1
+add
+pop @w
+label while.12
+push @w
+push @right
+lt
+not
+if-goto endwhile.12
+push Screen.color
+not
+if-goto else.13
+push Screen.screen
+push @base
+push @w
+add
+add
+push 1
+neg
+pop-indirect
+goto endif.13
+label else.13
+push Screen.screen
+push @base
+push @w
+add
+add
+push 0
+pop-indirect
+label endif.13
+push @w
+push 1
+add
+pop @w
+goto while.12
+label endwhile.12
+push @right
+push 16
+call Math.multiply
+push @x2
+push @y
+call Screen.drawRun
+pop Sys.discard
+push 0
+return
+function Screen.drawVertical(x, y1, y2) locals address, y, mask
+push @x
+push 0
+lt
+push @x
+push 511
+gt
+or
+not
+if-goto else.14
+push 8
+call Sys.error
+pop Sys.discard
+goto endif.14
+label else.14
+label endif.14
+push @y1
+push 32
+call Math.multiply
+push @x
+push 16
+call Math.divide
+add
+pop @address
+push Screen.twoToThe
+push @x
+push 15
+and
+add
+push-indirect
+pop @mask
+push @y1
+pop @y
+label while.15
+push @y
+push @y2
+gt
+not
+not
+if-goto endwhile.15
+push Screen.color
+not
+if-goto else.16
+push Screen.screen
+push @address
+add
+push Screen.screen
+push @address
+add
+push-indirect
+push @mask
+or
+pop-indirect
+goto endif.16
+label else.16
+push Screen.screen
+push @address
+add
+push Screen.screen
+push @address
+add
+push-indirect
+push @mask
+not
+and
+pop-indirect
+label endif.16
+push @address
+push 32
+add
+pop @address
+push @y
+push 1
+add
+pop @y
+goto while.15
+label endwhile.15
+push 0
+return
+function Screen.drawLine(x1, y1, x2, y2) locals dx, dy, a, b, difference, swap
+push @y1
+push @y2
+eq
+not
+if-goto else.17
+push @x1
+push @x2
+call Math.min
+push @x1
+push @x2
+call Math.max
+push @y1
+call Screen.drawHorizontal
+pop Sys.discard
+push 0
+return
+goto endif.17
+label else.17
+label endif.17
+push @x1
+push @x2
+eq
+not
+if-goto else.18
+push @x1
+push @y1
+push @y2
+call Math.min
+push @y1
+push @y2
+call Math.max
+call Screen.drawVertical
+pop Sys.discard
+push 0
+return
+goto endif.18
+label else.18
+label endif.18
+push @x1
+push @x2
+gt
+not
+if-goto else.19
+push @x1
+pop @swap
+push @x2
+pop @x1
+push @swap
+pop @x2
+push @y1
+pop @swap
+push @y2
+pop @y1
+push @swap
+pop @y2
+goto endif.19
+label else.19
+label endif.19
+push @x2
+push @x1
+sub
+pop @dx
+push @y2
+push @y1
+sub
+pop @dy
+push 0
+pop @a
+push 0
+pop @b
+push 0
+pop @difference
+push @dy
+push 0
+gt
+not
+if-goto else.20
+label while.21
+push @a
+push @dx
+gt
+not
+push @b
+push @dy
+gt
+not
+and
+not
+if-goto endwhile.21
+push @x1
+push @a
+add
+push @y1
+push @b
+add
+call Screen.drawPixel
+pop Sys.discard
+push @difference
+push 0
+lt
+not
+if-goto else.22
+push @a
+push 1
+add
+pop @a
+push @difference
+push @dy
+add
+pop @difference
+goto endif.22
+label else.22
+push @b
+push 1
+add
+pop @b
+push @difference
+push @dx
+sub
+pop @difference
+label endif.22
+goto while.21
+label endwhile.21
+push 0
+return
+goto endif.20
+label else.20
+label endif.20
+label while.23
+push @a
+push @dx
+gt
+not
+push @b
+push @dy
+lt
+not
+and
+not
+if-goto endwhile.23
+push @x1
+push @a
+add
+push @y1
+push @b
+add
+call Screen.drawPixel
+pop Sys.discard
+push @difference
+push 0
+lt
+not
+if-goto else.24
+push @a
+push 1
+add
+pop @a
+push @difference
+push @dy
+sub
+pop @difference
+goto endif.24
+label else.24
+push @b
+push 1
+sub
+pop @b
+push @difference
+push @dx
+sub
+pop @difference
+label endif.24
+goto while.23
+label endwhile.23
+push 0
+return
+function Screen.drawRectangle(x1, y1, x2, y2) locals y
+push @x1
+push @x2
+gt
+push @y1
+push @y2
+gt
+or
+not
+if-goto else.25
+push 9
+call Sys.error
+pop Sys.discard
+goto endif.25
+label else.25
+label endif.25
+push @y1
+pop @y
+label while.26
+push @y
+push @y2
+gt
+not
+not
+if-goto endwhile.26
+push @x1
+push @x2
+push @y
+call Screen.drawHorizontal
+pop Sys.discard
+push @y
+push 1
+add
+pop @y
+goto while.26
+label endwhile.26
+push 0
+return
+function Screen.drawCircle(x, y, r) locals dy, half
+push @r
+push 0
+lt
+not
+if-goto else.27
+push 13
+call Sys.error
+pop Sys.discard
+goto endif.27
+label else.27
+label endif.27
+push @r
+push 181
+gt
+not
+if-goto else.28
+push 13
+call Sys.error
+pop Sys.discard
+goto endif.28
+label else.28
+label endif.28
+push @r
+neg
+pop @dy
+label while.29
+push @dy
+push @r
+gt
+not
+not
+if-goto endwhile.29
+push @r
+push @r
+call Math.multiply
+push @dy
+push @dy
+call Math.multiply
+sub
+call Math.sqrt
+pop @half
+push @x
+push @half
+sub
+push @x
+push @half
+add
+push @y
+push @dy
+add
+call Screen.drawHorizontal
+pop Sys.discard
+push @dy
+push 1
+add
+pop @dy
+goto while.29
+label endwhile.29
+push 0
+return

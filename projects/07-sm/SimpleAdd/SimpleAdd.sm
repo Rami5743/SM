@@ -1,4 +1,4 @@
 // Adds two constants.
-<-7
-<-8
-+
+push 7
+push 8
+add

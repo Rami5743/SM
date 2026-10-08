@@ -14,14 +14,15 @@ export interface Pos {
   readonly line: number
 }
 
-/** Arithmetic, logic and memory: the commands that take no operand text. */
+/** Arithmetic, logic and memory: the commands that take no operand. */
 export type SimpleOp =
-  | '+' | '-' | '(-)' | '~' | '&' | '|'
-  | '==' | '>' | '<'
-  | '[]' | '->[]'
+  | 'add' | 'sub' | 'neg' | 'not' | 'and' | 'or'
+  | 'eq' | 'gt' | 'lt'
+  | 'push-indirect' | 'pop-indirect'
 
 export const SIMPLE_OPS: readonly SimpleOp[] = [
-  '+', '-', '(-)', '~', '&', '|', '==', '>', '<', '[]', '->[]',
+  'add', 'sub', 'neg', 'not', 'and', 'or', 'eq', 'gt', 'lt',
+  'push-indirect', 'pop-indirect',
 ]
 
 export type Command =

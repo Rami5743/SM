@@ -5,7 +5,7 @@
  * on the Hebrew side is the difference between a readable listing and a
  * scrambled one.
  */
-import { parse, printCommand, resolve, type SmFile, type Notation } from '@sm/core'
+import { parse, printCommand, printDecl, resolve, type SmFile } from '@sm/core'
 import { ADDR, Emulator, planFor, SmFault, standardLibrary, withLibrary } from '@sm/emulator'
 import { el } from '../lib/dom.js'
 import type { Strings } from '../lib/i18n.js'
@@ -34,7 +34,6 @@ export function emulatorPage(s: Strings): HTMLElement {
 
   const emulator = new Emulator()
   let files: SmFile[] = []
-  let notation: Notation = 'mnemonic'
   let fault = ''
   let libraryLinked = false
 
@@ -72,16 +71,6 @@ export function emulatorPage(s: Strings): HTMLElement {
   const stepBtn = el('button', {}, s.step)
   const runBtn = el('button', {}, s.run)
   const resetBtn = el('button', {}, s.reset)
-
-  const notationSelect = el('select')
-  notationSelect.append(
-    el('option', { value: 'mnemonic' }, s.mnemonics),
-    el('option', { value: 'words' }, s.words),
-  )
-  notationSelect.addEventListener('change', () => {
-    notation = notationSelect.value as Notation
-    draw()
-  })
 
   const examples = el('select', { dir: 'ltr' })
   for (const [i, ex] of EXAMPLES.entries()) examples.append(el('option', { value: String(i) }, ex.label))
@@ -205,7 +194,7 @@ export function emulatorPage(s: Strings): HTMLElement {
     // step inside it falls past the end and nothing is marked.
     listing.replaceChildren()
     let here: HTMLElement | undefined
-    for (const [index, text] of listingLines(files, notation).entries()) {
+    for (const [index, text] of listingLines(files).entries()) {
       const line = el('div', { class: 'line' }, text)
       if (index === emulator.programCounter) {
         line.classList.add('here')
@@ -229,17 +218,15 @@ export function emulatorPage(s: Strings): HTMLElement {
    * then each function's declaration followed by its body. The index of a
    * line is the step index, which is what the program counter holds.
    */
-  function listingLines(files: readonly SmFile[], notation: Notation): string[] {
+  function listingLines(files: readonly SmFile[]): string[] {
     const lines: string[] = []
     for (const file of files) {
-      for (const c of file.fragment) lines.push(printCommand(c, notation))
+      for (const c of file.fragment) lines.push(printCommand(c))
     }
     for (const file of files) {
       for (const fn of file.functions) {
-        lines.push(notation === 'words'
-          ? `function ${fn.decl.name}(${fn.decl.args.join(',')})${fn.decl.locals.length ? ' locals ' + fn.decl.locals.join(',') : ''}`
-          : `!${fn.decl.name}(${fn.decl.args.join(',')})${fn.decl.locals.join(',')}`)
-        for (const c of fn.body) lines.push('  ' + printCommand(c, notation))
+        lines.push(printDecl(fn.decl))
+        for (const c of fn.body) lines.push('  ' + printCommand(c))
       }
     }
     return lines
@@ -261,7 +248,6 @@ export function emulatorPage(s: Strings): HTMLElement {
     el('div', { class: 'controls' },
       stepBtn, runBtn, resetBtn, testBtn, shareBtn, downloadBtn, openFiles, openFolder,
       el('label', {}, `${s.examples} `, examples),
-      el('label', {}, `${s.notation} `, notationSelect),
       status),
     faultLine,
     noticeLine,

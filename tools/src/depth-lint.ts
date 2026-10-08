@@ -37,8 +37,8 @@ function effect(cmd: Command, arity: (name: string) => number | undefined): numb
     case 'return': return 0
     case 'op':
       switch (cmd.op) {
-        case '(-)': case '~': case '[]': return 0
-        case '->[]': return -2
+        case 'neg': case 'not': case 'push-indirect': return 0
+        case 'pop-indirect': return -2
         default: return -1
       }
     case 'call': {

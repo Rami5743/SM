@@ -11,7 +11,7 @@ function compile(source: string, file = 'Main.jack'): string {
 /** Compile these classes, add a Sys.init that stores a result, and run. */
 function runJack(classes: readonly string[], expression: string): number {
   const sm = classes.map((c) => compile(c, 'C.jack')).join('')
-  const sys = `!Sys.init()\n${expression}\n->result\n<-0\n<--\n`
+  const sys = `function Sys.init()\n${expression}\npop result\npush 0\nreturn\n`
   const files = [parse('C.sm', sm), parse('Sys.sm', sys)].map((r) => {
     expect(r.diagnostics.map((d) => `${d.pos.file}:${d.pos.line} ${d.message}`)).toEqual([])
     return r.file
@@ -90,7 +90,7 @@ describe('the checks the course performs', () => {
 describe('what it emits', () => {
   it('never pushes a receiver a function does not have', () => {
     const sm = compile('class Main { function int f(int n) { return Main.f(n); } }')
-    expect(sm).not.toContain('<-@this')
+    expect(sm).not.toContain('push @this')
   })
 
   it('writes an array element with the address below the value, and no temporary', () => {
@@ -98,21 +98,21 @@ describe('what it emits', () => {
       'class Main { function void f(Array a, Array b) { let a[1] = b[2]; return; } }',
     )
     // address of a[1], then the value of b[2], then the store.
-    expect(sm).toContain(['<-@a', '<-1', '+', '<-@b', '<-2', '+', '[]', '->[]'].join('\n'))
+    expect(sm).toContain(['push @a', 'push 1', 'add', 'push @b', 'push 2', 'add', 'push-indirect', 'pop-indirect'].join('\n'))
   })
 
   it('reaches a field through this, with no segment to point', () => {
     const sm = compile('class P { field int x; method int get() { return x; } }')
-    expect(sm).toContain(['<-@this', '<-0', '+', '[]'].join('\n'))
+    expect(sm).toContain(['push @this', 'push 0', 'add', 'push-indirect'].join('\n'))
   })
 
   it('gives a static the class\'s name, which is how the dotted convention arises', () => {
     const sm = compile('class P { static int n; function void f() { let n = 1; return; } }')
-    expect(sm).toContain('->P.n')
+    expect(sm).toContain('pop P.n')
   })
 
   it('declares a method\'s receiver as its first argument', () => {
-    expect(compile('class P { method int f(int a) { return a; } }')).toContain('!P.f(this,a)')
+    expect(compile('class P { method int f(int a) { return a; } }')).toContain('function P.f(this, a)')
   })
 })
 
@@ -120,7 +120,7 @@ describe('running what it emits', () => {
   it('computes with functions and arguments', () => {
     expect(runJack(
       ['class C { function int add(int a, int b) { return a + b; } }'],
-      '<-20\n<-22\nC.add',
+      'push 20\npush 22\ncall C.add',
     )).toBe(42)
   })
 
@@ -128,14 +128,14 @@ describe('running what it emits', () => {
     expect(runJack(
       ['class C { function int sum(int n) { var int i, t; let i = 1; let t = 0;' +
        ' while (~(i > n)) { let t = t + i; let i = i + 1; } return t; } }'],
-      '<-6\nC.sum',
+      'push 6\ncall C.sum',
     )).toBe(21)
   })
 
   it('runs an if with both branches', () => {
     expect(runJack(
       ['class C { function int pick(int n) { if (n > 0) { return 10; } else { return 20; } } }'],
-      '<-5\nC.pick',
+      'push 5\ncall C.pick',
     )).toBe(10)
   })
 
@@ -143,7 +143,7 @@ describe('running what it emits', () => {
     expect(runJack(
       ['class C { function int fib(int n) { if (n < 2) { return n; }' +
        ' return C.fib(n - 1) + C.fib(n - 2); } }'],
-      '<-6\nC.fib',
+      'push 6\ncall C.fib',
     )).toBe(8)
   })
 
@@ -151,13 +151,13 @@ describe('running what it emits', () => {
     expect(runJack(
       ['class C { function int go(Array a) { let a[0] = 11; let a[1] = 31;' +
        ' return a[0] + a[1]; } }'],
-      '<-3000\nC.go',
+      'push 3000\ncall C.go',
     )).toBe(42)
   })
 
   it('handles true, false and null as the convention says', () => {
-    expect(runJack(['class C { function int t() { if (true) { return 1; } return 0; } }'], 'C.t')).toBe(1)
-    expect(runJack(['class C { function int f() { if (false) { return 1; } return 0; } }'], 'C.f')).toBe(0)
+    expect(runJack(['class C { function int t() { if (true) { return 1; } return 0; } }'], 'call C.t')).toBe(1)
+    expect(runJack(['class C { function int f() { if (false) { return 1; } return 0; } }'], 'call C.f')).toBe(0)
   })
 
   it('discards a statement call\'s value rather than leaving it', () => {
@@ -166,7 +166,7 @@ describe('running what it emits', () => {
     expect(runJack(
       ['class C { function int go() { do C.side(); do C.side(); return 7; }' +
        ' function int side() { return 1; } }'],
-      'C.go',
+      'call C.go',
     )).toBe(7)
   })
 })

@@ -1,13 +1,13 @@
-!Sys.init()
-	<-6
-	<-8
-	Class1.set
-	->drop
-	<-23
-	<-15
-	Class2.set
-	->drop
-	Class1.get
-	Class2.get
-	+
-	<--
+function Sys.init()
+	push 6
+	push 8
+	call Class1.set
+	pop drop
+	push 23
+	push 15
+	call Class2.set
+	pop drop
+	call Class1.get
+	call Class2.get
+	add
+	return

@@ -1,10 +1,10 @@
-!Array.new(size)
-<-@size
-Memory.alloc
-<--
-!Array.dispose(this)
-<-@this
-Memory.deAlloc
-->Sys.discard
-<-0
-<--
+function Array.new(size)
+push @size
+call Memory.alloc
+return
+function Array.dispose(this)
+push @this
+call Memory.deAlloc
+pop Sys.discard
+push 0
+return

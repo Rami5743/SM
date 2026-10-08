@@ -6,9 +6,9 @@ function declaration, the call, the return, and finally the bootstrap.
 
 | Test | What it adds |
 |---|---|
-| [`BasicLoop`](BasicLoop/) | a label, `-->`, `?-->` |
+| [`BasicLoop`](BasicLoop/) | `label`, `goto`, `if-goto` |
 | [`FibonacciSeries`](FibonacciSeries/) | the same, over an array in the heap |
-| [`SimpleFunction`](SimpleFunction/) | a declaration, internal variables, `<--` |
+| [`SimpleFunction`](SimpleFunction/) | a declaration, internal variables, `return` |
 | [`NestedCall`](NestedCall/) | frames that must survive a call |
 | [`StaticsTest`](StaticsTest/) | several files sharing globals, with `Sys.init` |
 | [`FibonacciElement`](FibonacciElement/) | recursion, several files, and the bootstrap |

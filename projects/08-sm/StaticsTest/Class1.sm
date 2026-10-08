@@ -1,16 +1,16 @@
 // Two files writing and reading the same globals. The dotted names are a
 // convention for keeping each class's own apart; the machine sees ordinary
 // globals either way.
-!Class1.set(a, b)
-	<-@a
-	->Class1.x
-	<-@b
-	->Class1.y
-	<-0
-	<--
+function Class1.set(a, b)
+	push @a
+	pop Class1.x
+	push @b
+	pop Class1.y
+	push 0
+	return
 
-!Class1.get()
-	<-Class1.x
-	<-Class1.y
-	-
-	<--
+function Class1.get()
+	push Class1.x
+	push Class1.y
+	sub
+	return

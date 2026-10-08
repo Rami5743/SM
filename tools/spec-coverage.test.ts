@@ -2,9 +2,11 @@
  * M0's acceptance test: the normative reference covers every SM command.
  *
  * `reference/tst/all_cmds.sm` was supplied as one occurrence of every command
- * in the language, so it is the natural checklist. Each command is matched
- * against the reference by the shape it has there, not by a literal search,
- * because the reference writes them in tables with metavariables.
+ * in the language, so it is the natural checklist of what has to be covered.
+ * It is written in the notation the prototype had, so each of its lines is
+ * matched to the spelling the reference gives that command now — by shape,
+ * not by a literal search, because the reference writes them in tables with
+ * metavariables.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -16,28 +18,28 @@ const allCmds = readFileSync(join(root, 'reference/tst/all_cmds.sm'), 'utf8')
 
 /** The reference's spelling of each command found in all_cmds.sm. */
 const spelling: ReadonlyArray<readonly [RegExp, string]> = [
-  [/^!.*\(.*\).*$/, '`! f(x1, x2, ...) y1, y2, ...`'],
-  [/^\+$/, '`+`'],
-  [/^-$/, '`-`'],
-  [/^&$/, '`&`'],
-  [/^\|$/, '`\\|`'],
-  [/^\(-\)$/, '`(-)`'],
-  [/^~$/, '`~`'],
-  [/^>$/, '`>`'],
-  [/^<$/, '`<`'],
-  [/^==$/, '`==`'],
-  [/^\[\]$/, '`[]`'],
-  [/^->\[\]$/, '`->[]`'],
-  [/^<--$/, '`<--`'],
-  [/^<-[0-9]+$/, '`<- 5`'],
-  [/^<-@.+$/, '`<- @x`'],
-  [/^<-[A-Za-z].*$/, '`<- x`'],
-  [/^->@.+$/, '`-> @x`'],
-  [/^->[A-Za-z].*$/, '`-> x`'],
-  [/^.+:$/, '`loop:`'],
-  [/^-->.+$/, '`--> loop`'],
-  [/^\?-->.+$/, '`?--> loop`'],
-  [/^[A-Za-z][A-Za-z0-9.]*$/, '`f`'],
+  [/^!.*\(.*\).*$/, '`function f(x1, x2, ...) locals y1, y2, ...`'],
+  [/^\+$/, '`add`'],
+  [/^-$/, '`sub`'],
+  [/^&$/, '`and`'],
+  [/^\|$/, '`or`'],
+  [/^\(-\)$/, '`neg`'],
+  [/^~$/, '`not`'],
+  [/^>$/, '`gt`'],
+  [/^<$/, '`lt`'],
+  [/^==$/, '`eq`'],
+  [/^\[\]$/, '`push-indirect`'],
+  [/^->\[\]$/, '`pop-indirect`'],
+  [/^<--$/, '`return`'],
+  [/^<-[0-9]+$/, '`push 5`'],
+  [/^<-@.+$/, '`push @x`'],
+  [/^<-[A-Za-z].*$/, '`push x`'],
+  [/^->@.+$/, '`pop @x`'],
+  [/^->[A-Za-z].*$/, '`pop x`'],
+  [/^.+:$/, '`label loop`'],
+  [/^-->.+$/, '`goto loop`'],
+  [/^\?-->.+$/, '`if-goto loop`'],
+  [/^[A-Za-z][A-Za-z0-9.]*$/, '`call f`'],
 ]
 
 /** Strip comments and all whitespace, exactly as the language says to. */
@@ -75,8 +77,9 @@ describe('spec/sm.md', () => {
 
   // Every decision recorded in CORRECTIONS.md must be visible in the reference,
   // so that a reader of one is never surprised by the other. The citation may
-  // be parenthetical in prose or a cell in a table; either counts.
-  it.each(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'])('cites %s', (c) => {
+  // be parenthetical in prose or a cell in a table; either counts. C4 is the
+  // one exception: C9 supersedes it, so the reference cites C9 instead.
+  it.each(['C1', 'C2', 'C3', 'C5', 'C6', 'C7', 'C8', 'C9'])('cites %s', (c) => {
     expect(spec).toMatch(new RegExp(`\\b${c}\\b`))
   })
 })

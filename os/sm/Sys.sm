@@ -1,87 +1,87 @@
-!Sys.init()
-Memory.init
-->Sys.discard
-Math.init
-->Sys.discard
-Screen.init
-->Sys.discard
-Output.init
-->Sys.discard
-Keyboard.init
-->Sys.discard
-Main.main
-->Sys.discard
-Sys.halt
-->Sys.discard
-<-0
-<--
-!Sys.halt()
-while.0:
-<-1
-(-)
-~
-?-->endwhile.0
--->while.0
-endwhile.0:
-<-0
-<--
-!Sys.wait(duration)i,j
-<-@duration
-<-0
-<
-~
-?-->else.1
-<-1
-Sys.error
-->Sys.discard
--->endif.1
-else.1:
-endif.1:
-<-0
-->@i
-while.2:
-<-@i
-<-@duration
-<
-~
-?-->endwhile.2
-<-0
-->@j
-while.3:
-<-@j
-<-250
-<
-~
-?-->endwhile.3
-<-@j
-<-1
-+
-->@j
--->while.3
-endwhile.3:
-<-@i
-<-1
-+
-->@i
--->while.2
-endwhile.2:
-<-0
-<--
-!Sys.error(errorCode)
-<-3
-String.new
-<-69
-String.appendChar
-<-82
-String.appendChar
-<-82
-String.appendChar
-Output.printString
-->Sys.discard
-<-@errorCode
-Output.printInt
-->Sys.discard
-Sys.halt
-->Sys.discard
-<-0
-<--
+function Sys.init()
+call Memory.init
+pop Sys.discard
+call Math.init
+pop Sys.discard
+call Screen.init
+pop Sys.discard
+call Output.init
+pop Sys.discard
+call Keyboard.init
+pop Sys.discard
+call Main.main
+pop Sys.discard
+call Sys.halt
+pop Sys.discard
+push 0
+return
+function Sys.halt()
+label while.0
+push 1
+neg
+not
+if-goto endwhile.0
+goto while.0
+label endwhile.0
+push 0
+return
+function Sys.wait(duration) locals i, j
+push @duration
+push 0
+lt
+not
+if-goto else.1
+push 1
+call Sys.error
+pop Sys.discard
+goto endif.1
+label else.1
+label endif.1
+push 0
+pop @i
+label while.2
+push @i
+push @duration
+lt
+not
+if-goto endwhile.2
+push 0
+pop @j
+label while.3
+push @j
+push 250
+lt
+not
+if-goto endwhile.3
+push @j
+push 1
+add
+pop @j
+goto while.3
+label endwhile.3
+push @i
+push 1
+add
+pop @i
+goto while.2
+label endwhile.2
+push 0
+return
+function Sys.error(errorCode)
+push 3
+call String.new
+push 69
+call String.appendChar
+push 82
+call String.appendChar
+push 82
+call String.appendChar
+call Output.printString
+pop Sys.discard
+push @errorCode
+call Output.printInt
+pop Sys.discard
+call Sys.halt
+pop Sys.discard
+push 0
+return

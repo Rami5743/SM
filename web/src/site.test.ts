@@ -164,7 +164,7 @@ describe('direction', () => {
   it('renders a listing in source order, not reversed', async () => {
     const page = await open('/emulator')
     const first = await page.textContent('.listing .line')
-    expect(first?.trim()).toBe('<-7')
+    expect(first?.trim()).toBe('push 7')
     await page.close()
   })
 })
@@ -197,32 +197,30 @@ describe('the emulator page', () => {
 
   it('marks the line the program counter is on, and moves it on a step', async () => {
     const page = await open('/emulator')
-    expect(await page.textContent('.listing .line.here')).toBe('<-7')
+    expect(await page.textContent('.listing .line.here')).toBe('push 7')
     await page.click('button:text-is("צעד")')
-    expect(await page.textContent('.listing .line.here')).toBe('<-8')
+    expect(await page.textContent('.listing .line.here')).toBe('push 8')
     await page.click('button:text-is("צעד")')
-    expect(await page.textContent('.listing .line.here')).toBe('+')
+    expect(await page.textContent('.listing .line.here')).toBe('add')
     await page.close()
   })
 
   it('reports a bad program with a line number instead of running it', async () => {
     const page = await open('/emulator')
-    await page.fill('textarea', '!f()\n-->Nowhere\n<--')
+    await page.fill('textarea', 'function f()\ngoto Nowhere\nreturn')
     await page.waitForSelector('.fault:text-matches("unknown label")')
     expect(await page.textContent('.fault')).toContain('in line 2')
     await page.close()
   })
 
-  it('renders the same program in words when asked', async () => {
+  it('lists a program as the language writes it', async () => {
     const page = await open('/emulator')
-    await page.selectOption('.controls select >> nth=1', 'words')
     await page.selectOption('.controls select >> nth=0', { label: '08-sm · BasicLoop' })
     const text = await page.textContent('.listing')
-    expect(text).toContain('if-goto')
-    expect(text).toContain('goto')
-    // C4: the operators stay symbolic in every view.
-    expect(text).toContain('+')
-    expect(text).not.toContain('add')
+    for (const command of ['function BasicLoop.sum(n) locals total, i', 'label loop',
+      'if-goto done', 'goto loop', 'push @n', 'pop @total', 'lt', 'add', 'return']) {
+      expect(text).toContain(command)
+    }
     await page.close()
   })
 })
@@ -231,8 +229,8 @@ describe('the compiler page', () => {
   it('compiles Jack to SM as you type', async () => {
     const page = await open('/compiler')
     const sm = await page.textContent('.panel:has(h3:text-is("הפלט ב‑SM")) pre')
-    expect(sm).toContain('!Main.main()i,sum')
-    expect(sm).toContain('Math.multiply')
+    expect(sm).toContain('function Main.main() locals i, sum')
+    expect(sm).toContain('call Math.multiply')
     expect(await page.textContent('.fault')).toBe('')
     await page.close()
   })
@@ -277,11 +275,11 @@ describe('the bridge page', () => {
     const page = await open('/bridge')
     const sm = await page.textContent('.panel:has(h3:text-is("התוצאה")) pre')
     // `eq` has to leave all ones or zero, which SM reaches through a branch.
-    expect(sm).toContain('<-17')
-    expect(sm).toContain('==')
-    expect(sm).toContain('?-->vm.true.0')
+    expect(sm).toContain('push 17')
+    expect(sm).toContain('eq')
+    expect(sm).toContain('if-goto vm.true.0')
     // `pop this 0` through an address, with the value stepping aside.
-    expect(sm).toContain('->[]')
+    expect(sm).toContain('pop-indirect')
     await page.close()
   })
 
@@ -309,8 +307,8 @@ describe('the bridge page', () => {
     ])
     await page.waitForSelector('pre:text-matches("Class1.0")')
     const sm = await page.textContent('.panel:has(h3:text-is("התוצאה")) pre')
-    expect(sm).toContain('<-Class1.0')
-    expect(sm).toContain('<-Class2.0')
+    expect(sm).toContain('push Class1.0')
+    expect(sm).toContain('push Class2.0')
     await page.close()
   })
 
@@ -326,7 +324,7 @@ describe('the bridge page', () => {
 describe('a program in the address bar', () => {
   it('comes back from the link', async () => {
     const page = await open('/emulator')
-    await page.fill('textarea', '<-7\n<-8\n+\n')
+    await page.fill('textarea', 'push 7\npush 8\nadd\n')
     await page.click('button:text-is("העתק קישור")')
     await page.waitForSelector('.notice:text-is("הקישור הועתק.")')
     const url = page.url()
@@ -335,7 +333,7 @@ describe('a program in the address bar', () => {
     const reopened = await browser.newPage()
     await reopened.goto(url)
     await reopened.waitForSelector('textarea')
-    expect(await reopened.inputValue('textarea')).toBe('<-7\n<-8\n+\n')
+    expect(await reopened.inputValue('textarea')).toBe('push 7\npush 8\nadd\n')
     await reopened.close()
     await page.close()
   })
@@ -352,8 +350,8 @@ describe('opening a program from disk', () => {
   it('the emulator takes a whole test folder, and puts only the .sm in the box', async () => {
     const page = await open('/emulator')
     await page.setInputFiles('.opener:has-text("טען תיקייה") input', folder({
-      'Sys.sm': '!Sys.init()\n<-9\nMain.twice\n<--\n',
-      'Main.sm': '!Main.twice(n)\n<-@n\n<-@n\n+\n<--\n',
+      'Sys.sm': 'function Sys.init()\npush 9\ncall Main.twice\nreturn\n',
+      'Main.sm': 'function Main.twice(n)\npush @n\npush @n\nadd\nreturn\n',
       'notes.txt': 'not a program',
     }))
     await page.waitForSelector('textarea')
@@ -453,7 +451,7 @@ describe('the test runner on the emulator page', () => {
 
   it('says so when a program and its compare file disagree', async () => {
     const page = await open('/emulator')
-    await page.fill('textarea >> nth=0', '<-7\n<-8\n-\n')
+    await page.fill('textarea >> nth=0', 'push 7\npush 8\nsub\n')
     await page.click('button:text-is("הרץ את הבדיקה")')
     await page.waitForSelector('.notice:text-matches("ההשוואה נכשלה בשורה")')
     await page.close()
@@ -464,8 +462,8 @@ describe('the test runner on the emulator page', () => {
  * Direction, measured rather than eyeballed.
  *
  * On a Hebrew page the bidirectional algorithm decides where every neutral
- * character goes, and a token made only of neutrals — `[]`, `->[]`, `<--`,
- * `(-)`, `0..32767` — takes the direction of the paragraph around it. The
+ * character goes, and a token made only of neutrals — `0..32767`,
+ * `2048..16383` — takes the direction of the paragraph around it. The
  * test asks the browser for the box of every single character and compares
  * the order the characters are painted in with the order they were written
  * in. Anything that must read left to right has to match exactly.
@@ -569,9 +567,10 @@ describe('direction, character by character', () => {
     const page = await open('/reference')
     await page.addStyleTag({ content: 'code, .code, pre, .cells { unicode-bidi: normal !important; }' })
     const problems = await page.evaluate(DIRECTION_AUDIT)
-    expect(problems.length).toBeGreaterThan(10)
-    expect(problems.map((p) => `${p.logical} -> ${p.visual}`)).toContain('->[] -> ][>-')
-    expect(problems.map((p) => `${p.logical} -> ${p.visual}`)).toContain('0..32767 -> 32767..0')
+    expect(problems.length).toBeGreaterThan(5)
+    const seen = problems.map((p) => `${p.logical} -> ${p.visual}`)
+    expect(seen).toContain('0..32767 -> 32767..0')
+    expect(seen).toContain('2048..16383 -> 16383..2048')
     await page.close()
   })
 })

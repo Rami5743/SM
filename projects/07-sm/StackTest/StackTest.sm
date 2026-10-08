@@ -2,41 +2,41 @@
 // most significant bit of a register carries a truth value.
 
 // arithmetic
-<-17
-<-17
-==        // true
-<-17
-<-16
-==        // false
-<-16
-<-17
-<         // true
-<-17
-<-16
-<         // false
-<-16
-<-17
->         // false
-<-17
-<-16
->         // true
-<-57
-<-31
-+         // 88
-<-53
-<-112
--         // -59
+push 17
+push 17
+eq  // true
+push 17
+push 16
+eq  // false
+push 16
+push 17
+lt  // true
+push 17
+push 16
+lt  // false
+push 16
+push 17
+gt  // false
+push 17
+push 16
+gt  // true
+push 57
+push 31
+add  // 88
+push 53
+push 112
+sub  // -59
 
 // the operators that take one operand
-<-82
-(-)       // -82
-<-0
-~         // -1, every bit set
+push 82
+neg  // -82
+push 0
+not  // -1, every bit set
 
 // bitwise, on values whose significant bit is set and clear
-<-82
-<-27
-&         // 18
-<-82
-<-27
-|         // 91
+push 82
+push 27
+and  // 18
+push 82
+push 27
+or  // 91

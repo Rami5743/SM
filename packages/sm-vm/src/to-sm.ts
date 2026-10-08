@@ -2,15 +2,16 @@
  * The course's VM to SM.
  *
  * The segments collapse, and where they collapse to is the argument the
- * design makes. `this i` is an address on the stack, an addition and `[]`;
- * the whole `pointer`/`that` apparatus is gone. `pop this i` costs one
- * instruction more than it might, because SM cannot swap the top two cells
- * and `->[]` wants the address underneath, so the value steps aside into a
- * global for one instruction.
+ * design makes. `this i` is an address on the stack, an addition and
+ * `push-indirect`; the whole `pointer`/`that` apparatus is gone.
+ * `pop this i` costs one instruction more than it might, because SM cannot
+ * swap the top two cells and `pop-indirect` wants the address underneath, so
+ * the value steps aside into a global for one instruction.
  *
  * Where the pointers live. `this`, `that`, `pointer` and `temp` stay in the
  * cells the VM specification puts them in — RAM[3], RAM[4] and RAM[5..12] —
- * reached with `<-3 []` and the like. Nothing in SM uses those cells, the
+ * reached with `push 3`, `push-indirect` and the like. Nothing in SM uses
+ * those cells, the
  * translation is then exactly the VM's own, and a test script that sets
  * `this` by name is setting the cell the program reads.
  *
@@ -42,8 +43,9 @@
  * or zero and a VM program may do arithmetic with that, so SM has to produce
  * the same value and not merely the same sign; the comparison leaves its
  * answer in the most significant bit and a branch turns that into the two
- * values. The other way round, `if-goto` branches on "not zero" where
- * `?-->` branches on "negative", so it becomes `<-0`, `==`, `~`, `?-->`.
+ * values. The other way round, the VM's `if-goto` branches on "not zero"
+ * where SM's branches on "negative", so it becomes `push 0`, `eq`, `not`,
+ * `if-goto`.
  */
 import { BridgeError } from './to-vm.js'
 import type { VmCommand, VmFile } from './vm.js'
@@ -102,16 +104,17 @@ export function vmToSm(files: readonly VmFile[]): ToSmResult {
         const argNames = Array.from({ length: args }, (_, i) => `a${i}`)
         const localNames = Array.from({ length: c.locals }, (_, i) => `l${i}`)
         if (repoints) localNames.push(SAVED_THIS, SAVED_THAT)
-        functions.push(`!${symbol(c.name, where)}(${argNames.join(',')})${localNames.join(',')}`)
+        const locals = localNames.length > 0 ? ` locals ${localNames.join(', ')}` : ''
+        functions.push(`function ${symbol(c.name, where)}(${argNames.join(', ')})${locals}`)
         continue
       }
       const lines = c.kind === 'call' && repoints && inside !== undefined
         ? [
-          `<-${THIS}`, '[]', `->@${SAVED_THIS}`,
-          `<-${THAT}`, '[]', `->@${SAVED_THAT}`,
-          symbol(c.name, where),
-          `<-${THIS}`, `<-@${SAVED_THIS}`, '->[]',
-          `<-${THAT}`, `<-@${SAVED_THAT}`, '->[]',
+          `push ${THIS}`, 'push-indirect', `pop @${SAVED_THIS}`,
+          `push ${THAT}`, 'push-indirect', `pop @${SAVED_THAT}`,
+          `call ${symbol(c.name, where)}`,
+          `push ${THIS}`, `push @${SAVED_THIS}`, 'pop-indirect',
+          `push ${THAT}`, `push @${SAVED_THAT}`, 'pop-indirect',
         ]
         : translate(c, file, where, inside !== undefined, () => labels++)
       ;(inside === undefined ? fragment : functions).push(...lines)
@@ -153,12 +156,15 @@ function recoverArity(files: readonly VmFile[]): Map<string, number> {
 
 /** Push the contents of the cell at `base` plus `index`. */
 function throughPointer(base: number, index: number): string[] {
-  return [`<-${base}`, '[]', `<-${index}`, '+', '[]']
+  return [`push ${base}`, 'push-indirect', `push ${index}`, 'add', 'push-indirect']
 }
 
 /** Store the value on top into the cell at `base` plus `index`. */
 function intoPointer(base: number, index: number): string[] {
-  return [`->${SCRATCH}`, `<-${base}`, '[]', `<-${index}`, '+', `<-${SCRATCH}`, '->[]']
+  return [
+    `pop ${SCRATCH}`, `push ${base}`, 'push-indirect', `push ${index}`, 'add',
+    `push ${SCRATCH}`, 'pop-indirect',
+  ]
 }
 
 function translate(
@@ -171,23 +177,25 @@ function translate(
   switch (c.kind) {
     case 'push':
       switch (c.segment) {
-        case 'constant': return [`<-${c.index}`]
-        case 'argument': return inFunction ? [`<-@a${c.index}`] : throughPointer(ARG, c.index)
-        case 'local': return inFunction ? [`<-@l${c.index}`] : throughPointer(LCL, c.index)
-        case 'static': return [`<-${file.name}.${c.index}`]
-        case 'temp': return [`<-${TEMP + c.index}`, '[]']
-        case 'pointer': return [`<-${THIS + c.index}`, '[]']
+        case 'constant': return [`push ${c.index}`]
+        case 'argument': return inFunction ? [`push @a${c.index}`] : throughPointer(ARG, c.index)
+        case 'local': return inFunction ? [`push @l${c.index}`] : throughPointer(LCL, c.index)
+        case 'static': return [`push ${file.name}.${c.index}`]
+        case 'temp': return [`push ${TEMP + c.index}`, 'push-indirect']
+        case 'pointer': return [`push ${THIS + c.index}`, 'push-indirect']
         case 'this': return throughPointer(THIS, c.index)
         case 'that': return throughPointer(THAT, c.index)
       }
       break
     case 'pop':
       switch (c.segment) {
-        case 'argument': return inFunction ? [`->@a${c.index}`] : intoPointer(ARG, c.index)
-        case 'local': return inFunction ? [`->@l${c.index}`] : intoPointer(LCL, c.index)
-        case 'static': return [`->${file.name}.${c.index}`]
-        case 'temp': return [`->${SCRATCH}`, `<-${TEMP + c.index}`, `<-${SCRATCH}`, '->[]']
-        case 'pointer': return [`->${SCRATCH}`, `<-${THIS + c.index}`, `<-${SCRATCH}`, '->[]']
+        case 'argument': return inFunction ? [`pop @a${c.index}`] : intoPointer(ARG, c.index)
+        case 'local': return inFunction ? [`pop @l${c.index}`] : intoPointer(LCL, c.index)
+        case 'static': return [`pop ${file.name}.${c.index}`]
+        case 'temp':
+          return [`pop ${SCRATCH}`, `push ${TEMP + c.index}`, `push ${SCRATCH}`, 'pop-indirect']
+        case 'pointer':
+          return [`pop ${SCRATCH}`, `push ${THIS + c.index}`, `push ${SCRATCH}`, 'pop-indirect']
         case 'this': return intoPointer(THIS, c.index)
         case 'that': return intoPointer(THAT, c.index)
         case 'constant': break
@@ -195,23 +203,23 @@ function translate(
       break
     case 'arithmetic':
       switch (c.op) {
-        case 'add': return ['+']
-        case 'sub': return ['-']
-        case 'neg': return ['(-)']
-        case 'and': return ['&']
-        case 'or': return ['|']
-        case 'not': return ['~']
-        case 'eq': return canonical('==', nextLabel())
-        case 'gt': return canonical('>', nextLabel())
-        case 'lt': return canonical('<', nextLabel())
+        case 'add': return ['add']
+        case 'sub': return ['sub']
+        case 'neg': return ['neg']
+        case 'and': return ['and']
+        case 'or': return ['or']
+        case 'not': return ['not']
+        case 'eq': return canonical('eq', nextLabel())
+        case 'gt': return canonical('gt', nextLabel())
+        case 'lt': return canonical('lt', nextLabel())
       }
       break
-    case 'label': return [`${symbol(c.name, where)}:`]
-    case 'goto': return [`-->${symbol(c.name, where)}`]
+    case 'label': return [`label ${symbol(c.name, where)}`]
+    case 'goto': return [`goto ${symbol(c.name, where)}`]
     // "not zero", read at the most significant bit.
-    case 'ifGoto': return ['<-0', '==', '~', `?-->${symbol(c.name, where)}`]
-    case 'call': return [symbol(c.name, where)]
-    case 'return': return ['<--']
+    case 'ifGoto': return ['push 0', 'eq', 'not', `if-goto ${symbol(c.name, where)}`]
+    case 'call': return [`call ${symbol(c.name, where)}`]
+    case 'return': return ['return']
     case 'function': break
   }
   throw new BridgeError(`${where}: this command cannot be translated`)
@@ -222,6 +230,9 @@ function translate(
  * wants all-ones or zero, because a VM program may go on to do arithmetic
  * with it. The branch is what turns the one into the other.
  */
-function canonical(op: '==' | '<' | '>', n: number): string[] {
-  return [op, `?-->vm.true.${n}`, '<-0', `-->vm.end.${n}`, `vm.true.${n}:`, '<-1', '(-)', `vm.end.${n}:`]
+function canonical(op: 'eq' | 'lt' | 'gt', n: number): string[] {
+  return [
+    op, `if-goto vm.true.${n}`, 'push 0', `goto vm.end.${n}`,
+    `label vm.true.${n}`, 'push 1', 'neg', `label vm.end.${n}`,
+  ]
 }

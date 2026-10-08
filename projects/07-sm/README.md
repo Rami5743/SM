@@ -12,7 +12,7 @@ the two memory commands. No functions, no frames, no bootstrap — those are
 | [`SimpleAdd`](SimpleAdd/) | the stack, and one operator |
 | [`StackTest`](StackTest/) | every arithmetic and logical command, and the truth convention |
 | [`GlobalTest`](GlobalTest/) | global variables |
-| [`PointerTest`](PointerTest/) | `[]` and `->[]` |
+| [`PointerTest`](PointerTest/) | `push-indirect` and `pop-indirect` |
 | [`StaticTest`](StaticTest/) | dotted names, which are ordinary globals |
 
 Do them in that order; each assumes the ones before it.

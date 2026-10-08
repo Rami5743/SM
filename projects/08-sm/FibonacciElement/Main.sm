@@ -1,20 +1,20 @@
 // The n'th Fibonacci number, recursively.
-!Main.fibonacci(n)
-	<-@n
-	<-2
-	<
-	?-->base
+function Main.fibonacci(n)
+	push @n
+	push 2
+	lt
+	if-goto base
 	// fib(n-1) + fib(n-2)
-	<-@n
-	<-1
-	-
-	Main.fibonacci
-	<-@n
-	<-2
-	-
-	Main.fibonacci
-	+
-	<--
-	base:
-	<-@n
-	<--
+	push @n
+	push 1
+	sub
+	call Main.fibonacci
+	push @n
+	push 2
+	sub
+	call Main.fibonacci
+	add
+	return
+	label base
+	push @n
+	return

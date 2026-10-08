@@ -1,355 +1,355 @@
-!String.new(maxLength)this
-<-3
-Memory.alloc
-->@this
-<-@maxLength
-<-0
-<
-~
-?-->else.0
-<-14
-Sys.error
-->Sys.discard
--->endif.0
-else.0:
-endif.0:
-<-@maxLength
-<-0
-==
-~
-?-->else.1
-<-@this
-<-2
-+
-<-1
-->[]
--->endif.1
-else.1:
-<-@this
-<-2
-+
-<-@maxLength
-->[]
-endif.1:
-<-@this
-<-0
-+
-<-@this
-<-2
-+
-[]
-Array.new
-->[]
-<-@this
-<-1
-+
-<-0
-->[]
-<-@this
-<--
-!String.dispose(this)
-<-@this
-<-0
-+
-[]
-Array.dispose
-->Sys.discard
-<-@this
-Memory.deAlloc
-->Sys.discard
-<-0
-<--
-!String.length(this)
-<-@this
-<-1
-+
-[]
-<--
-!String.charAt(this,j)
-<-@j
-<-0
-<
-<-@j
-<-@this
-<-1
-+
-[]
-<
-~
-|
-~
-?-->else.2
-<-15
-Sys.error
-->Sys.discard
--->endif.2
-else.2:
-endif.2:
-<-@this
-<-0
-+
-[]
-<-@j
-+
-[]
-<--
-!String.setCharAt(this,j,c)
-<-@j
-<-0
-<
-<-@j
-<-@this
-<-1
-+
-[]
-<
-~
-|
-~
-?-->else.3
-<-16
-Sys.error
-->Sys.discard
--->endif.3
-else.3:
-endif.3:
-<-@this
-<-0
-+
-[]
-<-@j
-+
-<-@c
-->[]
-<-0
-<--
-!String.appendChar(this,c)
-<-@this
-<-1
-+
-[]
-<-@this
-<-2
-+
-[]
-<
-~
-~
-?-->else.4
-<-17
-Sys.error
-->Sys.discard
--->endif.4
-else.4:
-endif.4:
-<-@this
-<-0
-+
-[]
-<-@this
-<-1
-+
-[]
-+
-<-@c
-->[]
-<-@this
-<-1
-+
-<-@this
-<-1
-+
-[]
-<-1
-+
-->[]
-<-@this
-<--
-!String.eraseLastChar(this)
-<-@this
-<-1
-+
-[]
-<-0
-==
-~
-?-->else.5
-<-18
-Sys.error
-->Sys.discard
--->endif.5
-else.5:
-endif.5:
-<-@this
-<-1
-+
-<-@this
-<-1
-+
-[]
-<-1
--
-->[]
-<-0
-<--
-!String.intValue(this)value,i,digit,negative
-<-0
-->@value
-<-0
-->@i
-<-0
-->@negative
-<-@this
-<-1
-+
-[]
-<-0
->
-~
-?-->else.6
-<-@this
-<-0
-+
-[]
-<-0
-+
-[]
-<-45
-==
-~
-?-->else.7
-<-1
-(-)
-->@negative
-<-1
-->@i
--->endif.7
-else.7:
-endif.7:
--->endif.6
-else.6:
-endif.6:
-while.8:
-<-@i
-<-@this
-<-1
-+
-[]
-<
-~
-?-->endwhile.8
-<-@this
-<-0
-+
-[]
-<-@i
-+
-[]
-<-48
--
-->@digit
-<-@digit
-<-0
-<
-<-@digit
-<-9
->
-|
-~
-?-->else.9
-<-@this
-<-1
-+
-[]
-->@i
--->endif.9
-else.9:
-<-@value
-<-10
-Math.multiply
-<-@digit
-+
-->@value
-<-@i
-<-1
-+
-->@i
-endif.9:
--->while.8
-endwhile.8:
-<-@negative
-~
-?-->else.10
-<-@value
-(-)
-<--
--->endif.10
-else.10:
-endif.10:
-<-@value
-<--
-!String.setInt(this,value)
-<-@this
-<-1
-+
-<-0
-->[]
-<-@value
-<-0
-<
-~
-?-->else.11
-<-@this
-<-45
-String.appendChar
-->Sys.discard
-<-@value
-(-)
-->@value
--->endif.11
-else.11:
-endif.11:
-<-@this
-<-@value
-String.digits
-->Sys.discard
-<-0
-<--
-!String.digits(this,value)quotient
-<-@value
-<-10
-Math.divide
-->@quotient
-<-@quotient
-<-0
->
-~
-?-->else.12
-<-@this
-<-@quotient
-String.digits
-->Sys.discard
--->endif.12
-else.12:
-endif.12:
-<-@this
-<-48
-<-@value
-<-@quotient
-<-10
-Math.multiply
--
-+
-String.appendChar
-->Sys.discard
-<-0
-<--
-!String.newLine()
-<-128
-<--
-!String.backSpace()
-<-129
-<--
-!String.doubleQuote()
-<-34
-<--
+function String.new(maxLength) locals this
+push 3
+call Memory.alloc
+pop @this
+push @maxLength
+push 0
+lt
+not
+if-goto else.0
+push 14
+call Sys.error
+pop Sys.discard
+goto endif.0
+label else.0
+label endif.0
+push @maxLength
+push 0
+eq
+not
+if-goto else.1
+push @this
+push 2
+add
+push 1
+pop-indirect
+goto endif.1
+label else.1
+push @this
+push 2
+add
+push @maxLength
+pop-indirect
+label endif.1
+push @this
+push 0
+add
+push @this
+push 2
+add
+push-indirect
+call Array.new
+pop-indirect
+push @this
+push 1
+add
+push 0
+pop-indirect
+push @this
+return
+function String.dispose(this)
+push @this
+push 0
+add
+push-indirect
+call Array.dispose
+pop Sys.discard
+push @this
+call Memory.deAlloc
+pop Sys.discard
+push 0
+return
+function String.length(this)
+push @this
+push 1
+add
+push-indirect
+return
+function String.charAt(this, j)
+push @j
+push 0
+lt
+push @j
+push @this
+push 1
+add
+push-indirect
+lt
+not
+or
+not
+if-goto else.2
+push 15
+call Sys.error
+pop Sys.discard
+goto endif.2
+label else.2
+label endif.2
+push @this
+push 0
+add
+push-indirect
+push @j
+add
+push-indirect
+return
+function String.setCharAt(this, j, c)
+push @j
+push 0
+lt
+push @j
+push @this
+push 1
+add
+push-indirect
+lt
+not
+or
+not
+if-goto else.3
+push 16
+call Sys.error
+pop Sys.discard
+goto endif.3
+label else.3
+label endif.3
+push @this
+push 0
+add
+push-indirect
+push @j
+add
+push @c
+pop-indirect
+push 0
+return
+function String.appendChar(this, c)
+push @this
+push 1
+add
+push-indirect
+push @this
+push 2
+add
+push-indirect
+lt
+not
+not
+if-goto else.4
+push 17
+call Sys.error
+pop Sys.discard
+goto endif.4
+label else.4
+label endif.4
+push @this
+push 0
+add
+push-indirect
+push @this
+push 1
+add
+push-indirect
+add
+push @c
+pop-indirect
+push @this
+push 1
+add
+push @this
+push 1
+add
+push-indirect
+push 1
+add
+pop-indirect
+push @this
+return
+function String.eraseLastChar(this)
+push @this
+push 1
+add
+push-indirect
+push 0
+eq
+not
+if-goto else.5
+push 18
+call Sys.error
+pop Sys.discard
+goto endif.5
+label else.5
+label endif.5
+push @this
+push 1
+add
+push @this
+push 1
+add
+push-indirect
+push 1
+sub
+pop-indirect
+push 0
+return
+function String.intValue(this) locals value, i, digit, negative
+push 0
+pop @value
+push 0
+pop @i
+push 0
+pop @negative
+push @this
+push 1
+add
+push-indirect
+push 0
+gt
+not
+if-goto else.6
+push @this
+push 0
+add
+push-indirect
+push 0
+add
+push-indirect
+push 45
+eq
+not
+if-goto else.7
+push 1
+neg
+pop @negative
+push 1
+pop @i
+goto endif.7
+label else.7
+label endif.7
+goto endif.6
+label else.6
+label endif.6
+label while.8
+push @i
+push @this
+push 1
+add
+push-indirect
+lt
+not
+if-goto endwhile.8
+push @this
+push 0
+add
+push-indirect
+push @i
+add
+push-indirect
+push 48
+sub
+pop @digit
+push @digit
+push 0
+lt
+push @digit
+push 9
+gt
+or
+not
+if-goto else.9
+push @this
+push 1
+add
+push-indirect
+pop @i
+goto endif.9
+label else.9
+push @value
+push 10
+call Math.multiply
+push @digit
+add
+pop @value
+push @i
+push 1
+add
+pop @i
+label endif.9
+goto while.8
+label endwhile.8
+push @negative
+not
+if-goto else.10
+push @value
+neg
+return
+goto endif.10
+label else.10
+label endif.10
+push @value
+return
+function String.setInt(this, value)
+push @this
+push 1
+add
+push 0
+pop-indirect
+push @value
+push 0
+lt
+not
+if-goto else.11
+push @this
+push 45
+call String.appendChar
+pop Sys.discard
+push @value
+neg
+pop @value
+goto endif.11
+label else.11
+label endif.11
+push @this
+push @value
+call String.digits
+pop Sys.discard
+push 0
+return
+function String.digits(this, value) locals quotient
+push @value
+push 10
+call Math.divide
+pop @quotient
+push @quotient
+push 0
+gt
+not
+if-goto else.12
+push @this
+push @quotient
+call String.digits
+pop Sys.discard
+goto endif.12
+label else.12
+label endif.12
+push @this
+push 48
+push @value
+push @quotient
+push 10
+call Math.multiply
+sub
+add
+call String.appendChar
+pop Sys.discard
+push 0
+return
+function String.newLine()
+push 128
+return
+function String.backSpace()
+push 129
+return
+function String.doubleQuote()
+push 34
+return

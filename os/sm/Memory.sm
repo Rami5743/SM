@@ -1,172 +1,172 @@
-!Memory.init()
-<-0
-->Memory.memory
-<-2048
-->Memory.freeList
-<-Memory.freeList
-<-0
-+
-<-14336
-->[]
-<-Memory.freeList
-<-1
-+
-<-0
-->[]
-<-0
-<--
-!Memory.peek(address)
-<-Memory.memory
-<-@address
-+
-[]
-<--
-!Memory.poke(address,value)
-<-Memory.memory
-<-@address
-+
-<-@value
-->[]
-<-0
-<--
-!Memory.alloc(size)block,previous,carved,need
-<-@size
-<-1
-<
-~
-?-->else.0
-<-5
-Sys.error
-->Sys.discard
--->endif.0
-else.0:
-endif.0:
-<-@size
-<-2
-+
-->@need
-<-0
-->@previous
-<-Memory.freeList
-->@block
-while.1:
-<-@block
-<-0
-==
-~
-~
-?-->endwhile.1
-<-@block
-<-0
-+
-[]
-<-@need
-<-1
-+
->
-~
-?-->else.2
-<-@block
-<-0
-+
-<-@block
-<-0
-+
-[]
-<-@need
--
-->[]
-<-@block
-<-@block
-<-0
-+
-[]
-+
-->@carved
-<-@carved
-<-0
-+
-<-@need
-->[]
-<-@carved
-<-1
-+
-<-0
-->[]
-<-@carved
-<-2
-+
-<--
--->endif.2
-else.2:
-endif.2:
-<-@block
-<-0
-+
-[]
-<-@need
-<
-~
-~
-?-->else.3
-<-@previous
-<-0
-==
-~
-?-->else.4
-<-@block
-<-1
-+
-[]
-->Memory.freeList
--->endif.4
-else.4:
-<-@previous
-<-1
-+
-<-@block
-<-1
-+
-[]
-->[]
-endif.4:
-<-@block
-<-1
-+
-<-0
-->[]
-<-@block
-<-2
-+
-<--
--->endif.3
-else.3:
-endif.3:
-<-@block
-->@previous
-<-@block
-<-1
-+
-[]
-->@block
--->while.1
-endwhile.1:
-<-6
-Sys.error
-->Sys.discard
-<-0
-<--
-!Memory.deAlloc(object)block
-<-@object
-<-2
--
-->@block
-<-@block
-<-1
-+
-<-Memory.freeList
-->[]
-<-@block
-->Memory.freeList
-<-0
-<--
+function Memory.init()
+push 0
+pop Memory.memory
+push 2048
+pop Memory.freeList
+push Memory.freeList
+push 0
+add
+push 14336
+pop-indirect
+push Memory.freeList
+push 1
+add
+push 0
+pop-indirect
+push 0
+return
+function Memory.peek(address)
+push Memory.memory
+push @address
+add
+push-indirect
+return
+function Memory.poke(address, value)
+push Memory.memory
+push @address
+add
+push @value
+pop-indirect
+push 0
+return
+function Memory.alloc(size) locals block, previous, carved, need
+push @size
+push 1
+lt
+not
+if-goto else.0
+push 5
+call Sys.error
+pop Sys.discard
+goto endif.0
+label else.0
+label endif.0
+push @size
+push 2
+add
+pop @need
+push 0
+pop @previous
+push Memory.freeList
+pop @block
+label while.1
+push @block
+push 0
+eq
+not
+not
+if-goto endwhile.1
+push @block
+push 0
+add
+push-indirect
+push @need
+push 1
+add
+gt
+not
+if-goto else.2
+push @block
+push 0
+add
+push @block
+push 0
+add
+push-indirect
+push @need
+sub
+pop-indirect
+push @block
+push @block
+push 0
+add
+push-indirect
+add
+pop @carved
+push @carved
+push 0
+add
+push @need
+pop-indirect
+push @carved
+push 1
+add
+push 0
+pop-indirect
+push @carved
+push 2
+add
+return
+goto endif.2
+label else.2
+label endif.2
+push @block
+push 0
+add
+push-indirect
+push @need
+lt
+not
+not
+if-goto else.3
+push @previous
+push 0
+eq
+not
+if-goto else.4
+push @block
+push 1
+add
+push-indirect
+pop Memory.freeList
+goto endif.4
+label else.4
+push @previous
+push 1
+add
+push @block
+push 1
+add
+push-indirect
+pop-indirect
+label endif.4
+push @block
+push 1
+add
+push 0
+pop-indirect
+push @block
+push 2
+add
+return
+goto endif.3
+label else.3
+label endif.3
+push @block
+pop @previous
+push @block
+push 1
+add
+push-indirect
+pop @block
+goto while.1
+label endwhile.1
+push 6
+call Sys.error
+pop Sys.discard
+push 0
+return
+function Memory.deAlloc(object) locals block
+push @object
+push 2
+sub
+pop @block
+push @block
+push 1
+add
+push Memory.freeList
+pop-indirect
+push @block
+pop Memory.freeList
+push 0
+return

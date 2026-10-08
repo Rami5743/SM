@@ -193,33 +193,41 @@ function parseAll(sm: string, name: string): SmFile[] {
 const ANSWER = 3000
 
 function program(run: string): string {
-  return `!Sys.init()\n<-${ANSWER}\nMain.run\n->[]\nspin:\n-->spin\n${run}`
+  return [
+    'function Sys.init()',
+    `push ${ANSWER}`,
+    'call Main.run',
+    'pop-indirect',
+    'label spin',
+    'goto spin',
+    run,
+  ].join('\n')
 }
 
 const ROUND_TRIP: ReadonlyArray<{ readonly name: string; readonly sm: string }> = [
   {
     name: 'arithmetic and logic',
-    sm: program('!Main.run()a,b\n<-7\n->@a\n<-8\n->@b\n<-@a\n<-@b\n+\n<-@a\n<-@b\n-\n+\n<-@a\n(-)\n+\n<-@a\n~\n+\n<-@a\n<-@b\n&\n+\n<-@a\n<-@b\n|\n+\n<--\n'),
+    sm: program('function Main.run() locals a, b\npush 7\npop @a\npush 8\npop @b\npush @a\npush @b\nadd\npush @a\npush @b\nsub\nadd\npush @a\nneg\nadd\npush @a\nnot\nadd\npush @a\npush @b\nand\nadd\npush @a\npush @b\nor\nadd\nreturn\n'),
   },
   {
     name: 'the comparisons, whose values SM and the VM disagree about',
-    sm: program('!Main.run()\n<-3\n<-5\n<\n<-5\n<-3\n>\n+\n<-4\n<-4\n==\n+\n<--\n'),
+    sm: program('function Main.run()\npush 3\npush 5\nlt\npush 5\npush 3\ngt\nadd\npush 4\npush 4\neq\nadd\nreturn\n'),
   },
   {
     name: 'a peek and a poke',
-    sm: program('!Main.run()\n<-3001\n<-42\n->[]\n<-3001\n[]\n<--\n'),
+    sm: program('function Main.run()\npush 3001\npush 42\npop-indirect\npush 3001\npush-indirect\nreturn\n'),
   },
   {
     name: 'globals',
-    sm: program('!Main.run()\n<-11\n->g\n<-g\n<-1\n+\n->h\n<-g\n<-h\n+\n<--\n'),
+    sm: program('function Main.run()\npush 11\npop g\npush g\npush 1\nadd\npop h\npush g\npush h\nadd\nreturn\n'),
   },
   {
     name: 'branches and a loop',
-    sm: program('!Main.run()i,s\n<-0\n->@s\n<-5\n->@i\nloop:\n<-@i\n<-1\n<\n?-->done\n<-@s\n<-@i\n+\n->@s\n<-@i\n<-1\n-\n->@i\n-->loop\ndone:\n<-@s\n<--\n'),
+    sm: program('function Main.run() locals i, s\npush 0\npop @s\npush 5\npop @i\nlabel loop\npush @i\npush 1\nlt\nif-goto done\npush @s\npush @i\nadd\npop @s\npush @i\npush 1\nsub\npop @i\ngoto loop\nlabel done\npush @s\nreturn\n'),
   },
   {
     name: 'calls, with recursion',
-    sm: program('!Main.run()\n<-7\nMain.fib\n<--\n!Main.fib(n)\n<-@n\n<-2\n<\n?-->base\n<-@n\n<-1\n-\nMain.fib\n<-@n\n<-2\n-\nMain.fib\n+\n<--\nbase:\n<-@n\n<--\n'),
+    sm: program('function Main.run()\npush 7\ncall Main.fib\nreturn\nfunction Main.fib(n)\npush @n\npush 2\nlt\nif-goto base\npush @n\npush 1\nsub\ncall Main.fib\npush @n\npush 2\nsub\ncall Main.fib\nadd\nreturn\nlabel base\npush @n\nreturn\n'),
   },
 ]
 
@@ -245,7 +253,7 @@ describe('SM to VM and back', () => {
   }
 
   it('refuses a fragment, because the VM has nowhere to put one', () => {
-    expect(() => smToVm(parseAll('<-1\n<-2\n+\n', 'f.sm'))).toThrow(/fragment/)
+    expect(() => smToVm(parseAll('push 1\npush 2\nadd\n', 'f.sm'))).toThrow(/fragment/)
   })
 })
 
